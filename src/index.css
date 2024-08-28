@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* .btn-primary {
+      @apply py-1.5 px-3 text-center bg-blue-700 rounded-md text-white;
+  } */
+  input[type='range']::-webkit-slider-thumb {
+    @apply appearance-none w-2 h-2 bg-white outline  outline-4 outline-red-700 rounded-full cursor-grab transition-shadow hover:drop-shadow-lg ease-in-out;
+  }
+
+  input[type=range] {
+    @apply appearance-none h-[6px] border-red-100 border rounded-full ;
+  }
+}
