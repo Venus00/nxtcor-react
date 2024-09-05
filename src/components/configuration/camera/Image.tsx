@@ -6,6 +6,7 @@ import { ImageRotationOptions } from "./Options";
 import Toggle from "../../common/Toggle";
 import Slider from "../../common/RangeSlider";
 import axios from "axios";
+import Toast from "../../common/Toast";
 
 const Image = () => {
 
@@ -16,6 +17,12 @@ const Image = () => {
     const [isFlipH, setIsFlipH] = useState(false);
     const [isFlipV, setIsFlipV] = useState(false);
     const [rotation, setrotation] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' }>({
+        message: '',
+        type: 'info' // Default type, can be 'success', 'error', or 'info'
+    });
+
 
 
 
@@ -23,11 +30,11 @@ const Image = () => {
 
     const submitImageConfig = async () => {
         try {
-            const actionUrl = 'cgi-bin/mj-settings.cgi'; // Replace with your actual URL
-
+            const actionUrl = 'cgi-bin/mj-settings_new.cgi'; // Replace with your actual URL
+            setIsSaving(true)
 
             const payload = {
-                action: 'update',
+                action: 'update_restart',
                 _image_mirror: isFlipH,
                 _image_flip: isFlipV,
                 _image_rotate: rotation,
@@ -40,20 +47,23 @@ const Image = () => {
                 _video0_sliceUnits: 0
             }
 
-            await axios.post(actionUrl, payload, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            });
-            await axios.post(actionUrl, { action: 'restart' }, {
+            const response = await axios.post(actionUrl, payload, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
 
 
+            if (response.data.includes('success')) {
+                setToast({ message:  'Configuration Updated', type: 'success' });
+                setIsSaving(false)
+            } else {
+                setToast({ message:  'Error Updating Configuration ', type: 'error' });
+                setIsSaving(false)
+            }
         } catch (error) {
-            console.error('Error updating network configuration:', error);
+            setIsSaving(false)
+            setToast({ message: 'Error', type: 'error' });
         }
     };
 
@@ -61,16 +71,16 @@ const Image = () => {
         const response = await axios.get(
             "/api/v1/config.json"
         );
-       const data = response.data.image
+        const data = response.data.image
         // Log the response from the API to the console
-        console.log("response", response.data.image);                                         
-        setbrightness       (data.luminance);                             
-        setcontrast         (data.contrast);                             
-        sethue              (data.hue);                             
-        setsaturation       (data.saturation);                             
-        setIsFlipH          (data.mirror);                             
-        setIsFlipV          (data.flip);                             
-        setrotation         (data.rotate);                             
+        console.log("response", response.data.image);
+        setbrightness(data.luminance);
+        setcontrast(data.contrast);
+        sethue(data.hue);
+        setsaturation(data.saturation);
+        setIsFlipH(data.mirror);
+        setIsFlipV(data.flip);
+        setrotation(data.rotate);
     }
 
 
@@ -98,7 +108,9 @@ const Image = () => {
                 <Select label="Rotate Image Clockwise" value={rotation} setValue={setrotation} options={ImageRotationOptions} />
 
             </div>
-            <SaveButton onClick={submitImageConfig} label='SAVE CHANGES' />
+            <SaveButton onClick={submitImageConfig}  loading={isSaving} label='SAVE CHANGES' />
+            <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
+
         </div>
     );
 };

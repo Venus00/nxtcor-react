@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import SaveButton from "../../common/SaveButton";
 import Toggle from "../../common/Toggle";
 import axios from "axios";
+import Toast from "../../common/Toast";
 
 
 
@@ -10,53 +11,62 @@ import axios from "axios";
 const Display = () => {
 
     const [isCheckedDisplayTime, setIsCheckedDisplayTime] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' }>({
+        message: '',
+        type: 'info' // Default type, can be 'success', 'error', or 'info'
+    });
+
 
     const submitDisplayConfig = async () => {
         try {
-            const actionUrl = 'cgi-bin/mj-settings.cgi'; 
-    
-       
+            const actionUrl = 'cgi-bin/mj-settings_new.cgi';
+
+            setIsSaving(true)
             const payload = {
                 _osd_enabled: isCheckedDisplayTime,
                 _osd_font: '/usr/share/fonts/truetype/UbuntuMono-Regular.ttf',
-                _osd_template: '%d.%m.%Y  %H:%M:%S '   ,      
+                _osd_template: '%d.%m.%Y  %H:%M:%S ',
                 _osd_posX: 30,
                 _osd_posY: 30,
                 _osd_privacyMasks: '',
-                action: 'update'
-                
+                action: 'update_restart'
+
             }
-    
-             await axios.post(actionUrl, payload, {
+
+            const response = await axios.post(actionUrl, payload, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
-            await axios.post(actionUrl, {action: 'restart'}, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            });
-    
-           
+
+
+            if (response.data.includes('success')){
+                setToast({ message:  'Configuration Updated', type: 'success' });
+                setIsSaving(false)
+            } else {
+                setToast({ message:  'Error updating Configuration', type: 'error' });
+                setIsSaving(false)
+            }
         } catch (error) {
-            console.error('Error updating network configuration:', error);
+            setIsSaving(false)
+            setToast({ message: 'Error', type: 'error' });
         }
     };
-    
-    const  getData = async() =>{
+
+    const getData = async () => {
         const response = await axios.get(
             "/api/v1/config.json"
         );
 
-          setIsCheckedDisplayTime(response.data.osd.enabled);    
-      }
-    
+        setIsCheckedDisplayTime(response.data.osd.enabled);
+    }
 
-    useEffect(()=>{
+
+    useEffect(() => {
         getData()
-    
-    },[])
+
+    }, [])
 
 
     return (
@@ -68,12 +78,11 @@ const Display = () => {
           lg:w-2/4 /* Larger screens (1024px and up) */
          `}
             >
-                <Toggle label="Display Time" value={isCheckedDisplayTime} setValue={setIsCheckedDisplayTime} />
-                <div></div>
-
-
+            <Toggle label="Display Time" value={isCheckedDisplayTime} setValue={setIsCheckedDisplayTime} />
             </div>
-            <SaveButton onClick={submitDisplayConfig} label='SAVE CHANGES' />
+            <SaveButton onClick={submitDisplayConfig}  loading={isSaving} label='SAVE CHANGES' />
+            <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
+
         </div>
     );
 };

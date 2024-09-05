@@ -44,7 +44,7 @@ const Camera = () => {
         {tabs.map((tab) => (
           <div
             key={tab.name}
-            className={`p-4 rounded-lg bg-gray-50 ${
+            className={`p-4 rounded-lg  ${
               activeTab === tab.name ? '' : 'hidden'
             }`}
             role="tabpanel"

@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Live from './pages/Live';
-// import Playback from './pages/Playback';
 import Configuration from './pages/Configuration';
 
 const App: React.FC = () => {
@@ -12,9 +11,8 @@ const App: React.FC = () => {
       <Navbar />
         <Routes>
           <Route path="/live" element={<Live />} />
-          {/* <Route path="/playback" element={<Playback />} /> */}
           <Route path="/configuration" element={<Configuration />} />
-          <Route path="/" element={<Live />} /> {/* Default route */}
+          <Route path="/" element={<Live />} />
         </Routes>
       </div>
 

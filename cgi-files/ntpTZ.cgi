@@ -1,14 +1,9 @@
 #!/bin/sh
 
 # Set the Content-Type header to application/json
-echo "HTTP/1.1 200 OK"
 echo "Content-Type: application/json"
-echo "Pragma: no-cache"
-echo "Date: $(TZ=GMT0 date +'%a, %d %b %Y %T %Z')"
-echo "Expires: $(TZ=GMT0 date +'%a, %d %b %Y %T %Z')"
-echo "Etag: \"$(cat /proc/sys/kernel/random/uuid)\""
-echo "Connection: close"
 echo ""
+
 
 FILE="/etc/ntp.conf"
 

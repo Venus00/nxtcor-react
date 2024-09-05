@@ -1,40 +1,41 @@
 interface TextFieldParams {
-    label: string;
-    value: number | string;
-    placeholder: string;
-    setValue?: React.Dispatch<React.SetStateAction<string>> | React.Dispatch<React.SetStateAction<number>>;
-  }
-  
-  const TextField: React.FC<TextFieldParams> = (props) => {
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value;
-  
-      // Check the type of props.setValue to determine how to handle the value
-      if (typeof props.value === 'number' && typeof props.setValue === 'function') {
-        const numericValue = Number(newValue);
-        if (!isNaN(numericValue)) {
-          (props.setValue as React.Dispatch<React.SetStateAction<number>>)(numericValue);
-        }
-      } else {
-        (props.setValue as React.Dispatch<React.SetStateAction<string>>)(newValue);
+  label: string;
+  value: number | string;
+  placeholder: string;
+  setValue?: React.Dispatch<React.SetStateAction<string>> | React.Dispatch<React.SetStateAction<number>>;
+  isEditable?: boolean;  // New prop for making the field editable or not
+}
+
+const TextField: React.FC<TextFieldParams> = (props) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+
+    // Check the type of props.setValue to determine how to handle the value
+    if (typeof props.value === 'number' && typeof props.setValue === 'function') {
+      const numericValue = Number(newValue);
+      if (!isNaN(numericValue)) {
+        (props.setValue as React.Dispatch<React.SetStateAction<number>>)(numericValue);
       }
-    };
-  
-    return (
-      <div>
-        <label className="block mb-1 text-md font-medium text-black">
-          {props.label}
-        </label>
-        <input
-          type="text"
-          className="bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
-          placeholder={props.placeholder}
-          value={props.value}
-          onChange={handleChange}
-        />
-      </div>
-    );
+    } else if (typeof props.setValue === 'function') {
+      (props.setValue as React.Dispatch<React.SetStateAction<string>>)(newValue);
+    }
   };
-  
-  export default TextField;
-  
+
+  return (
+    <div>
+      <label className="block mb-1 text-md font-medium text-black">
+        {props.label}
+      </label>
+      <input
+        type="text"
+        className={`bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 ${!props.isEditable ? 'bg-gray-200 cursor-not-allowed' : ''}`}
+        placeholder={props.placeholder}
+        value={props.value}
+        onChange={handleChange}
+        disabled={!props.isEditable}  // Conditionally disable the input
+      />
+    </div>
+  );
+};
+
+export default TextField;

@@ -4,6 +4,7 @@ import TextField from "../../common/TextField";
 import SaveButton from "../../common/SaveButton";
 import { VideoResoltionOptions, VideoEncodingOptions, RateControlModeOptions, VideoProfileOptions } from "./Options";
 import axios from "axios";
+import Toast from "../../common/Toast";
 
 
 
@@ -12,20 +13,26 @@ import axios from "axios";
 const Video = () => {
 
     const [videoResolution, setVideoResolution] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
     const [videoEncoding, setVideoEncoding] = useState('');
     const [videoFPS, setVideoFPS] = useState(20);
     const [videoBitrate, setVideoBitrate] = useState(4096);
     const [rateControlMode, setRateControlMode] = useState('');
     const [videoProfile, setVideoProfile] = useState('');
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' }>({
+        message: '',
+        type: 'info' // Default type, can be 'success', 'error', or 'info'
+    });
+
 
 
     const submitVideoConfig = async () => {
         try {
-            const actionUrl = 'cgi-bin/mj-settings.cgi';
-
+            const actionUrl = 'cgi-bin/mj-settings_new.cgi';
+            setIsSaving(true)
 
             const payload = {
-                action: 'update',
+                action: 'update_restart',
                 _video0_enabled: true,
                 _video0_codec: videoEncoding,
                 _video0_size: videoResolution,
@@ -36,21 +43,22 @@ const Video = () => {
 
             }
 
-            await axios.post(actionUrl, payload, {
+            const response = await axios.post(actionUrl, payload, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
-            await axios.post(actionUrl, { action: 'restart' }, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            });
-
-
-
+            if (response.data.includes('success')) {
+                setToast({ message:  'Configuration Updated', type: 'success' });
+                setIsSaving(false)
+            } else {
+                setToast({ message:  'Error Updating Configuration', type: 'error' });
+                setIsSaving(false)
+            }
         } catch (error) {
-            console.error('Error updating network configuration:', error);
+            console.error(error);
+            setToast({ message: 'Error', type: 'error' });
+            setIsSaving(false)
         }
     };
 
@@ -87,7 +95,9 @@ const Video = () => {
             <TextField label="Video Bitrate" value={videoBitrate} placeholder="4096" setValue={setVideoBitrate} />
             <Select label="Rate control mode" value={rateControlMode} setValue={setRateControlMode} options={RateControlModeOptions} />
             <Select label="Video Profile" value={videoProfile} setValue={setVideoProfile} options={VideoProfileOptions} />
-            <SaveButton onClick={submitVideoConfig} label='SAVE CHANGES' />
+            <SaveButton onClick={submitVideoConfig}  loading={isSaving} label='SAVE CHANGES' />
+            <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
+
 
         </div>
     );

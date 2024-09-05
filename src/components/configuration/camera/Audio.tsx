@@ -5,6 +5,7 @@ import Select from '../../common/Select';
 import SaveButton from '../../common/SaveButton';
 import { RecordingFormatOptions, AudioSamplingRateOptions } from "./Options"
 import axios from 'axios';
+import Toast from '../../common/Toast';
 
 
 
@@ -14,18 +15,24 @@ const Audio = () => {
     const [recordingFormat, setRecordingFormat] = useState('');
     const [audioSamplingRate, setaudioSamplingRate] = useState('');
     const [isCheckedSpeaker, setIsCheckedSpeaker] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const [SpeakerVolume, setSpeakerVolume] = useState(0);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' }>({
+        message: '',
+        type: 'info' // Default type, can be 'success', 'error', or 'info'
+    });
+
 
 
 
 
     const submitAudioConfig = async () => {
         try {
-            const actionUrl = 'cgi-bin/mj-settings.cgi';
+            const actionUrl = 'cgi-bin/mj-settings_new.cgi';
 
-
+            setIsSaving(true)
             const payload = {
-                action: 'update',
+                action: 'update_restart',
                 _audio_enabled: isCheckedMicro,
                 _audio_volume: Volume,
                 _audio_srate: audioSamplingRate,
@@ -36,20 +43,23 @@ const Audio = () => {
                 _audio_speakerPinInvert: false
             }
 
-            await axios.post(actionUrl, payload, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            });
-            await axios.post(actionUrl, {action: 'restart'}, {
+            const response = await axios.post(actionUrl, payload, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
 
 
+            if (response.data.includes('success')) {
+                setToast({ message: 'Configuration Updated', type: 'success' });
+                setIsSaving(false)
+            } else {
+                setToast({ message: 'Error Updating Configuration ', type: 'error' });
+                setIsSaving(false)
+            }
         } catch (error) {
-            console.error('Error updating network configuration:', error);
+            setIsSaving(false)
+            setToast({ message: 'Error .', type: 'error' });
         }
     };
 
@@ -60,12 +70,12 @@ const Audio = () => {
         const data = response.data.audio
         // Log the response from the API to the console
         console.log("response", response);
-        setIsCheckedMicro            (data.enabled);
-        setVolume                (data.volume);
-        setRecordingFormat           (data.codec);
-        setaudioSamplingRate         (data.srate);;
-        setIsCheckedSpeaker          (data.outputEnabled);
-        setSpeakerVolume                 (data.outputVolume);
+        setIsCheckedMicro(data.enabled);
+        setVolume(data.volume);
+        setRecordingFormat(data.codec);
+        setaudioSamplingRate(data.srate);;
+        setIsCheckedSpeaker(data.outputEnabled);
+        setSpeakerVolume(data.outputVolume);
 
 
 
@@ -98,7 +108,9 @@ const Audio = () => {
                 isCheckedSpeaker && <Slider label="Line Out" value={SpeakerVolume} setValue={setSpeakerVolume} max={30} />
 
             }
-            <SaveButton onClick={submitAudioConfig} label='SAVE CHANGES' />
+            <SaveButton onClick={submitAudioConfig}  loading={isSaving}  label='SAVE CHANGES' />
+            <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
+
         </div>
     );
 };

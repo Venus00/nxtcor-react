@@ -47,6 +47,48 @@ export const TZ = [
 	{ label: 'Africa/Sao_Tome', value: 'Africa/Sao_Tome', offset: 'GMT0' },
 	{ label: 'Africa/Timbuktu', value: 'Africa/Timbuktu', offset: 'GMT0' },
 	{ label: 'Africa/Tunis', value: 'Africa/Tunis', offset: 'CET-1' },
-	{ label: 'Africa/Windhoek', value: 'Africa/Windhoek', offset: 'CAT-2' }
-  ]
-  
+	{ label: 'Africa/Windhoek', value: 'Africa/Windhoek', offset: 'CAT-2' },
+	{ label: "Etc/GMT", value: "Etc/GMT", offset: "GMT0" },
+	{ label: "Etc/GMT+1", value: "Etc/GMT+1", offset: "<-01>1" },
+	{ label: "Etc/GMT+10", value: "Etc/GMT+10", offset: "<-10>10" },
+	{ label: "Etc/GMT+11", value: "Etc/GMT+11", offset: "<-11>11" },
+	{ label: "Etc/GMT+12", value: "Etc/GMT+12", offset: "<-12>12" },
+	{ label: "Etc/GMT+2", value: "Etc/GMT+2", offset: "<-02>2" },
+	{ label: "Etc/GMT+3", value: "Etc/GMT+3", offset: "<-03>3" },
+	{ label: "Etc/GMT+4", value: "Etc/GMT+4", offset: "<-04>4" },
+	{ label: "Etc/GMT+5", value: "Etc/GMT+5", offset: "<-05>5" },
+	{ label: "Etc/GMT+6", value: "Etc/GMT+6", offset: "<-06>6" },
+	{ label: "Etc/GMT+7", value: "Etc/GMT+7", offset: "<-07>7" },
+	{ label: "Etc/GMT+8", value: "Etc/GMT+8", offset: "<-08>8" },
+	{ label: "Etc/GMT+9", value: "Etc/GMT+9", offset: "<-09>9" },
+	{ label: "Etc/GMT-1", value: "Etc/GMT-1", offset: "<+01>-1" },
+	{ label: "Etc/GMT-10", value: "Etc/GMT-10", offset: "<+10>-10" },
+	{ label: "Etc/GMT-11", value: "Etc/GMT-11", offset: "<+11>-11" },
+	{ label: "Etc/GMT-12", value: "Etc/GMT-12", offset: "<+12>-12" },
+	{ label: "Etc/GMT-13", value: "Etc/GMT-13", offset: "<+13>-13" },
+	{ label: "Etc/GMT-14", value: "Etc/GMT-14", offset: "<+14>-14" },
+	{ label: "Etc/GMT-2", value: "Etc/GMT-2", offset: "<+02>-2" },
+	{ label: "Etc/GMT-3", value: "Etc/GMT-3", offset: "<+03>-3" },
+	{ label: "Etc/GMT-4", value: "Etc/GMT-4", offset: "<+04>-4" },
+	{ label: "Etc/GMT-5", value: "Etc/GMT-5", offset: "<+05>-5" },
+	{ label: "Etc/GMT-6", value: "Etc/GMT-6", offset: "<+06>-6" },
+	{ label: "Etc/GMT-7", value: "Etc/GMT-7", offset: "<+07>-7" },
+	{ label: "Etc/GMT-8", value: "Etc/GMT-8", offset: "<+08>-8" },
+	{ label: "Etc/GMT-9", value: "Etc/GMT-9", offset: "<+09>-9" },
+
+	{ label: "Europe/Astrakhan", value: "Europe/Astrakhan", offset: "<+04>-4" },
+
+
+	{ label: "Europe/Berlin", value: "Europe/Berlin", offset: "CET-1" },
+
+
+	{ label: "Europe/Chisinau", value: "Europe/Chisinau", offset: "EET-2" },
+
+	{ label: "Europe/Dublin", value: "Europe/Dublin", offset: "IST-1" },
+	{ label: "Europe/London", value: "Europe/London", offset: "GMT0" },
+
+	{ label: "Europe/Moscow", value: "Europe/Moscow", offset: "MSK-3" },
+
+
+
+]

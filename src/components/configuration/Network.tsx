@@ -1,13 +1,17 @@
 import  { useState } from 'react';
 import NetworkAccess from './network/Network';
-import Port from './network/Port';
+// import Port from './network/Port';
+import Rtmp from './network/Rtmp';
+import Rtsp from './network/Rtsp';
 
 const Network = () => {
   const [activeTab, setActiveTab] = useState('Network access');
 
   const tabs = [
     { name: 'Network access', content: <NetworkAccess /> },
-    { name: 'Port', content: <Port /> }
+    // { name: 'Port', content: <Port /> },
+    { name: 'RTSP', content: <Rtsp /> },
+    { name: 'RTMP', content: <Rtmp /> }
   ];
 
   return (
@@ -40,7 +44,7 @@ const Network = () => {
         {tabs.map((tab) => (
           <div
             key={tab.name}
-            className={`p-4 rounded-lg bg-gray-50 ${
+            className={`p-4 rounded-lg  ${
               activeTab === tab.name ? '' : 'hidden'
             }`}
             role="tabpanel"
