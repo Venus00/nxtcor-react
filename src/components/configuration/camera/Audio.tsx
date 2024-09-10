@@ -58,6 +58,7 @@ const Audio = () => {
                 setIsSaving(false)
             }
         } catch (error) {
+            console.log(error)
             setIsSaving(false)
             setToast({ message: 'Error .', type: 'error' });
         }

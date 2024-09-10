@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Authentification from './security/Authentification';
+import Rebooting from './security/Rebooting';
 
 // import Security_Service from './security/Security_Service';
 
@@ -8,7 +9,7 @@ const Security = () => {
 
   const tabs = [
     { name: 'Authentification', content: <Authentification /> },
-    // { name: 'Security Service', content: <Security_Service /> }
+    { name: 'Reboot', content: <Rebooting /> }
   ];
 
   return (

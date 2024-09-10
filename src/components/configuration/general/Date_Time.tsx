@@ -64,7 +64,7 @@ const Date_Time: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const getOffset = (value: any) => {
+  const getOffset = (value: unknown) => {
     const zone = TZ.find(zone => zone.value === value);
     return zone ? zone.offset : null;  // Return the offset or null if not found
   };
@@ -117,6 +117,7 @@ const Date_Time: React.FC = () => {
         setIsSyncing(false)
       }
     } catch (error) {
+      console.log(error)
       setIsSyncing(false)
       setToast({ message: 'Error syncing NTP.', type: 'error' });
     }
@@ -136,7 +137,7 @@ const Date_Time: React.FC = () => {
               id="date_year"
               className="bg-gray-50 border border-gray-300 text-center text-md text-gray-900 rounded-md w-[80px] p-2"
               readOnly
-              value={date.year || "2024"}
+              value={date.year || "----"}
             />
             <div className="text-md">-</div>
             <input
@@ -144,7 +145,7 @@ const Date_Time: React.FC = () => {
               id="date_month"
               className="bg-gray-50 border border-gray-300 text-center text-md text-gray-900 rounded-md w-[70px] p-2"
               readOnly
-              value={date.month || "08"}
+              value={date.month || "--"}
             />
             <div className="text-md">-</div>
             <input
@@ -152,7 +153,7 @@ const Date_Time: React.FC = () => {
               id="date_day_num"
               className="bg-gray-50 border border-gray-300 text-center text-md text-gray-900 rounded-md w-[70px] p-2"
               readOnly
-              value={date.day || "15"}
+              value={date.day || "--"}
             />
           </div>
         </div>
@@ -168,7 +169,7 @@ const Date_Time: React.FC = () => {
               id="time_hour"
               className="bg-gray-50 border border-gray-300 text-center text-md text-gray-900 rounded-md w-[78px] p-2"
               readOnly
-              value={time.hours || "15"}
+              value={time.hours || "00"}
             />
             <div className="text-md p-1.5">:</div>
             <input
@@ -176,7 +177,7 @@ const Date_Time: React.FC = () => {
               id="time_minute"
               className="bg-gray-50 border border-gray-300 text-center text-md text-gray-900 rounded-md w-[70px] p-2"
               readOnly
-              value={time.minutes || "08"}
+              value={time.minutes || "00"}
             />
             <div className="text-md p-1.5">:</div>
             <input
@@ -184,7 +185,7 @@ const Date_Time: React.FC = () => {
               id="time_second"
               className="bg-gray-50 border border-gray-300 text-center text-md text-gray-900 rounded-md w-[70px] p-2"
               readOnly
-              value={time.seconds || "15"}
+              value={time.seconds || "00"}
             />
           </div>
         </div>

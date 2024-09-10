@@ -3,6 +3,8 @@ import General from './General';
 import Security from './Security';
 import Camera from './Camera';
 import Network from './Network'
+import Events from './Events';
+import Storage from './Storage';
 
 
 const Sidebar: React.FC = () => {
@@ -13,6 +15,8 @@ const Sidebar: React.FC = () => {
     { name: 'General', activeImg: 'assets/GeneralActive.png', img: 'assets/General.png', content: <General /> },
     { name: 'Camera', activeImg: 'assets/CameraActive.png', img: 'assets/Camera.png', content: <Camera /> },
     { name: 'Network', activeImg: 'assets/NetworkActive.png', img: 'assets/Network.png', content: <Network /> },
+    { name: 'Storage', activeImg: 'assets/StorageActive.png', img: 'assets/Storage.png', content: <Storage /> },
+    { name: 'Events', activeImg: 'assets/EventsActive.png', img: 'assets/Events.png', content: <Events /> },
     { name: 'Security', activeImg: 'assets/SecurityActive.png', img: 'assets/Security.png', content: <Security /> }
   ];
 
