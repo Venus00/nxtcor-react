@@ -49,12 +49,11 @@ const Navbar = () => {
             {/* Caméra Thermique */}
             <li>
               <Link
-                to="/live"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  isActive("/live")
-                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                }`}
+                to="/live/cam1"
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/live")
+                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                  }`}
               >
                 <Thermometer className="h-4 w-4" />
                 Thermique
@@ -64,12 +63,11 @@ const Navbar = () => {
             {/* Caméra Normale */}
             <li>
               <Link
-                to="/live"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  isActive("/live")
-                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                }`}
+                to="/live/cam2"
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/live")
+                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                  }`}
               >
                 <Camera className="h-4 w-4" />
                 Normale
@@ -80,11 +78,10 @@ const Navbar = () => {
             <li>
               <Link
                 to="/playback"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  isActive("/playback")
-                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                }`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/playback")
+                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                  }`}
               >
                 <Play className="h-4 w-4" />
                 Playback
@@ -95,11 +92,10 @@ const Navbar = () => {
             <li>
               <Link
                 to="/configuration"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  isActive("/configuration")
-                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                }`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/configuration")
+                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                  }`}
               >
                 <Settings className="h-4 w-4" />
                 Configuration
@@ -117,17 +113,16 @@ const Navbar = () => {
             >
               <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50 ring-2 ring-green-500/20"></div>
               <span className="text-sm text-slate-200 font-semibold tracking-wide">Live</span>
-              <ChevronDown 
-                className={`h-4 w-4 text-slate-400 group-hover:text-slate-300 transition-all duration-300 ${
-                  isPopoverOpen ? 'rotate-180 text-slate-300' : ''
-                }`} 
+              <ChevronDown
+                className={`h-4 w-4 text-slate-400 group-hover:text-slate-300 transition-all duration-300 ${isPopoverOpen ? 'rotate-180 text-slate-300' : ''
+                  }`}
               />
             </button>
 
             {isPopoverOpen && (
               <div className="absolute right-0 top-full mt-3 w-56 z-[9999]">
                 <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-800 border-l border-t border-slate-600/50 rotate-45"></div>
-                
+
                 <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-600/50 rounded-xl shadow-2xl shadow-black/40 backdrop-blur-sm overflow-hidden">
                   <div className="px-4 py-3 bg-gradient-to-r from-slate-700/30 to-slate-800/30 border-b border-slate-600/30">
                     <div className="flex items-center gap-2">
@@ -172,7 +167,7 @@ const Navbar = () => {
                     </button>
                   </div>
 
-            
+
                 </div>
               </div>
             )}
