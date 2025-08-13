@@ -3,7 +3,7 @@ interface SiderParams {
     label : string, 
      value : number,
      max : number
-    setValue : React.Dispatch<React.SetStateAction<number>>;
+     setValue: React.Dispatch<React.SetStateAction<number>>;
   }
   
   const Slider = (props : SiderParams) => {

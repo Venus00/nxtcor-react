@@ -52,7 +52,7 @@ const Authentification = () => {
                 setIsSaving(false)
             }
         } catch (error) {
-            // console.error(error);
+            console.error(error);
             setIsSaving(false)
             setToast({ message: 'Error .', type: 'error' });
         }

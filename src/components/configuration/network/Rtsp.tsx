@@ -28,7 +28,7 @@ const Rtsp = () => {
         const rtsp_data = response.data.rtsp
         // Log the response from the API to the console
         console.log("response", rtsp_data);
-        setIsCheckedRtsp(rtsp_data.enabled);
+
     }
 
     useEffect(() => {
