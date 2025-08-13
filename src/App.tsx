@@ -8,16 +8,15 @@ import Playback from './pages/playback';
 const App: React.FC = () => {
   return (
     <Router>
-      <div className="h-screen w-screen p-4">
-      <Navbar />
-        <Routes>
-          <Route path="/live" element={<Live />} />
-          <Route path="/playback" element={<Playback />} />
-          <Route path="/configuration" element={<Configuration />} />
-          <Route path="/" element={<Live />} />
-        </Routes>
+      <div className="h-screen w-screen p-1">
+        <Navbar />
+          <Routes>
+            <Route path="/live" element={<Live />} />
+            <Route path="/playback" element={<Playback />} />
+            <Route path="/configuration" element={<Configuration />} />
+            <Route path="/" element={<Live />} />
+          </Routes>
       </div>
-
     </Router>
   );
 }

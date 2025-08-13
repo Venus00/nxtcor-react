@@ -1,3 +1,4 @@
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, ZoomIn, ZoomOut } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 
 const VideoStream: React.FC = () => {
@@ -60,77 +61,74 @@ console.log(direction)
   };
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] mt-4 gap-2">
-      {/* Sidebar with grid controls */}
-      <div className="w-1/6 h-full p-4 bg-gray-50 shadow-md border  rounded-xl">
-      <h2 className="text-xl font-semibold mb-4 text-gray-900 text-center ">Controls</h2>
-        <div className=" flex flex-col items-center justify-center mt-24  space-y-2  ">
+    <div className="flex h-[calc(100vh-8rem)]">
+      <div className="w-1/6 h-full p-4 bg-black shadow-2xl border-r border-gray-800">
+        <h2 className="text-xl font-semibold mb-4 text-white text-center">Controls</h2>
+        <div className="flex flex-col items-center justify-center space-y-3">
           {/* Arrow Keys */}
-          <div className='flex  justify-center gap-2 '>
-          <button
-            onClick={() => move('up')}
-            className=" text-white font-semibold rounded-lg bg-white shadow border flex justify-center"
-          >
-            <img src="/assets/top.png" alt="Up" className="w-14 h-14" />
-          </button>
-          </div>
-          <div className='flex  justify-center gap-2 '>
-           
+          <div className="flex justify-center gap-2">
             <button
-              onClick={() => move('left')}
-              className=" text-white font-semibold rounded-lg shadow border  flex items-center justify-center"
+              onClick={() => move("up")}
+              className="w-14 h-14 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-lg border border-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
             >
-              <img src="/assets/left.png" alt="Left" className="w-14 h-14" />
-            </button>
-        
-             <img src="/assets/middle.png" alt="middle" className="w-14 h-14 shadow border cursor-none" />
-        
-            <button
-              onClick={() => move('right')}
-              className=" text-white font-semibold rounded-lg shadow border  flex items-center justify-center"
-            >
-              <img src="/assets/right.png" alt="Right" className="w-14 h-14" />
+              <ChevronUp size={24} />
             </button>
           </div>
-        
-          <div className='flex  justify-center gap-4 '>
-          <button
-            onClick={() => move('down')}
-            className=" text-white font-semibold rounded-lg shadow border  flex items-center justify-center"
-          >
-            <img src="/assets/down.png" alt="Down" className="w-14 h-14" />
-          </button>
+          <div className="flex justify-center gap-2">
+            <button
+              onClick={() => move("left")}
+              className="w-14 h-14 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-lg border border-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <div className="w-14 h-14 bg-gray-900 border border-gray-600 rounded-lg flex items-center justify-center shadow-inner">
+              <Circle size={16} className="text-gray-500" />
+            </div>
+            <button
+              onClick={() => move("right")}
+              className="w-14 h-14 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-lg border border-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
+            >
+              <ChevronRight size={24} />
+            </button>
           </div>
-          <div className='flex  justify-center gap-2 '>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => move("down")}
+              className="w-14 h-14 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-lg border border-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
+            >
+              <ChevronDown size={24} />
+            </button>
+          </div>
+          <div className="flex justify-center gap-2 mt-4">
             <button
               onClick={zoomOut}
-              className=" text-white font-semibold rounded-lg shadow border flex items-center justify-center"
+              className="w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-lg border border-blue-500 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
             >
-              <img src="/assets/zoomOut.png" alt="Zoom Out" className="w-14 h-14" />
+              <ZoomOut size={20} />
             </button>
             <button
               onClick={zoomIn}
-              className=" text-white font-semibold rounded-lg shadow border flex items-center justify-center"
+              className="w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-lg border border-blue-500 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
             >
-              <img src="/assets/zoomIn.png" alt="Zoom In" className="w-14 h-14" />
+              <ZoomIn size={20} />
             </button>
           </div>
         </div>
       </div>
 
       {/* Video Player */}
-      <div className="flex-grow flex justify-center items-center relative">
-        <div className="relative w-full h-full overflow-hidden bg-black rounded-xl">
+      <div className="flex-grow flex justify-center items-center relative bg-black">
+        <div className="relative w-full h-full overflow-hidden bg-black">
           <video
             ref={videoRef}
             className="object-fill"
             poster="/mjpeg"
             style={{
               transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
-              transformOrigin: 'center',
-              transition: 'transform 0.3s ease',
-              width: '100%',
-              height: '100%',
+              transformOrigin: "center",
+              transition: "transform 0.3s ease",
+              width: "100%",
+              height: "100%",
             }}
           >
             Your browser does not support the video tag.
@@ -138,7 +136,7 @@ console.log(direction)
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
 export default VideoStream;
