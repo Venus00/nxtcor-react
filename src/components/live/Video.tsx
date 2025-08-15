@@ -61,7 +61,7 @@ console.log(direction)
   };
 
   return (
-    <div className="flex h-[calc(100vh-8rem)]">
+    <div className="flex h-[calc(100vh-5rem)]">
       <div className="w-1/6 h-full p-4 bg-black shadow-2xl border-r border-gray-800">
         <h2 className="text-xl font-semibold mb-4 text-white text-center">Controls</h2>
         <div className="flex flex-col items-center justify-center space-y-3">

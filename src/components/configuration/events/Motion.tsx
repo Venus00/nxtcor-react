@@ -70,7 +70,7 @@ const Motion = () => {
 
     return (
         <div className={`  space-y-8
-          lg:w-full
+          lg:w-full bg-gray-800
          `}
         >
             <div className="w-1/4">

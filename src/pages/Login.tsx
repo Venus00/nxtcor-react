@@ -27,15 +27,11 @@ const Login: React.FC = () => {
       backgroundSize: 'cover',
       backgroundPosition: 'center'
     }}>
-      {/* Overlay sombre */}
       <div className="absolute inset-0 bg-black/40"></div>
       
-      {/* Contenu centré à droite */}
       <div className="relative z-10 w-full flex justify-center items-center px-8">
         <div className="ml-auto mr-32">
-          {/* Cadre du formulaire */}
           <div className="bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gray-700/50 p-8 w-96 shadow-2xl">
-            {/* Logo et titre */}
             <div className="text-center mb-8">
               <div className="flex items-center justify-center mb-4">
                 <div className="w-8 h-8 bg-red-600 rounded-lg mr-3 flex items-center justify-center">
@@ -48,7 +44,6 @@ const Login: React.FC = () => {
               <h2 className="text-white text-2xl font-semibold mb-2">CONNEXION</h2>
             </div>
 
-            {/* Formulaire */}
             <div className="space-y-6">
               <div>
                 <label htmlFor="email" className="block text-gray-300 text-sm font-medium mb-2">

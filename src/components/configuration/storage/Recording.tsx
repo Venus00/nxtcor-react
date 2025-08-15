@@ -181,58 +181,79 @@ const Recording = () => {
 
 
     return (
-        <div className='overflow-x-auto w-3/4 p-6 '>
-            <div className="grid grid-cols-3  mb-14 ">
-                <Toggle label="Enable" value={enable} setValue={setEnable} />
+        <div className='overflow-x-auto w-full p-6 bg-gray-700 rounded-lg'>
+            <div className="grid grid-cols-3 mb-6">
+                <Toggle label="Enable Recording" value={enable} setValue={setEnable} />
             </div>
-            {enable && <>
-                <div className="flex justify-end ">
-                    <button
-                        className="mb-2 px-4 py-2 bg-red-500 text-white font-medium rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300"
-                        onClick={clearAllCheckboxes}
-                    >
-                        Clear All
-                    </button>
-                </div>
-                <table className="min-w-full border">
-                    <thead>
-                        <tr>
-                            <th className="border px-4 py-2"></th>
-                            {timeSlots.map((slot) => (
-                                <th key={slot} className="border text-black font-medium text-sm px-4 py-2">{slot}</th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {daysOfWeek.map((day, dayIndex) => (
-                            <tr key={day}>
-                                <td className="border text-sm font-medium text-black border-gray-300 px-4 py-2">{day}</td>
-                                {timeSlots.map((slot, timeIndex) => (
-                                    <td key={slot} className="border border-gray-300 px-4 py-2 text-center">
-                                        <input
-                                            type="checkbox"
-                                            checked={checkedState[dayIndex][timeIndex]}
-                                            onChange={() => handleCheckboxChange(dayIndex, timeIndex)}
-                                            className={`h-4 w-4 rounded cursor-pointer appearance-none ${checkedState[dayIndex][timeIndex] ? 'bg-green-500 border-green-500' : 'bg-gray-300 border-gray-300'}`}
-                                        />
-                                    </td>
+            
+            {enable && (
+                <>
+                    <div className="flex justify-end mb-4">
+                        <button
+                            className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors duration-200"
+                            onClick={clearAllCheckboxes}
+                        >
+                            Clear All
+                        </button>
+                    </div>
+                    
+                    <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
+                        <table className="min-w-full">
+                            <thead className="bg-gray-600">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-white font-semibold"></th>
+                                    {timeSlots.map((slot) => (
+                                        <th key={slot} className="px-4 py-3 text-center text-white font-semibold text-sm">
+                                            {slot}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {daysOfWeek.map((day, dayIndex) => (
+                                    <tr key={day} className="border-b border-gray-600 hover:bg-gray-750">
+                                        <td className="px-4 py-3 text-sm font-medium text-white bg-gray-650">
+                                            {day}
+                                        </td>
+                                        {timeSlots.map((slot, timeIndex) => (
+                                            <td key={slot} className="px-4 py-3 text-center">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={checkedState[dayIndex][timeIndex]}
+                                                    onChange={() => handleCheckboxChange(dayIndex, timeIndex)}
+                                                    className={`h-5 w-5 rounded cursor-pointer transition-all duration-200 ${
+                                                        checkedState[dayIndex][timeIndex] 
+                                                            ? 'bg-green-500 border-green-500' 
+                                                            : 'bg-gray-400 border-gray-400 hover:bg-gray-300'
+                                                    }`}
+                                                />
+                                            </td>
+                                        ))}
+                                    </tr>
                                 ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-            </>}
-            <div className="flex flex-col items-center justify-center gap-4  mt-4">
-
-                <div>
-                    {enable && <SaveButton onClick={submitMotionConfig} label="SAVE CHANGES" loading={isSaving} />}
-                    {!enable && <SaveButton onClick={submitMotionDisable} label="SAVE CHANGES" loading={isSaving} />}
-                </div>
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
+            
+            <div className="flex justify-center mt-6">
+                {enable ? (
+                    <SaveButton onClick={submitMotionConfig} label="SAVE CHANGES" loading={isSaving} />
+                ) : (
+                    <SaveButton onClick={submitMotionDisable} label="SAVE CHANGES" loading={isSaving} />
+                )}
             </div>
-            <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
+            
+            <Toast 
+                message={toast.message} 
+                type={toast.type} 
+                onClose={() => setToast({ message: '', type: 'info' })} 
+            />
         </div>
     );
+
+
 };
 
 export default Recording;

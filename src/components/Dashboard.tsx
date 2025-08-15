@@ -6,7 +6,7 @@ import Configuration from "../pages/Configuration";
 import Analytics from "./configuration/Analytics";
 
 const Dashboard: React.FC = () => (
-  <div className="h-screen w-screen p-1">
+  <div className="h-full w-full flex flex-col bg-black">
     <Navbar />
     <Routes>
       <Route path="/live" element={<Live />} />

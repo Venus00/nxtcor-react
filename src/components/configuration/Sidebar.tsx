@@ -71,66 +71,66 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      <div
-        className={`${getSidebarWidth()} h-[calc(100vh-8rem)] rounded-[16px] p-[16px] flex flex-col justify-between bg-white shadow border-2 transition-all duration-300 ease-in-out relative`}
-      >
-        <button
-          onClick={toggleSidebar}
-          className="absolute -right-3 top-4 bg-white border-2 rounded-full p-1 shadow-md hover:bg-gray-50 transition-colors z-10"
-        >
-          {isCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-gray-600" />
-          ) : (
-            <ChevronLeft className="w-4 h-4 text-gray-600" />
-          )}
-        </button>
-
-        <ul className="flex flex-col space-y-6 text-xs text-gray-900 mt-4 flex-1">
-          {tabs.map((tab) => {
-            const IconComponent = tab.icon
-            return (
-              <li key={tab.name}>
-                <a
-                  href="#"
-                  onClick={() => setActiveTab(tab.name)}
-                  className={`inline-flex items-center px-4 py-3 text-[20px] rounded-lg w-full transition-colors ${
-                    tab.name === activeTab
-                      ? "text-red-700 bg-red-50"
-                      : "hover:text-gray-500 hover:bg-gray-50"
-                  }`}
-                  aria-current={tab.name === activeTab ? "page" : undefined}
-                  title={isCollapsed ? tab.name : undefined}
-                >
-                  <IconComponent
-                    className={`w-[24px] h-[24px] ${isCollapsed ? "" : "me-2"} flex-shrink-0`}
-                  />
-                  {!isCollapsed && (
-                    <span className="transition-opacity duration-300">
-                      {tab.name}
-                    </span>
-                  )}
-                </a>
-              </li>
-            )
-          })}
-        </ul>
-
-<div className="border-t pt-4">
+<div
+  className={`${getSidebarWidth()} h-[calc(100vh-5rem)]   flex flex-col justify-between bg-black shadow-lg border border-gray-800 transition-all duration-300 ease-in-out relative`}
+>
   <button
-    onClick={handleLogout}
-    className="flex items-center justify-center lg:justify-start px-4 py-3 text-[20px] text-red-600 rounded-lg w-full hover:bg-red-50 transition-colors"
+    onClick={toggleSidebar}
+    className="absolute -right-3 top-4 bg-black border border-gray-700 rounded-full p-1 shadow-md hover:bg-gray-800 transition-colors z-10"
   >
-    <LogOut className="w-[24px] h-[24px] flex-shrink-0" />
-    {!isCollapsed && <span className="ml-2">Sign out</span>}
+    {isCollapsed ? (
+      <ChevronRight className="w-4 h-4 text-gray-300" />
+    ) : (
+      <ChevronLeft className="w-4 h-4 text-gray-300" />
+    )}
   </button>
+
+  <ul className="flex flex-col space-y-6 text-xs text-gray-300 mt-4 flex-1">
+    {tabs.map((tab) => {
+      const IconComponent = tab.icon
+      return (
+        <li key={tab.name}>
+          <a
+            href="#"
+            onClick={() => setActiveTab(tab.name)}
+            className={`inline-flex items-center px-4 py-3 text-[20px] rounded-lg w-full transition-colors ${
+              tab.name === activeTab
+                ? "text-red-500 bg-gray-800"
+                : "hover:text-white hover:bg-gray-800"
+            }`}
+            aria-current={tab.name === activeTab ? "page" : undefined}
+            title={isCollapsed ? tab.name : undefined}
+          >
+            <IconComponent
+              className={`w-[24px] h-[24px] ${isCollapsed ? "" : "me-2"} flex-shrink-0`}
+            />
+            {!isCollapsed && (
+              <span className="transition-opacity duration-300">
+                {tab.name}
+              </span>
+            )}
+          </a>
+        </li>
+      )
+    })}
+  </ul>
+
+  <div className="border-t border-gray-700 pt-4">
+    <button
+      onClick={handleLogout}
+      className="flex items-center justify-center lg:justify-start px-4 py-3 text-[20px] text-red-500 rounded-lg w-full hover:bg-gray-800 transition-colors"
+    >
+      <LogOut className="w-[24px] h-[24px] flex-shrink-0" />
+      {!isCollapsed && <span className="ml-2">Sign out</span>}
+    </button>
+  </div>
 </div>
 
-      </div>
 
       <div
-        className={`text-medium text-gray-500 bg-white shadow rounded-[16px] border-2 transition-all duration-300 ease-in-out ml-4 flex-1`}
+        className={`text-medium text-gray-500 bg-white shadow rounded-[16px]  transition-all duration-300 ease-in-out  flex-1`}
       >
-        <div className="p-4">
+        <div className="">
           {tabs.find((tab) => tab.name === activeTab)?.content}
         </div>
       </div>

@@ -12,7 +12,7 @@ const Events = () => {
   ];
 
   return (
-    <div>
+    <div className="bg-black text-white h-[calc(100vh-4rem)] ">
       <div className="mb-4 ">
         <ul
           className="flex  space-x-6 text-xl text-center "
@@ -23,7 +23,7 @@ const Events = () => {
               <button
                 className={`inline-block p-4  rounded-t-lg ${
                   activeTab === tab.name
-                    ? 'text-black border-black border-b-2'
+                    ? 'text-white border-black border-b-2'
                     : 'text-gray-500 hover:text-gray-600 hover:border-gray-300 '
                 }`}
                 onClick={() => setActiveTab(tab.name)}

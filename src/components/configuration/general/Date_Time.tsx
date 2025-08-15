@@ -1,136 +1,136 @@
-import React, { useEffect, useState } from 'react';
-import Select from '../../common/Select';
-import TextField from '../../common/TextField';
-import SaveButton from '../../common/SaveButton';
-import { TZ } from './Options';
-import axios from 'axios';
-import Toast from '../../common/Toast';
+"use client"
+
+import type React from "react"
+import { useEffect, useState } from "react"
+import Select from "../../common/Select"
+import TextField from "../../common/TextField"
+import SaveButton from "../../common/SaveButton"
+import { TZ } from "./Options"
+import axios from "axios"
+import Toast from "../../common/Toast"
 
 const Date_Time: React.FC = () => {
-  const [timezone, setTimezone] = useState('');
-  const [primaryNTP, setPrimaryNTP] = useState('');
-  const [secondaryNTP, setSecondaryNTP] = useState('');
-  const [date, setDate] = useState({ year: 0, month: 0, day: 0 });
-  const [time, setTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' }>({
-    message: '',
-    type: 'info' // Default type, can be 'success', 'error', or 'info'
-  });
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [timezone, setTimezone] = useState("")
+  const [primaryNTP, setPrimaryNTP] = useState("")
+  const [secondaryNTP, setSecondaryNTP] = useState("")
+  const [date, setDate] = useState({ year: 0, month: 0, day: 0 })
+  const [time, setTime] = useState({ hours: 0, minutes: 0, seconds: 0 })
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" }>({
+    message: "",
+    type: "info", // Default type, can be 'success', 'error', or 'info'
+  })
+  const [isSaving, setIsSaving] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   const syncToBrowser = () => {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    console.log('browser timezone', tz);
-    setTimezone(tz);
-  };
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+    console.log("browser timezone", tz)
+    setTimezone(tz)
+  }
 
   const getData = async () => {
     try {
-      const response = await axios.get('/cgi-bin/j/datetime.cgi');
-      const currentDate = new Date(parseInt(response.data.time_now) * 1000);
+      const response = await axios.get("/cgi-bin/j/datetime.cgi")
+      const currentDate = new Date(Number.parseInt(response.data.time_now) * 1000)
 
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth() + 1;
-      const day = currentDate.getDate();
-      const hours = currentDate.getHours();
-      const minutes = currentDate.getMinutes();
-      const seconds = currentDate.getSeconds();
+      const year = currentDate.getFullYear()
+      const month = currentDate.getMonth() + 1
+      const day = currentDate.getDate()
+      const hours = currentDate.getHours()
+      const minutes = currentDate.getMinutes()
+      const seconds = currentDate.getSeconds()
 
-      setDate({ year, month, day });
-      setTime({ hours, minutes, seconds });
-
+      setDate({ year, month, day })
+      setTime({ hours, minutes, seconds })
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error)
     }
-  };
+  }
 
   const getTimezone = async () => {
     try {
-      const response = await axios.get('/cgi-bin/j/ntpTZ.cgi');
-      setTimezone(response.data.tz_name);
-      setPrimaryNTP(response.data.server_0);
-      setSecondaryNTP(response.data.server_1);
+      const response = await axios.get("/cgi-bin/j/ntpTZ.cgi")
+      setTimezone(response.data.tz_name)
+      setPrimaryNTP(response.data.server_0)
+      setSecondaryNTP(response.data.server_1)
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error)
     }
-  };
+  }
 
   useEffect(() => {
     const interval = setInterval(() => {
-      getData();
-    }, 1000);
-    getTimezone();
-    return () => clearInterval(interval);
-  }, []);
+      getData()
+    }, 1000)
+    getTimezone()
+    return () => clearInterval(interval)
+  }, [])
 
   const getOffset = (value: unknown) => {
-    const zone = TZ.find(zone => zone.value === value);
-    return zone ? zone.offset : null;  // Return the offset or null if not found
-  };
+    const zone = TZ.find((zone) => zone.value === value)
+    return zone ? zone.offset : null // Return the offset or null if not found
+  }
   const handleSave = async () => {
     try {
-      const actionUrl = 'cgi-bin/fw-time.cgi';
+      const actionUrl = "cgi-bin/fw-time.cgi"
 
- setIsSaving(true)
+      setIsSaving(true)
 
       const payload = {
-        action: 'update',
+        action: "update",
         tz_name: timezone,
         tz_data: getOffset(timezone),
         server_0: primaryNTP,
         server_1: secondaryNTP,
-      };
+      }
 
-      const response =await axios.post(actionUrl, payload, {
+      const response = await axios.post(actionUrl, payload, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-      });
+      })
 
       if (response.status === 200) {
-        setToast({ message: "Settings Updated successfully", type: 'success' });
+        setToast({ message: "Settings Updated successfully", type: "success" })
       } else {
-        setToast({ message: `Unexpected status code: ${response.status}`, type: 'error' });
+        setToast({ message: `Unexpected status code: ${response.status}`, type: "error" })
       }
     } catch (error) {
-      console.error('Error updating Time configuration:', error);
-      setToast({ message: 'Error updating settings.', type: 'error' });
+      console.error("Error updating Time configuration:", error)
+      setToast({ message: "Error updating settings.", type: "error" })
     }
-  };
+  }
 
   const SyncNTP = async () => {
-    const actionUrl = '/cgi-bin/j/time.cgi';
+    const actionUrl = "/cgi-bin/j/time.cgi"
     setIsSyncing(true)
     try {
       const response = await axios.get(actionUrl, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-      });
+      })
 
       if (response.status === 200) {
-        setToast({ message: response.data.message, type: 'success' });
+        setToast({ message: response.data.message, type: "success" })
         setIsSyncing(false)
       } else {
-        setToast({ message: `Unexpected status code: ${response.status}`, type: 'error' });
+        setToast({ message: `Unexpected status code: ${response.status}`, type: "error" })
         setIsSyncing(false)
       }
     } catch (error) {
       console.log(error)
       setIsSyncing(false)
-      setToast({ message: 'Error syncing NTP.', type: 'error' });
+      setToast({ message: "Error syncing NTP.", type: "error" })
     }
-  };
+  }
 
   return (
-    <div className='space-y-4 w-1/4'>
+    <div className="space-y-4 w-1/4 ">
       <div className="space-y-4">
         {/* Device Date Section */}
         <div className="flex items-center space-x-2">
-          <label className="text-md font-medium text-black mr-3">
-            Camera Date
-          </label>
+          <label className="text-md font-medium text-black mr-3">Camera Date</label>
           <div className="flex items-center space-x-2">
             <input
               type="text"
@@ -160,9 +160,7 @@ const Date_Time: React.FC = () => {
 
         {/* Device Time Section */}
         <div className="flex items-center space-x-2">
-          <label className="text-md font-semibold text-black mr-3">
-            Camera Time
-          </label>
+          <label className="text-md font-semibold text-black mr-3">Camera Time</label>
           <div className="flex items-center space-x-1">
             <input
               type="text"
@@ -201,23 +199,33 @@ const Date_Time: React.FC = () => {
         Sync to Browser Timezone
       </button>
 
-      <TextField label="Primary NTP server" value={primaryNTP} placeholder="0.time.openipc.org" setValue={setPrimaryNTP} />
-      <TextField label="Secondary NTP server" value={secondaryNTP} placeholder="1.time.openipc.org" setValue={setSecondaryNTP} />
+      <TextField
+        label="Primary NTP server"
+        value={primaryNTP}
+        placeholder="0.time.openipc.org"
+        setValue={setPrimaryNTP}
+      />
+      <TextField
+        label="Secondary NTP server"
+        value={secondaryNTP}
+        placeholder="1.time.openipc.org"
+        setValue={setSecondaryNTP}
+      />
 
       <button
         type="button"
         onClick={SyncNTP}
         className="text-blue-500 bg-blue-200 hover:bg-blue-500 hover:text-white focus:ring-4 focus:ring-blue-300 font-medium rounded-md text-md p-2 w-full"
       >
-      { isSyncing ? 'Syncing ...' :  ' Sync to NTP Server'}
+        {isSyncing ? "Syncing ..." : " Sync to NTP Server"}
       </button>
 
-      <SaveButton onClick={handleSave}  loading={isSaving} label='SAVE CHANGES' />
+      <SaveButton onClick={handleSave} loading={isSaving} label="SAVE CHANGES" />
 
       {/* Render Toast */}
-      <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
+      <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: "info" })} />
     </div>
-  );
-};
+  )
+}
 
-export default Date_Time;
+export default Date_Time
