@@ -1,24 +1,34 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Live from './pages/Live';
-import Configuration from './pages/Configuration';
-import Playback from './pages/playback';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+
+import Login from './pages/Login';
+import Dashboard from './components/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const App: React.FC = () => {
   return (
     <Router>
-      <div className="h-screen w-screen p-1">
-        <Navbar />
-          <Routes>
-            <Route path="/live" element={<Live />} />
-            <Route path="/playback" element={<Playback />} />
-            <Route path="/configuration" element={<Configuration />} />
-            <Route path="/" element={<Live />} />
-          </Routes>
-      </div>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route 
+          path="/*" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/*" 
+          element={
+            <ProtectedRoute>
+              <Navigate to="/" replace />
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
     </Router>
   );
-}
+};
 
 export default App;
