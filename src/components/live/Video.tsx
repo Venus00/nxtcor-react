@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -6,13 +6,14 @@ const VideoStream: React.FC = () => {
   const [scale, setScale] = useState(1);
   const [position,] = useState({ x: 0, y: 0 });
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [rotation, setRotation] = useState(0); 
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (videoRef.current && videoRef.current.readyState < 3) { // Less than HAVE_FUTURE_DATA
-        videoRef.current.load(); // Reload the video if it's stuck
+      if (videoRef.current && videoRef.current.readyState < 3) { 
+        videoRef.current.load(); 
       }
-    }, 5000); // Check every 5 seconds
+    }, 5000); 
 
     return () => clearInterval(interval);
   }, []);
@@ -24,7 +25,8 @@ const VideoStream: React.FC = () => {
   const zoomOut = () => {
     setScale((prevScale) => Math.max(prevScale - 0.2, 1));
   };
-
+  const rotateLeft = () => setRotation((prev) => prev - 90);
+  const rotateRight = () => setRotation((prev) => prev + 90);
   const move = (direction: 'up' | 'down' | 'left' | 'right') => {
     // const movementStep = 20; // Amount of pixels to move
     console.log(direction)
@@ -120,6 +122,55 @@ const VideoStream: React.FC = () => {
       {/* Video Player */}
       <div className="flex-grow flex justify-center items-center relative bg-black">
         <div className="relative w-full h-full overflow-hidden bg-black">
+         <div className="absolute bottom-4 right-4 z-10 flex flex-col items-center space-y-3 bg-gray-900/80 p-4 rounded-2xl shadow-2xl border border-gray-700">
+    {/* Flèche haut */}
+    <button
+      onClick={() => move("up")}
+      className="w-12 h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center transition-all duration-200"
+    >
+      <ChevronUp size={22} />
+    </button>
+
+    <div className="flex gap-3">
+      <button
+        onClick={() => move("left")}
+        className="w-12 h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center transition-all duration-200"
+      >
+        <ChevronLeft size={22} />
+      </button>
+      <div className="w-12 h-12 bg-gray-900 border border-gray-600 rounded-lg flex items-center justify-center">
+        <Circle size={14} className="text-gray-500" />
+      </div>
+      <button
+        onClick={() => move("right")}
+        className="w-12 h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center transition-all duration-200"
+      >
+        <ChevronRight size={22} />
+      </button>
+    </div>
+
+    <button
+      onClick={() => move("down")}
+      className="w-12 h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center transition-all duration-200"
+    >
+      <ChevronDown size={22} />
+    </button>
+
+    <div className="flex gap-3 mt-3">
+      <button
+        onClick={zoomOut}
+        className="w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center justify-center transition-all duration-200"
+      >
+        <ZoomOut size={20} />
+      </button>
+      <button
+        onClick={zoomIn}
+        className="w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center justify-center transition-all duration-200"
+      >
+        <ZoomIn size={20} />
+      </button>
+    </div>
+  </div>
           <iframe
             src={`http://192.168.10.57:8888/${camId}`}
             width="640"
