@@ -1,9 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './pages/Login';
-import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import MainLayout from './components/Dashboard';
 
 const App: React.FC = () => {
   return (
@@ -14,20 +13,11 @@ const App: React.FC = () => {
           path="/*"
           element={
             <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <Navigate to="/" replace />
+              <MainLayout />
             </ProtectedRoute>
           }
         />
       </Routes>
-
     </Router>
   );
 };

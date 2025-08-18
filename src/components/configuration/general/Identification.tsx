@@ -65,7 +65,7 @@ const Identification = () => {
             setValue={setdeviceName}
             placeholder=""
             isEditable={true}
-            labelClassName="text-white" // <-- Ajoute cette prop si ton TextField la supporte
+            labelClassName="text-white" 
           />
         </div>
         <button
