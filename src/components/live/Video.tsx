@@ -1,9 +1,10 @@
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, ZoomIn, ZoomOut } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 
 const VideoStream: React.FC = () => {
   const [scale, setScale] = useState(1);
-  const [position, ] = useState({ x: 0, y: 0 });
+  const [position,] = useState({ x: 0, y: 0 });
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -19,14 +20,14 @@ const VideoStream: React.FC = () => {
   const zoomIn = () => {
     setScale((prevScale) => prevScale + 0.2);
   };
-
+  const camId = useParams().id
   const zoomOut = () => {
     setScale((prevScale) => Math.max(prevScale - 0.2, 1));
   };
 
   const move = (direction: 'up' | 'down' | 'left' | 'right') => {
     // const movementStep = 20; // Amount of pixels to move
-console.log(direction)
+    console.log(direction)
     // setPosition((prevPosition) => {
     //   const videoElement = videoRef.current;
     //   if (!videoElement) return prevPosition;
@@ -119,10 +120,13 @@ console.log(direction)
       {/* Video Player */}
       <div className="flex-grow flex justify-center items-center relative bg-black">
         <div className="relative w-full h-full overflow-hidden bg-black">
-          <video
-            ref={videoRef}
+          <iframe
+            src={`http://192.168.10.57:8888/${camId}`}
+            width="640"
+            height="360"
             className="object-fill"
-            poster="/mjpeg"
+
+            allow="autoplay; fullscreen"
             style={{
               transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
               transformOrigin: "center",
@@ -130,9 +134,7 @@ console.log(direction)
               width: "100%",
               height: "100%",
             }}
-          >
-            Your browser does not support the video tag.
-          </video>
+          />
         </div>
       </div>
     </div>
