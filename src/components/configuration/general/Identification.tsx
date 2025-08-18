@@ -4,6 +4,12 @@ import { useEffect, useState } from "react"
 import TextField from "../../common/TextField"
 import axios from "axios"
 import Toast from "../../common/Toast"
+import Select from "../../common/Select"
+
+const cameraTypeOptions = [
+  { label: "Thermal", value: "thermal" },
+  { label: "Normal", value: "normal" },
+]
 
 const Identification = () => {
   const [deviceName, setdeviceName] = useState("")
@@ -11,14 +17,14 @@ const Identification = () => {
   const [deviceMAC, setdeviceMAC] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [webVersion, setWebVersion] = useState("")
+  const [cameraType, setCameraType] = useState("thermal")
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" }>({
     message: "",
-    type: "info", // Default type, can be 'success', 'error', or 'info'
+    type: "info",
   })
 
   const getData = async () => {
     const response = await axios.get("/cgi-bin/general_info.cgi")
-    // Log the response from the API to the console
     console.log("response", response)
     setdeviceName(response.data.network_hostname.toUpperCase())
     setdeviceIP(response.data.network_address)
@@ -29,11 +35,13 @@ const Identification = () => {
   useEffect(() => {
     getData()
   }, [])
+
   const handelCameraNameChange = async () => {
     const actionUrl = "/cgi-bin/general_info_post.cgi"
     setIsSaving(true)
     const payload = {
       network_hostname: deviceName,
+      camera_type: cameraType,
     }
     try {
       const response = await axios.post(actionUrl, payload, {
@@ -59,13 +67,20 @@ const Identification = () => {
     <div className="space-y-4 bg-gray-800 text-white p-6 rounded-lg">
       <div className="flex items-center space-x-4">
         <div className="w-1/4">
+          <Select
+            label="Type Camera"
+            value={cameraType}
+            setValue={setCameraType}
+            options={cameraTypeOptions}
+            labelClassName="text-white"
+          />
           <TextField
             label="Camera name"
             value={deviceName}
             setValue={setdeviceName}
             placeholder=""
             isEditable={true}
-            labelClassName="text-white" // <-- Ajoute cette prop si ton TextField la supporte
+            labelClassName="text-white"
           />
         </div>
         <button
@@ -89,12 +104,13 @@ const Identification = () => {
       </div>
 
       <div className="w-1/4 space-y-4">
-        <TextField label="Camera IP" value={deviceIP} placeholder="" isEditable={false}labelClassName="text-white" />
+        <TextField label="Camera IP" value={deviceIP} placeholder="" isEditable={false} labelClassName="text-white" />
         <TextField label="Camera MAC" value={deviceMAC} placeholder="" isEditable={false} labelClassName="text-white" />
         <TextField label="Web version" value={webVersion} placeholder="" isEditable={false} labelClassName="text-white" />
       </div>
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: "info" })} />
-    </div>  )
+    </div>
+  )
 }
 
 export default Identification
