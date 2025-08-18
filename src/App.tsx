@@ -10,21 +10,21 @@ const App: React.FC = () => {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route 
-          path="/*" 
+        <Route
+          path="/*"
           element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/*" 
+        <Route
+          path="/*"
           element={
             <ProtectedRoute>
               <Navigate to="/" replace />
             </ProtectedRoute>
-          } 
+          }
         />
       </Routes>
 

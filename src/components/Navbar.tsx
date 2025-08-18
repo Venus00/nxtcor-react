@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react"
 const Navbar = () => {
   const location = useLocation()
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const popoverRef = useRef<HTMLDivElement>(null)
 
@@ -24,10 +24,10 @@ const Navbar = () => {
     }
   }, [])
 
-const handleLogout = () => {
-  localStorage.removeItem("isAuthenticated"); 
-  navigate("/login");
-};
+  const handleLogout = () => {
+    localStorage.removeItem("isAuthenticated");
+    navigate("/login");
+  };
 
   const handleSecurity = () => {
     console.log('Security clicked')
@@ -40,7 +40,7 @@ const handleLogout = () => {
         {/* Logo */}
         <Link to="/live" className="flex items-center space-x-3 group">
           <div className="relative">
-            <img src="assets/logo.svg" className="h-10 transition-transform group-hover:scale-105" alt="NEXTCOR Logo" />
+            <img src="assets/logoNav.png" className="h-10 transition-transform group-hover:scale-105" alt="NEXTCOR Logo" />
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity blur-xl"></div>
           </div>
         </Link>
@@ -79,18 +79,17 @@ const handleLogout = () => {
             <li>
               <Link
                 to="/analytics"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  isActive("/analytics")
-                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                }`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/analytics")
+                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                  }`}
               >
                 <BarChart3 className="h-4 w-4" />
                 Analytics
               </Link>
             </li>
 
-       
+
 
 
             {/* Playback */}

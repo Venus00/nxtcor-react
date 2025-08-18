@@ -9,7 +9,7 @@ const Dashboard: React.FC = () => (
   <div className="h-full w-full flex flex-col bg-black">
     <Navbar />
     <Routes>
-      <Route path="/live" element={<Live />} />
+      <Route path="/live/:id" element={<Live />} />
       <Route path="/playback" element={<Playback />} />
       <Route path="/configuration" element={<Configuration />} />
       <Route path="/analytics" element={<Analytics />} />
