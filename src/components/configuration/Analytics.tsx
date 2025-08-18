@@ -39,8 +39,8 @@ const Analytics: React.FC = () => {
 
   function VideoFeedContent() {
     return (
-   <div className="min-h-screen bg-black p-2 sm:p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+   <div className="h-full bg-black p-2 sm:p-4 lg:p-6">
+      <div className=" mx-auto space-y-6">
         
         <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
           <h2 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
@@ -409,8 +409,8 @@ const Analytics: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black p-2 sm:p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-full bg-black p-2 ">
+      <div className=" mx-auto">
         <div className="mb-4 lg:mb-6">
           <ul className="flex space-x-2 sm:space-x-6 text-sm sm:text-lg lg:text-xl text-center border-b border-gray-700 overflow-x-auto" role="tablist">
             {tabs.map((tab) => (

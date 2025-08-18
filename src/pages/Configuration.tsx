@@ -25,7 +25,7 @@ const Configuration: React.FC<ConfigurationProps> = ({ activeConfigTab }) => {
 
   return (
     <div className="p-6 h-full bg-black text-white">
-      <div className="mb-6">
+      {/* <div className="mb-6">
         <h1 className="text-2xl font-bold text-white mb-2">Configuration</h1>
         <p className="text-white">
           Gérez les paramètres de votre système de surveillance
@@ -36,7 +36,7 @@ const Configuration: React.FC<ConfigurationProps> = ({ activeConfigTab }) => {
         <nav className="text-sm text-white">
           Configuration / <span className="text-red-600 font-medium">{activeConfigTab}</span>
         </nav>
-      </div>
+      </div> */}
 
       <div className="bg-black rounded-lg shadow-sm border border-gray-950 min-h-[calc(100vh-12rem)]">
         <div className="p-6">
