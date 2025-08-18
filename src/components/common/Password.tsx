@@ -4,9 +4,10 @@ interface PasswordProps {
     password: string;
     setPassword: (password: string) => void;
     label?: string;  // Optional label prop
+    labelClassName?: string; 
 }
 
-const Password: React.FC<PasswordProps> = ({ password, setPassword, label }) => {
+const Password: React.FC<PasswordProps> = ({ password, setPassword, label ,labelClassName}) => {
     const [showPassword, setShowPassword] = useState(false);
 
     const togglePasswordVisibility = () => {
@@ -15,7 +16,7 @@ const Password: React.FC<PasswordProps> = ({ password, setPassword, label }) => 
 
     return (
         <div className="max-w-sm">
-            <label className="block mb-1 text-md font-medium text-black">{label}</label>
+            <label className={`block mb-1 text-md font-medium${labelClassName ?? "text-black"}`}>{label}</label>
             <div className="relative">
                 <input
                     id="password-input"

@@ -3,14 +3,14 @@ interface TextFieldParams {
   value: number | string;
   placeholder: string;
   setValue?: React.Dispatch<React.SetStateAction<string>> | React.Dispatch<React.SetStateAction<number>>;
-  isEditable?: boolean;  // New prop for making the field editable or not
+  isEditable?: boolean;
+  labelClassName?: string; // <-- Ajout ici
 }
 
 const TextField: React.FC<TextFieldParams> = (props) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
 
-    // Check the type of props.setValue to determine how to handle the value
     if (typeof props.value === 'number' && typeof props.setValue === 'function') {
       const numericValue = Number(newValue);
       if (!isNaN(numericValue)) {
@@ -23,7 +23,7 @@ const TextField: React.FC<TextFieldParams> = (props) => {
 
   return (
     <div>
-      <label className="block mb-1 text-md font-medium text-black">
+      <label className={`block mb-1 text-md font-medium ${props.labelClassName ?? "text-black"}`}>
         {props.label}
       </label>
       <input
@@ -32,7 +32,7 @@ const TextField: React.FC<TextFieldParams> = (props) => {
         placeholder={props.placeholder}
         value={props.value}
         onChange={handleChange}
-        disabled={!props.isEditable}  // Conditionally disable the input
+        disabled={!props.isEditable}
       />
     </div>
   );

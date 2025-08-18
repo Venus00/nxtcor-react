@@ -1,68 +1,62 @@
-import { useEffect, useState } from "react";
-import TextField from "../../common/TextField";
-import axios from "axios";
-import Toast from "../../common/Toast";
+"use client"
+
+import { useEffect, useState } from "react"
+import TextField from "../../common/TextField"
+import axios from "axios"
+import Toast from "../../common/Toast"
 
 const Identification = () => {
-
-  const [deviceName, setdeviceName] = useState("");
-  const [deviceIP, setdeviceIP] = useState("");
-  const [deviceMAC, setdeviceMAC] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [webVersion, setWebVersion] = useState("");
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' }>({
-    message: '',
-    type: 'info' // Default type, can be 'success', 'error', or 'info'
-  });
+  const [deviceName, setdeviceName] = useState("")
+  const [deviceIP, setdeviceIP] = useState("")
+  const [deviceMAC, setdeviceMAC] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
+  const [webVersion, setWebVersion] = useState("")
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" }>({
+    message: "",
+    type: "info", // Default type, can be 'success', 'error', or 'info'
+  })
 
   const getData = async () => {
-    const response = await axios.get(
-      "/cgi-bin/general_info.cgi"
-    );
+    const response = await axios.get("/cgi-bin/general_info.cgi")
     // Log the response from the API to the console
-    console.log("response", response);
-    setdeviceName(response.data.network_hostname.toUpperCase());
-    setdeviceIP(response.data.network_address);
-    setdeviceMAC(response.data.network_macaddr.toUpperCase());
-    setWebVersion(response.data.fw_version);
+    console.log("response", response)
+    setdeviceName(response.data.network_hostname.toUpperCase())
+    setdeviceIP(response.data.network_address)
+    setdeviceMAC(response.data.network_macaddr.toUpperCase())
+    setWebVersion(response.data.fw_version)
   }
-
 
   useEffect(() => {
     getData()
-
   }, [])
   const handelCameraNameChange = async () => {
     const actionUrl = "/cgi-bin/general_info_post.cgi"
     setIsSaving(true)
     const payload = {
-      network_hostname: deviceName
-    };
+      network_hostname: deviceName,
+    }
     try {
       const response = await axios.post(actionUrl, payload, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-      });
+      })
 
-      if (response.data.includes('success')) {
+      if (response.data.includes("success")) {
         setIsSaving(false)
-        setToast({ message: 'Name changed successufuly', type: 'success' });
+        setToast({ message: "Name changed successufuly", type: "success" })
       } else {
         setIsSaving(false)
-        setToast({ message: 'Not valid : Empty value', type: 'error' });
+        setToast({ message: "Not valid : Empty value", type: "error" })
       }
     } catch (error) {
       setIsSaving(false)
-      setToast({ message: 'Error ', type: 'error' });
+      setToast({ message: "Error ", type: "error" })
     }
-  };
-
-
+  }
 
   return (
-    <div className="space-y-4 "
-    >
+    <div className="space-y-4 bg-gray-800 text-white p-6 rounded-lg">
       <div className="flex items-center space-x-4">
         <div className="w-1/4">
           <TextField
@@ -71,6 +65,7 @@ const Identification = () => {
             setValue={setdeviceName}
             placeholder=""
             isEditable={true}
+            labelClassName="text-white" // <-- Ajoute cette prop si ton TextField la supporte
           />
         </div>
         <button
@@ -88,24 +83,18 @@ const Identification = () => {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
             </svg>
           ) : (
-            'Change'
+            "Change"
           )}
         </button>
-
       </div>
-
 
       <div className="w-1/4 space-y-4">
-        <TextField label="Camera IP" value={deviceIP} placeholder="" isEditable={false} />
-        <TextField label="Camera MAC" value={deviceMAC} placeholder="" isEditable={false} />
-        <TextField label="Web version" value={webVersion} placeholder="" isEditable={false} />
-
-
+        <TextField label="Camera IP" value={deviceIP} placeholder="" isEditable={false}labelClassName="text-white" />
+        <TextField label="Camera MAC" value={deviceMAC} placeholder="" isEditable={false} labelClassName="text-white" />
+        <TextField label="Web version" value={webVersion} placeholder="" isEditable={false} labelClassName="text-white" />
       </div>
-      <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
+      <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: "info" })} />
+    </div>  )
+}
 
-    </div>
-  );
-};
-
-export default Identification;
+export default Identification

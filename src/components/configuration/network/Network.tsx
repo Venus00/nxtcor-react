@@ -88,31 +88,26 @@ const NetworkAccess = () => {
 
     }, [])
     return (
-        <div className={`  space-y-4
-          w-full   /* Default for mobile */
-          sm:w-1/2 /* Tablet size (640px and up) */
-          md:w-1/3 /* Desktop size (768px and up) */
-          lg:w-3/4 /* Larger screens (1024px and up) */
-         `}
+        <div className=""
         >
-            <div className="grid grid-cols-3    gap-4">
-                <Select label="Network Interface" value={networkInterface} setValue={setnetworkInterface} options={networkInterfaceOptions} />
+            <div className="">
+                <Select label="Network Interface" value={networkInterface} setValue={setnetworkInterface} options={networkInterfaceOptions} labelClassName="text-white" />
                 <Toggle label="Enable DHCP" value={isCheckedDHCP} setValue={setIsCheckedDHCP} />
             </div>
             <div className={`${isCheckedDHCP ? 'hidden' : 'block'} `} >
                 <div className="text-xl font-semibold  mb-3">IPv4</div>
                 <div className="grid grid-cols-3    gap-10">
-                    <TextField label="IP address" value={ipv4Address} setValue={setipv4Address} placeholder="192.168.10.22"      isEditable={true}/>
-                    <TextField label="Subnet mask" value={ipv4Mask} setValue={setipv4Mask} placeholder="255.255.255.0"     isEditable={true} />
-                    <TextField label="Gatway" value={ipv4Gateway} setValue={setipv4Gateway} placeholder="192.168.10.254"      isEditable={true} />
+                    <TextField label="IP address" value={ipv4Address} setValue={setipv4Address} placeholder="192.168.10.22"      isEditable={true} labelClassName="text-white"/>
+                    <TextField label="Subnet mask" value={ipv4Mask} setValue={setipv4Mask} placeholder="255.255.255.0"     isEditable={true} labelClassName="text-white" />
+                    <TextField label="Gatway" value={ipv4Gateway} setValue={setipv4Gateway} placeholder="192.168.10.254"      isEditable={true} labelClassName="text-white" />
                 </div>
             </div>
             <div className={`${isCheckedDHCP ? 'hidden' : 'hidden'} `} >
                 <div className="text-xl font-semibold  mb-3">IPv6</div>
                 <div className="grid grid-cols-3    gap-10">
-                    <TextField label="IP address" value={ipv6Address} setValue={setipv6Address} placeholder="192.168.10.22"       isEditable={true}/>
-                    <TextField label="Subnet mask" value={ipv6Mask} setValue={setipv6Mask} placeholder="255.255.255.0"      isEditable={true}/>
-                    <TextField label="Gatway" value={ipv6Gateway} setValue={setipv6Gateway} placeholder="192.168.10.254"      isEditable={true} />
+                    <TextField label="IP address" value={ipv6Address} setValue={setipv6Address} placeholder="192.168.10.22"   labelClassName="text-white"     isEditable={true}/>
+                    <TextField label="Subnet mask" value={ipv6Mask} setValue={setipv6Mask} placeholder="255.255.255.0"    labelClassName="text-white"   isEditable={true}/>
+                    <TextField label="Gatway" value={ipv6Gateway} setValue={setipv6Gateway} placeholder="192.168.10.254"  labelClassName="text-white"     isEditable={true} />
                 </div>
             </div>
 
@@ -120,8 +115,8 @@ const NetworkAccess = () => {
             <div className={`${isCheckedDHCP ? 'hidden' : 'block'} `} >
                 <div className="text-xl font-semibold mb-3">DNS server</div>
                 <div className="grid grid-cols-3    gap-10">
-                    <TextField label="Prefered DNS server " value={primaryDns} setValue={setprimaryDns} placeholder="8.8.8.8"      isEditable={true}/>
-                    <TextField label="Alternate DNS server " value={secondaryDns} setValue={setsecondaryDns} placeholder="8.8.8.8"      isEditable={true} />
+                    <TextField label="Prefered DNS server " labelClassName="text-white" value={primaryDns} setValue={setprimaryDns} placeholder="8.8.8.8"      isEditable={true}/>
+                    <TextField label="Alternate DNS server " labelClassName="text-white" value={secondaryDns} setValue={setsecondaryDns} placeholder="8.8.8.8"      isEditable={true} />
                 </div>
             </div>
 

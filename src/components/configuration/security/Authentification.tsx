@@ -68,8 +68,8 @@ const Authentification = () => {
             lg:w-1/4 /* Larger screens (1024px and up) */
            `}
         >
-            <TextField label="Username" value={'root'} placeholder="root"      isEditable={false} />
-            <Password password={password} setPassword={setpassword}  label="New password"/>
+            <TextField label="Username" value={'root'} placeholder="root"      isEditable={false} labelClassName="text-white" />
+            <Password password={password} setPassword={setpassword}  label="New password"  labelClassName="text-white"/>
             <Password password={confirmpassword} setPassword={setconfirmpassword}  label="Confirm new password"/>
             <SaveButton onClick={submitPassworfConfig}  loading={isSaving} label='SAVE CHANGES' />
             <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />

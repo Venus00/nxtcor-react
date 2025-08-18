@@ -5,13 +5,15 @@ interface SelectParams {
     value: string;
     setValue: React.Dispatch<React.SetStateAction<string>>;
     options: { value: string, label: string }[];
+    labelClassName?: string; 
 }
 
 const Select = (props: SelectParams) => {
 
     return (
         <div>
-            <label className="block mb-1 text-md font-medium text-black pb-2">{props.label}</label>
+                  <label className={`block mb-1 text-md font-medium ${props.labelClassName ?? "text-black"}`}>
+{props.label}</label>
 
 
             <select className="bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"

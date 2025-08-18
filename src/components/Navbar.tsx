@@ -1,10 +1,12 @@
-import { Link, useLocation } from "react-router-dom"
-import { Thermometer, Camera, Play, Settings, ChevronDown, LogOut, Shield } from "lucide-react"
+import { Link, useLocation, useNavigate } from "react-router-dom"
+import { Thermometer, Camera, Play, Settings, ChevronDown, LogOut, Shield, BarChart3 } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 
 const Navbar = () => {
   const location = useLocation()
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+    const navigate = useNavigate();
+
   const popoverRef = useRef<HTMLDivElement>(null)
 
   const isActive = (path: string) => location.pathname === path
@@ -22,10 +24,10 @@ const Navbar = () => {
     }
   }, [])
 
-  const handleLogout = () => {
-    console.log('Logout clicked')
-    setIsPopoverOpen(false)
-  }
+const handleLogout = () => {
+  localStorage.removeItem("isAuthenticated"); 
+  navigate("/login");
+};
 
   const handleSecurity = () => {
     console.log('Security clicked')
@@ -73,6 +75,23 @@ const Navbar = () => {
                 Normale
               </Link>
             </li>
+
+            <li>
+              <Link
+                to="/analytics"
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  isActive("/analytics")
+                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                }`}
+              >
+                <BarChart3 className="h-4 w-4" />
+                Analytics
+              </Link>
+            </li>
+
+       
+
 
             {/* Playback */}
             <li>
