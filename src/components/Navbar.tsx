@@ -35,20 +35,15 @@ const Navbar = () => {
   }
 
   return (
+
     <nav className="bg-black backdrop-blur-sm shadow-2xl relative z-[100]">
       <div className="flex items-center justify-between mx-auto px-8 py-4">
-        {/* Logo */}
-        <Link to="/live" className="flex items-center space-x-3 group">
           <div className="relative">
-            <img src="assets/logoNav.png" className="h-10 transition-transform group-hover:scale-105" alt="NEXTCOR Logo" />
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-blue-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity blur-xl"></div>
+            <img src="/assets/logoNav.png" className="h-10 transition-transform group-hover:scale-105" alt="NEXTCOR Logo" />
           </div>
-        </Link>
 
-        {/* Navigation Links */}
         <div className="flex items-center">
           <ul className="flex items-center space-x-6">
-            {/* Caméra Thermique */}
             <li>
               <Link
                 to="/live/cam1"
