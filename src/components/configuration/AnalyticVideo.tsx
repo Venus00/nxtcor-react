@@ -1,60 +1,60 @@
 import { Camera, Thermometer, BarChart3, Eye } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import axios from "axios"
-import Hls from "hls.js"
+
 const cameraOptions = [
-    { id: "Normal", name: "Normal Camera", icon: Camera, color: "blue", rtspUrl: "rtsp://192.168.10.57:8554/cam1" },
-    { id: "Thermal", name: "Thermal Camera", icon: Thermometer, color: "red", rtspUrl: "rtsp://192.168.10.57:8554/cam2" }
+    { id: "Normal", name: "Normal Camera", icon: Camera, color: "blue", rtspUrl: "rtsp://192.168.10.57:8554/cam1", stream: 'stream1' },
+    { id: "Thermal", name: "Thermal Camera", icon: Thermometer, color: "red", rtspUrl: "rtsp://192.168.10.57:8554/cam2", stream: 'stream2' }
 ]
-function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, color }: any) {
+function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: any) {
     const [hlsUrl, setHlsUrl] = useState<string | null>(null)
     const videoRef = useRef<HTMLVideoElement | null>(null)
 
-    useEffect(() => {
-        const fetchStreamUrl = async () => {
-            try {
-                const res = await axios.post("http://192.168.10.207:8000/stream_rtsp", {
-                    rtsp_url: rtspUrl,
-                    type: cameraId
+    // useEffect(() => {
+    //     const fetchStreamUrl = async () => {
+    //         try {
+    //             const res = await axios.post("http://192.168.10.57:8000/stream_rtsp", {
+    //                 rtsp_url: rtspUrl,
+    //                 type: cameraId
 
-                },
-                    {
-                        headers: {
-                            'Content-Type': 'multipart/form-data'
-                        }
-                    })
-                console.log(res.data)
-                const url = `http://192.168.10.207:8000${res.data.hls_playlist}`
-                console.log(url)
-                setHlsUrl(url)
-            } catch (err) {
-                console.error(`Failed to fetch HLS URL for ${name}:`, err)
-            }
-        }
-        fetchStreamUrl()
-    }, [])
+    //             },
+    //                 {
+    //                     headers: {
+    //                         'Content-Type': 'multipart/form-data'
+    //                     }
+    //                 })
+    //             console.log(res.data)
+    //             const url = `http://192.168.10.57:8000${res.data.hls_playlist}`
+    //             console.log(url)
+    //             setHlsUrl(url)
+    //         } catch (err) {
+    //             console.error(`Failed to fetch HLS URL for ${name}:`, err)
+    //         }
+    //     }
+    //     fetchStreamUrl()
+    // }, [])
 
-    useEffect(() => {
-        if (!hlsUrl || !videoRef.current) return
+    // useEffect(() => {
+    //     if (!hlsUrl || !videoRef.current) return
 
-        if (Hls.isSupported()) {
-            const hls = new Hls({
-                maxBufferLength: 60,
-                maxMaxBufferLength: 120,
-                maxBufferSize: 60 * 1000 * 1000,
-                liveSyncDuration: 10,
-                liveMaxLatencyDuration: 30,
-            });
-            hls.loadSource(hlsUrl)
-            hls.attachMedia(videoRef.current)
-            hls.on(Hls.Events.ERROR, (_, data) => {
-                console.error(`HLS error (${name}):`, data)
-            })
-            return () => hls.destroy()
-        } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
-            videoRef.current.src = hlsUrl
-        }
-    }, [hlsUrl, name])
+    //     if (Hls.isSupported()) {
+    //         const hls = new Hls({
+    //             maxBufferLength: 60,
+    //             maxMaxBufferLength: 120,
+    //             maxBufferSize: 60 * 1000 * 1000,
+    //             liveSyncDuration: 10,
+    //             liveMaxLatencyDuration: 30,
+    //         });
+    //         hls.loadSource(hlsUrl)
+    //         hls.attachMedia(videoRef.current)
+    //         hls.on(Hls.Events.ERROR, (_, data) => {
+    //             console.error(`HLS error (${name}):`, data)
+    //         })
+    //         return () => hls.destroy()
+    //     } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
+    //         videoRef.current.src = hlsUrl
+    //     }
+    // }, [hlsUrl, name])
 
     return (
         <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
@@ -70,19 +70,19 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, color }: any) {
 
             <div className="flex justify-center">
                 <div className="relative bg-black rounded-lg overflow-hidden border-2 border-gray-600 w-full aspect-video max-w-2xl">
-                    {hlsUrl ? (
-                        <video
-                            ref={videoRef}
-                            autoPlay
-                            muted
-                            controls={true}
-                            className="w-full h-full object-contain"
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                            <p className={`text-${color}-400 text-sm`}>Loading {name}...</p>
-                        </div>
-                    )}
+                    <iframe
+                        src={`http://192.168.10.57:8889/${stream}`}
+                        width="640"
+                        height="360"
+                        className="object-fill"
+                        allow="autoplay; fullscreen"
+                        style={{
+                            transformOrigin: "center",
+                            transition: "transform 0.3s ease",
+                            width: "100%",
+                            height: "100%",
+                        }}
+                    />
 
                     <div className="absolute top-2 left-2">
                         <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-${color}-600 text-white`}>
@@ -164,6 +164,7 @@ export function VideoFeedContent() {
                             isSelected(cam.id) ? (
                                 <CameraPlayer
                                     key={cam.id}
+                                    stream={cam.stream}
                                     cameraId={cam.id}
                                     name={cam.name}
                                     icon={cam.icon}
