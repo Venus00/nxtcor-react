@@ -181,7 +181,7 @@ const Recording = () => {
 
 
     return (
-        <div className='overflow-x-auto w-full p-6 bg-gray-700 rounded-lg'>
+        <div className='overflow-x-auto w-full p-6 bg-black rounded-lg'>
             <div className="grid grid-cols-3 mb-6">
                 <Toggle label="Enable Recording" value={enable} setValue={setEnable} />
             </div>
@@ -197,9 +197,9 @@ const Recording = () => {
                         </button>
                     </div>
                     
-                    <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
+                    <div className="bg-black rounded-lg overflow-hidden shadow-lg">
                         <table className="min-w-full">
-                            <thead className="bg-gray-600">
+                            <thead className="bg-black text-white">
                                 <tr>
                                     <th className="px-4 py-3 text-left text-white font-semibold"></th>
                                     {timeSlots.map((slot) => (

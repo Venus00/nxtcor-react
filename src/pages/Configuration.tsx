@@ -40,9 +40,9 @@ const Configuration: React.FC<ConfigurationProps> = ({ activeConfigTab }) => {
 
       <div className="bg-black rounded-lg shadow-sm border border-gray-950 min-h-[calc(100vh-12rem)]">
         <div className="p-6">
-          <h2 className="text-xl font-semibold text-white mb-4 border-b border-gray-950 pb-2">
+          {/* <h2 className="text-xl font-semibold text-white mb-4 border-b border-gray-950 pb-2">
             {activeConfigTab}
-          </h2>
+          </h2> */}
           {configComponents[activeConfigTab as keyof typeof configComponents]}
         </div>
       </div>

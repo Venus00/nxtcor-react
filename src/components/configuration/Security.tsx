@@ -41,7 +41,7 @@ const Security = () => {
         {tabs.map((tab) => (
           <div
             key={tab.name}
-            className={`p-4 ml-3 rounded-lg bg-gray-800 w-[900px]  ${activeTab === tab.name ? '' : 'hidden'
+            className={`p-4 ml-3 rounded-lg bg-black w-[900px]  ${activeTab === tab.name ? '' : 'hidden'
               }`}
             role="tabpanel"
           >

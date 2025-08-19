@@ -13,7 +13,7 @@ const Storage = () => {
   ];
 
 return (
-    <div className="min-h-screen bg-gray-800">
+    <div className="min-h-screen bg-black">
       <div className="container mx-auto px-4 py-6">
         {/* Header avec gradient subtil */}
         <div className="mb-8">
@@ -52,7 +52,7 @@ return (
         </div>
 
         {/* Contenu des tabs */}
-        <div className="bg-gray-900 rounded-lg shadow-xl overflow-hidden">
+        <div className="bg-black rounded-lg shadow-xl overflow-hidden">
           {tabs.map((tab) => (
             <div
               key={tab.name}

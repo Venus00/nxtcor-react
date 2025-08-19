@@ -37,7 +37,7 @@ const Camera = () => {
           ))}
         </ul>
       </div>
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <div className="bg-black rounded-lg p-6 border border-gray-700">
         {tabs.map((tab) => (
           <div key={tab.name} className={`${activeTab === tab.name ? "" : "hidden"}`} role="tabpanel">
             <div>{tabs.find((tab) => tab.name === activeTab)?.content}</div>

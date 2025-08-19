@@ -88,7 +88,7 @@ const NetworkAccess = () => {
 
     }, [])
     return (
-        <div className=""
+        <div className="bg-black"
         >
             <div className="">
                 <Select label="Network Interface" value={networkInterface} setValue={setnetworkInterface} options={networkInterfaceOptions} labelClassName="text-white" />
@@ -119,8 +119,9 @@ const NetworkAccess = () => {
                     <TextField label="Alternate DNS server " labelClassName="text-white" value={secondaryDns} setValue={setsecondaryDns} placeholder="8.8.8.8"      isEditable={true} />
                 </div>
             </div>
-
-            <SaveButton onClick={submitNetworkConfig}  loading={isSaving} label='SAVE CHANGES' />
+<div className="pt-6">
+            <SaveButton onClick={submitNetworkConfig}  loading={isSaving} label='SAVE CHANGES'  />
+            </div>
             <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
 
 
