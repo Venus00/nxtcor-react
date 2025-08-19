@@ -15,7 +15,7 @@ const Network = () => {
   ];
 
   return (
-    <div className='bg-gray-900 text-white p-6 rounded-lg h-[calc(100vh-5rem)]'>
+    <div className='bg-black text-white p-6 rounded-lg h-[calc(100vh-5rem)]'>
       <div className="mb-6">
         <ul
           className="flex space-x-6 text-lg text-center border-b border-gray-700"
@@ -44,7 +44,7 @@ const Network = () => {
         {tabs.map((tab) => (
           <div
             key={tab.name}
-            className={`p-6 rounded-lg h-[calc(100vh-12rem)] overflow-y-hidden bg-gray-800 ${
+            className={`p-6 rounded-lg h-[calc(100vh-12rem)] overflow-y-hidden bg-black ${
               activeTab === tab.name ? '' : 'hidden'
             }`}
             role="tabpanel"

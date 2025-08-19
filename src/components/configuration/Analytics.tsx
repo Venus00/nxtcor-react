@@ -13,8 +13,8 @@ const Analytics: React.FC = () => {
 
   function StatisticsContent() {
     return (
-      <div className=" h-[calc(100vh-5rem)]">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className=" h-[calc(100vh-5rem)]  ">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="h-5 w-5 text-blue-400" />

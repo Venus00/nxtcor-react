@@ -64,7 +64,7 @@ const Identification = () => {
   }
 
   return (
-    <div className="space-y-4 bg-gray-800 text-white p-6 rounded-lg">
+    <div className="space-y-4 bg-black text-white p-6 rounded-lg">
       <div className="flex items-center space-x-4">
         <div className="w-1/4">
           <Select

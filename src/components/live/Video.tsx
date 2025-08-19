@@ -65,63 +65,11 @@ const VideoStream: React.FC = () => {
 
   return (
     <div className="flex h-[calc(100vh-5rem)]">
-      <div className="w-1/6 h-full p-4 bg-black shadow-2xl border-r border-gray-800">
-        <h2 className="text-xl font-semibold mb-4 text-white text-center">Controls</h2>
-        <div className="flex flex-col items-center justify-center space-y-3">
-          {/* Arrow Keys */}
-          <div className="flex justify-center gap-2">
-            <button
-              onClick={() => move("up")}
-              className="w-14 h-14 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-lg border border-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
-            >
-              <ChevronUp size={24} />
-            </button>
-          </div>
-          <div className="flex justify-center gap-2">
-            <button
-              onClick={() => move("left")}
-              className="w-14 h-14 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-lg border border-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
-            >
-              <ChevronLeft size={24} />
-            </button>
-            <div className="w-14 h-14 bg-gray-900 border border-gray-600 rounded-lg flex items-center justify-center shadow-inner">
-              <Circle size={16} className="text-gray-500" />
-            </div>
-            <button
-              onClick={() => move("right")}
-              className="w-14 h-14 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-lg border border-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
-            >
-              <ChevronRight size={24} />
-            </button>
-          </div>
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={() => move("down")}
-              className="w-14 h-14 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-lg border border-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
-            >
-              <ChevronDown size={24} />
-            </button>
-          </div>
-          <div className="flex justify-center gap-2 mt-4">
-            <button
-              onClick={zoomOut}
-              className="w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-lg border border-blue-500 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
-            >
-              <ZoomOut size={20} />
-            </button>
-            <button
-              onClick={zoomIn}
-              className="w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-lg border border-blue-500 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
-            >
-              <ZoomIn size={20} />
-            </button>
-          </div>
-        </div>
-      </div>
+  
       <div className="flex-grow flex justify-center items-center relative bg-black">
         <div className="relative w-full h-full overflow-hidden bg-black">
-
-          <div className="absolute bottom-4 right-6 z-20">
+          
+          <div className="absolute bottom-4 right-10 z-20">
             <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 min-w-[160px]">
 
               <div className="flex items-center justify-between mb-5 pb-3 border-b border-white/10">
