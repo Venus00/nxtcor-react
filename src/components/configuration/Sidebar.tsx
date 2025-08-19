@@ -15,6 +15,7 @@ import {
   LogOut,
   Thermometer,
   Play,
+  Video,
 } from "lucide-react"
 import { useNavigate, useLocation } from "react-router-dom"
 
@@ -32,7 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeConfigTab, setActiveConfigTab }
   const location = useLocation()
 
   const navigationItems = [
-    { name: "Live", path: "/live/cam1", icon: Thermometer },
+    { name: "Live", path: "/live/cam1", icon: Video },
     { name: "Analytics", path: "/analytics", icon: BarChart3 },
     { name: "Playback", path: "/playback", icon: Play },
     { name: "Configuration", path: "/configuration", icon: Settings },
@@ -117,21 +118,20 @@ const Sidebar: React.FC<SidebarProps> = ({ activeConfigTab, setActiveConfigTab }
             </h2>
           )}
         </div>
-        
+
         <ul className="flex flex-col space-y-2 text-sm text-gray-300 px-2">
           {navigationItems.map((item) => {
             const IconComponent = item.icon
             const isActive = isActivePath(item.path)
-            
+
             return (
               <li key={item.name}>
                 <button
                   onClick={() => handleNavigation(item.path)}
-                  className={`inline-flex items-center px-3 py-3 text-sm rounded-lg w-full transition-colors ${
-                    isActive
+                  className={`inline-flex items-center px-3 py-3 text-sm rounded-lg w-full transition-colors ${isActive
                       ? "text-red-500 bg-gray-800 border-l-2 border-red-500"
                       : "hover:text-white hover:bg-gray-800"
-                  }`}
+                    }`}
                   title={isCollapsed ? item.name : undefined}
                 >
                   <IconComponent
@@ -157,21 +157,20 @@ const Sidebar: React.FC<SidebarProps> = ({ activeConfigTab, setActiveConfigTab }
                 </h2>
               )}
             </div>
-            
+
             <ul className="flex flex-col space-y-2 text-sm text-gray-300 px-2">
               {configTabs.map((tab) => {
                 const IconComponent = tab.icon
                 const isActiveTab = activeConfigTab === tab.name
-                
+
                 return (
                   <li key={tab.name}>
                     <button
                       onClick={() => handleConfigTabClick(tab.name)}
-                      className={`inline-flex items-center px-3 py-2 text-sm rounded-lg w-full transition-colors ${
-                        isActiveTab
+                      className={`inline-flex items-center px-3 py-2 text-sm rounded-lg w-full transition-colors ${isActiveTab
                           ? "text-blue-400 bg-gray-800 border-l-2 border-blue-400"
                           : "hover:text-white hover:bg-gray-800"
-                      }`}
+                        }`}
                       title={isCollapsed ? tab.name : undefined}
                     >
                       <IconComponent

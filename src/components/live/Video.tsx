@@ -6,14 +6,14 @@ const VideoStream: React.FC = () => {
   const [scale, setScale] = useState(1);
   const [position,] = useState({ x: 0, y: 0 });
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [rotation, setRotation] = useState(0); 
+  const [rotation, setRotation] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (videoRef.current && videoRef.current.readyState < 3) { 
-        videoRef.current.load(); 
+      if (videoRef.current && videoRef.current.readyState < 3) {
+        videoRef.current.load();
       }
-    }, 5000); 
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -120,10 +120,10 @@ const VideoStream: React.FC = () => {
       </div>
       <div className="flex-grow flex justify-center items-center relative bg-black">
         <div className="relative w-full h-full overflow-hidden bg-black">
-          
+
           <div className="absolute bottom-4 right-6 z-20">
             <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 min-w-[160px]">
-              
+
               <div className="flex items-center justify-between mb-5 pb-3 border-b border-white/10">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
@@ -148,11 +148,11 @@ const VideoStream: React.FC = () => {
                   >
                     <ChevronLeft size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                   </button>
-                  
+
                   <div className="w-12 h-12 bg-white/5 border border-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                     <div className="w-2 h-2 bg-white/60 rounded-full shadow-lg"></div>
                   </div>
-                  
+
                   <button
                     onClick={() => move("right")}
                     className="group w-12 h-12 bg-white/5 hover:bg-white/15 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
@@ -188,7 +188,7 @@ const VideoStream: React.FC = () => {
                 >
                   <ZoomOut size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
-                
+
                 <button
                   onClick={zoomIn}
                   className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
@@ -209,7 +209,7 @@ const VideoStream: React.FC = () => {
 
           {/* Video iframe */}
           <iframe
-            src={`http://192.168.10.57:8888/${camId}`}
+            src={`http://192.168.10.57:8889/${camId}`}
             width="640"
             height="360"
             className="object-fill"
@@ -229,3 +229,4 @@ const VideoStream: React.FC = () => {
 }
 
 export default VideoStream;
+
