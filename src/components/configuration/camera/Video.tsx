@@ -21,7 +21,7 @@ const Video = () => {
     const [videoProfile, setVideoProfile] = useState('');
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' }>({
         message: '',
-        type: 'info' // Default type, can be 'success', 'error', or 'info'
+        type: 'info' 
     });
 
 

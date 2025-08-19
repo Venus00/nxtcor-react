@@ -98,8 +98,8 @@ const Analytics: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black p-2 sm:p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-full bg-black p-2 ">
+      <div className=" mx-auto">
         <div className="mb-4 lg:mb-6">
           <ul className="flex space-x-2 sm:space-x-6 text-sm sm:text-lg lg:text-xl text-center border-b border-gray-700 overflow-x-auto" role="tablist">
             {tabs.map((tab) => (
