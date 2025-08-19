@@ -3,8 +3,8 @@ import { useState, useEffect, useRef } from "react"
 import axios from "axios"
 import Hls from "hls.js"
 const cameraOptions = [
-    { id: "normal", name: "Normal Camera", icon: Camera, color: "blue", rtspUrl: "rtsp://192.168.10.57:8554/cam1" },
-    { id: "thermal", name: "Thermal Camera", icon: Thermometer, color: "red", rtspUrl: "rtsp://192.168.10.57:8554/cam2" }
+    { id: "Normal", name: "Normal Camera", icon: Camera, color: "blue", rtspUrl: "rtsp://192.168.10.57:8554/cam1" },
+    { id: "Thermal", name: "Thermal Camera", icon: Thermometer, color: "red", rtspUrl: "rtsp://192.168.10.57:8554/cam2" }
 ]
 function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, color }: any) {
     const [hlsUrl, setHlsUrl] = useState<string | null>(null)
@@ -14,7 +14,7 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, color }: any) {
         const fetchStreamUrl = async () => {
             try {
                 const res = await axios.post("http://192.168.10.207:8000/stream_rtsp", {
-                    rtsp_url_1: rtspUrl,
+                    rtsp_url: rtspUrl,
                     type: cameraId
 
                 },
@@ -23,8 +23,9 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, color }: any) {
                             'Content-Type': 'multipart/form-data'
                         }
                     })
-
-                const url = `http://192.168.10.207:8000${cameraId === 'thermal' ? res.data.hls_playlist_nuit : res.data.hls_playlist_jour}`
+                console.log(res.data)
+                const url = `http://192.168.10.207:8000${res.data.hls_playlist}`
+                console.log(url)
                 setHlsUrl(url)
             } catch (err) {
                 console.error(`Failed to fetch HLS URL for ${name}:`, err)
@@ -74,7 +75,7 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, color }: any) {
                             ref={videoRef}
                             autoPlay
                             muted
-                            controls
+                            controls={true}
                             className="w-full h-full object-contain"
                         />
                     ) : (
@@ -101,7 +102,7 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, color }: any) {
 }
 
 export function VideoFeedContent() {
-    const [selectedCameras, setSelectedCameras] = useState<string[]>(["normal", "thermal"])
+    const [selectedCameras, setSelectedCameras] = useState<string[]>(["Normal", "Thermal"])
 
     const handleCameraChange = (cameraId: string) => {
         setSelectedCameras(prev =>
