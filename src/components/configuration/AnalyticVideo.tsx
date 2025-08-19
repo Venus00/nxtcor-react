@@ -118,7 +118,7 @@ export function VideoFeedContent() {
 
     return (
         <div className="min-h-screen bg-black p-2 sm:p-4 lg:p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className=" mx-auto space-y-6">
 
                 {/* Camera selection */}
                 <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
