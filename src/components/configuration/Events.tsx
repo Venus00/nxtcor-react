@@ -12,10 +12,10 @@ const Events = () => {
   ];
 
   return (
-    <div className="bg-black text-white h-[calc(100vh-4rem)] ">
+    <div className="bg-white text-black h-[calc(100vh-5rem)] ">
       <div className="mb-4 ">
         <ul
-          className="flex  space-x-6 text-xl text-center "
+          className="flex  space-x-6 text-base text-center "
           role="tablist"
         >
           {tabs.map((tab) => (
@@ -23,7 +23,7 @@ const Events = () => {
               <button
                 className={`inline-block p-4  rounded-t-lg ${
                   activeTab === tab.name
-                    ? 'text-white border-black border-b-2'
+                    ? 'text-black border-black border-b-2'
                     : 'text-gray-500 hover:text-gray-600 hover:border-gray-300 '
                 }`}
                 onClick={() => setActiveTab(tab.name)}

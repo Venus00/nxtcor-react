@@ -23,12 +23,12 @@ const TextField: React.FC<TextFieldParams> = (props) => {
 
   return (
     <div>
-      <label className={`block mb-1 text-md font-medium ${props.labelClassName ?? "text-black"}`}>
+      <label className={`block mb-1 text-sm font-medium ${props.labelClassName ?? "text-black"}`}>
         {props.label}
       </label>
       <input
         type="text"
-        className={`bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 ${!props.isEditable ? 'bg-gray-200 cursor-not-allowed' : ''}`}
+        className={`bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 ${!props.isEditable ? 'bg-gray-200 cursor-not-allowed' : ''}`}
         placeholder={props.placeholder}
         value={props.value}
         onChange={handleChange}

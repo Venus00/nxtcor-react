@@ -13,17 +13,17 @@ const Security = () => {
   ];
 
   return (
-    <div className='bg-black text-white h-[calc(100vh-4rem)] '>
+    <div className=' text-white h-[calc(100vh-8rem)] '>
       <div className="mb-4 ">
         <ul
-          className="flex  space-x-6 text-xl text-center "
+          className="flex  space-x-6 text-base text-center "
           role="tablist"
         >
           {tabs.map((tab) => (
             <li className="me-2" role="presentation" key={tab.name}>
               <button
                 className={`inline-block p-4  rounded-t-lg ${activeTab === tab.name
-                  ? 'text-white border-black border-b-2'
+                  ? 'text-black border-black border-b-2'
                   : 'text-gray-500 hover:text-gray-600 hover:border-gray-300 '
                   }`}
                 onClick={() => setActiveTab(tab.name)}
@@ -41,7 +41,7 @@ const Security = () => {
         {tabs.map((tab) => (
           <div
             key={tab.name}
-            className={`p-4 ml-3 rounded-lg bg-black w-[900px]  ${activeTab === tab.name ? '' : 'hidden'
+            className={`p-4 ml-3 rounded-lg w-[900px]  ${activeTab === tab.name ? '' : 'hidden'
               }`}
             role="tabpanel"
           >

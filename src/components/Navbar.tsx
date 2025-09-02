@@ -36,7 +36,7 @@ const Navbar = () => {
 
   return (
 
-    <nav className="bg-black backdrop-blur-sm shadow-2xl relative z-[100]">
+    <nav className="bg-black backdrop-blur-sm shadow-2xl relative z-[100] border rounded-xl ml-4 mr-4 ">
       <div className="flex items-center justify-between mx-auto px-8 py-4">
           <div className="relative">
             <img src="/assets/logoNav.png" className="h-10 transition-transform group-hover:scale-105" alt="NEXTCOR Logo" />

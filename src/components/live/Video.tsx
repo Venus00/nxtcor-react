@@ -64,7 +64,7 @@ const VideoStream: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-5rem)]">
+    <div className="flex h-[calc(100vh-5rem)] border rounded-xl overflow-hidden bg-black">
   
       <div className="flex-grow flex justify-center items-center relative bg-black">
         <div className="relative w-full h-full overflow-hidden bg-black">

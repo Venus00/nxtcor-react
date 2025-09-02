@@ -88,7 +88,7 @@ const NetworkAccess = () => {
 
     }, [])
     return (
-        <div className="bg-black"
+        <div className="bg-white"
         >
             <div className="">
                 <Select label="Network Interface" value={networkInterface} setValue={setnetworkInterface} options={networkInterfaceOptions} labelClassName="text-white" />

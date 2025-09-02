@@ -12,7 +12,7 @@ interface ToggleParams {
     return (
       <div >
         {/* Label at the top */}
-        <label className="block mb-1 text-md font-medium text-white pb-4">
+        <label className="block mb-1 text-base font-medium text-black pb-4">
           {props.label}
         </label>
   

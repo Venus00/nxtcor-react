@@ -11,16 +11,16 @@ const MainLayout: React.FC = () => {
   const [activeConfigTab, setActiveConfigTab] = useState("General");
 
   return (
-    <div className="h-screen w-full flex flex-col bg-black">
+    <div className="h-screen w-full flex flex-col bg-gray-100">
       <Navbar />
       
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar 
+      <div className="flex flex-1 overflow-hidden ">
+        {/* <Sidebar 
           activeConfigTab={activeConfigTab}
           setActiveConfigTab={setActiveConfigTab}
-        />
+        /> */}
         
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto ml-4 mr-4  ">
           <Routes>
             <Route path="/live/:id" element={<Live />} />
             <Route path="/live" element={<Live />} />

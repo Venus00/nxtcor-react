@@ -101,8 +101,8 @@ const Audio = () => {
                 isCheckedMicro &&
                 <>
                     <Slider label="Input Volume" value={Volume} setValue={setVolume} max={30} />
-                    <Select label="Audio Sampling Rate" value={audioSamplingRate} setValue={setaudioSamplingRate} options={AudioSamplingRateOptions} labelClassName="text-white" />
-                    <Select label="Codec for RTSP and MP4 encoding" value={recordingFormat} setValue={setRecordingFormat} options={RecordingFormatOptions} labelClassName="text-white" /></>
+                    <Select label="Audio Sampling Rate" value={audioSamplingRate} setValue={setaudioSamplingRate} options={AudioSamplingRateOptions} labelClassName="text-black" />
+                    <Select label="Codec for RTSP and MP4 encoding" value={recordingFormat} setValue={setRecordingFormat} options={RecordingFormatOptions} labelClassName="text-black" /></>
             }
             <Toggle label="Enable Speaker" value={isCheckedSpeaker} setValue={setIsCheckedSpeaker} />
             {

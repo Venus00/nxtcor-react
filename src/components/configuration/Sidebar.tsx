@@ -32,12 +32,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeConfigTab, setActiveConfigTab }
   const navigate = useNavigate()
   const location = useLocation()
 
-  const navigationItems = [
-    { name: "Live", path: "/live/cam1", icon: Video },
-    { name: "Analytics", path: "/analytics", icon: BarChart3 },
-    { name: "Playback", path: "/playback", icon: Play },
-    { name: "Configuration", path: "/configuration", icon: Settings },
-  ]
+
 
   const configTabs = [
     { name: "General", icon: Settings },
@@ -97,68 +92,35 @@ const Sidebar: React.FC<SidebarProps> = ({ activeConfigTab, setActiveConfigTab }
 
   return (
     <div
-      className={`${getSidebarWidth()} h-full flex flex-col justify-between bg-black shadow-lg border-r border-gray-800 transition-all duration-300 ease-in-out relative`}
+      className={`${getSidebarWidth()} h-[calc(100vh-5rem)] flex flex-col justify-between bg-white shadow-lg border-r border-gray-200 transition-all duration-300 ease-in-out relative   rounded-xl`}
     >
       <button
         onClick={toggleSidebar}
-        className="absolute -right-3 top-4 bg-black border border-gray-700 rounded-full p-1 shadow-md hover:bg-gray-800 transition-colors z-10"
+        className="absolute -right-3 top-4 bg-gray-100 border border-gray-300 rounded-full p-1 shadow-md hover:bg-gray-200 transition-colors z-10"
       >
         {isCollapsed ? (
-          <ChevronRight className="w-4 h-4 text-gray-300" />
+          <ChevronRight className="w-4 h-4 text-gray-600" />
         ) : (
-          <ChevronLeft className="w-4 h-4 text-gray-300" />
+          <ChevronLeft className="w-4 h-4 text-gray-600" />
         )}
       </button>
 
       <div className="flex flex-col mt-4 flex-1">
-        <div className="px-4 py-2">
-          {!isCollapsed && (
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
-              Navigation
-            </h2>
-          )}
-        </div>
+     
 
-        <ul className="flex flex-col space-y-2 text-sm text-gray-300 px-2">
-          {navigationItems.map((item) => {
-            const IconComponent = item.icon
-            const isActive = isActivePath(item.path)
-
-            return (
-              <li key={item.name}>
-                <button
-                  onClick={() => handleNavigation(item.path)}
-                  className={`inline-flex items-center px-3 py-3 text-sm rounded-lg w-full transition-colors ${isActive
-                      ? "text-red-500 bg-gray-800 border-l-2 border-red-500"
-                      : "hover:text-white hover:bg-gray-800"
-                    }`}
-                  title={isCollapsed ? item.name : undefined}
-                >
-                  <IconComponent
-                    className={`w-5 h-5 ${isCollapsed ? "" : "me-3"} flex-shrink-0`}
-                  />
-                  {!isCollapsed && (
-                    <span className="transition-opacity duration-300">
-                      {item.name}
-                    </span>
-                  )}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+      
 
         {isConfigurationPage && (
           <div className="mt-6">
             <div className="px-4 py-2">
               {!isCollapsed && (
-                <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider">
                   Settings
                 </h2>
               )}
             </div>
 
-            <ul className="flex flex-col space-y-2 text-sm text-gray-300 px-2">
+            <ul className="flex flex-col space-y-2 text-sm text-gray-700 px-2">
               {configTabs.map((tab) => {
                 const IconComponent = tab.icon
                 const isActiveTab = activeConfigTab === tab.name
@@ -167,10 +129,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeConfigTab, setActiveConfigTab }
                   <li key={tab.name}>
                     <button
                       onClick={() => handleConfigTabClick(tab.name)}
-                      className={`inline-flex items-center px-3 py-2 text-sm rounded-lg w-full transition-colors ${isActiveTab
-                          ? "text-blue-400 bg-gray-800 border-l-2 border-blue-400"
-                          : "hover:text-white hover:bg-gray-800"
-                        }`}
+                      className={`inline-flex items-center px-3 py-2 text-sm rounded-lg w-full transition-colors ${
+                        isActiveTab
+                          ? "text-red-600 bg-gray-100 border-l-2 border-blue-600"
+                          : "hover:bg-gray-100"
+                      }`}
                       title={isCollapsed ? tab.name : undefined}
                     >
                       <IconComponent
@@ -190,15 +153,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activeConfigTab, setActiveConfigTab }
         )}
       </div>
 
-      <div className="border-t border-gray-700 pt-4 px-2">
+      {/* <div className="border-t border-gray-200 pt-4 px-2">
         <button
           onClick={handleLogout}
-          className="flex items-center justify-center lg:justify-start px-3 py-3 text-sm text-red-500 rounded-lg w-full hover:bg-gray-800 transition-colors"
+          className="flex items-center justify-center lg:justify-start px-3 py-3 text-sm text-red-500 rounded-lg w-full hover:bg-gray-100 transition-colors"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           {!isCollapsed && <span className="ml-3">Sign out</span>}
         </button>
-      </div>
+      </div> */}
     </div>
   )
 }

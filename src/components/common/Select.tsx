@@ -12,11 +12,11 @@ const Select = (props: SelectParams) => {
 
     return (
         <div>
-                  <label className={`block mb-1 text-md font-medium ${props.labelClassName ?? "text-black"}`}>
+                  <label className={`block mb-1 text-sm font-medium ${props.labelClassName ?? "text-black"}`}>
 {props.label}</label>
 
 
-            <select className="bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
+            <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
                 onChange={e => props.setValue(e.target.value)}
                 value={props.value}
                 >
