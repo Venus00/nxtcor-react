@@ -65,10 +65,10 @@ const VideoStream: React.FC = () => {
 
   return (
     <div className="flex h-[calc(100vh-5rem)] border rounded-xl overflow-hidden bg-black">
-  
+
       <div className="flex-grow flex justify-center items-center relative bg-black">
         <div className="relative w-full h-full overflow-hidden bg-black">
-          
+
           <div className="absolute bottom-4 right-10 z-20">
             <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 min-w-[160px]">
 
@@ -157,7 +157,7 @@ const VideoStream: React.FC = () => {
 
           {/* Video iframe */}
           <iframe
-            src={`http://192.168.10.57:8889/${camId}`}
+            src={`http://${import.meta.env.VITE_SERVER_URL}:8889/${camId}`}
             width="640"
             height="360"
             className="object-fill"

@@ -3,170 +3,169 @@ import { useState, useRef } from "react"
 import axios from "axios"
 
 const cameraOptions = [
-  { id: "Normal", name: "Normal Camera", icon: Camera, color: "blue", rtspUrl: "rtsp://192.168.10.57:8554/cam1", stream: 'stream1' },
-  { id: "Thermal", name: "Thermal Camera", icon: Thermometer, color: "red", rtspUrl: "rtsp://192.168.10.57:8554/cam2", stream: 'stream2' }
+    { id: "Normal", name: "Normal Camera", icon: Camera, color: "blue", rtspUrl: "rtsp://${VITE}:8554/cam1", stream: 'stream1' },
+    { id: "Thermal", name: "Thermal Camera", icon: Thermometer, color: "red", rtspUrl: "rtsp://${VITE}:8554/cam2", stream: 'stream2' }
 ]
 
 function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: any) {
-  const [hlsUrl, setHlsUrl] = useState<string | null>(null)
-  const videoRef = useRef<HTMLVideoElement | null>(null)
+    const [hlsUrl, setHlsUrl] = useState<string | null>(null)
+    const videoRef = useRef<HTMLVideoElement | null>(null)
 
-  // useEffect(() => {
-  //     const fetchStreamUrl = async () => {
-  //         try {
-  //             const res = await axios.post("http://192.168.10.57:8000/stream_rtsp", {
-  //                 rtsp_url: rtspUrl,
-  //                 type: cameraId
-  //             }, {
-  //                 headers: {
-  //                     'Content-Type': 'multipart/form-data'
-  //                 }
-  //             })
-  //             console.log(res.data)
-  //             const url = `http://192.168.10.57:8000${res.data.hls_playlist}`
-  //             console.log(url)
-  //             setHlsUrl(url)
-  //         } catch (err) {
-  //             console.error(`Failed to fetch HLS URL for ${name}:`, err)
-  //         }
-  //     }
-  //     fetchStreamUrl()
-  // }, [])
+    // useEffect(() => {
+    //     const fetchStreamUrl = async () => {
+    //         try {
+    //             const res = await axios.post("http://${VITE}:8000/stream_rtsp", {
+    //                 rtsp_url: rtspUrl,
+    //                 type: cameraId
+    //             }, {
+    //                 headers: {
+    //                     'Content-Type': 'multipart/form-data'
+    //                 }
+    //             })
+    //             console.log(res.data)
+    //             const url = `http://${VITE}:8000${res.data.hls_playlist}`
+    //             console.log(url)
+    //             setHlsUrl(url)
+    //         } catch (err) {
+    //             console.error(`Failed to fetch HLS URL for ${name}:`, err)
+    //         }
+    //     }
+    //     fetchStreamUrl()
+    // }, [])
 
-  // useEffect(() => {
-  //     if (!hlsUrl || !videoRef.current) return
-  //     if (Hls.isSupported()) {
-  //         const hls = new Hls({
-  //             maxBufferLength: 60,
-  //             maxMaxBufferLength: 120,
-  //             maxBufferSize: 60 * 1000 * 1000,
-  //             liveSyncDuration: 10,
-  //             liveMaxLatencyDuration: 30,
-  //         });
-  //         hls.loadSource(hlsUrl)
-  //         hls.attachMedia(videoRef.current)
-  //         hls.on(Hls.Events.ERROR, (_, data) => {
-  //             console.error(`HLS error (${name}):`, data)
-  //         })
-  //         return () => hls.destroy()
-  //     } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
-  //         videoRef.current.src = hlsUrl
-  //     }
-  // }, [hlsUrl, name])
+    // useEffect(() => {
+    //     if (!hlsUrl || !videoRef.current) return
+    //     if (Hls.isSupported()) {
+    //         const hls = new Hls({
+    //             maxBufferLength: 60,
+    //             maxMaxBufferLength: 120,
+    //             maxBufferSize: 60 * 1000 * 1000,
+    //             liveSyncDuration: 10,
+    //             liveMaxLatencyDuration: 30,
+    //         });
+    //         hls.loadSource(hlsUrl)
+    //         hls.attachMedia(videoRef.current)
+    //         hls.on(Hls.Events.ERROR, (_, data) => {
+    //             console.error(`HLS error (${name}):`, data)
+    //         })
+    //         return () => hls.destroy()
+    //     } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
+    //         videoRef.current.src = hlsUrl
+    //     }
+    // }, [hlsUrl, name])
 
-  return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-white flex items-center gap-1">
-          <Icon className={`h-3.5 w-3.5 text-${color}-400`} />
-          {name}
-        </h3>
-        <div className="text-xs text-gray-400">
-          {cameraId === "thermal" ? "640×480px" : "1920×1080px"}
+    return (
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
+            <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-white flex items-center gap-1">
+                    <Icon className={`h-3.5 w-3.5 text-${color}-400`} />
+                    {name}
+                </h3>
+                <div className="text-xs text-gray-400">
+                    {cameraId === "thermal" ? "640×480px" : "1920×1080px"}
+                </div>
+            </div>
+
+            <div className="relative bg-black rounded-lg overflow-hidden border border-gray-600  aspect-video max-w-screen-sm  ">
+                <iframe
+                    src={`http://${import.meta.env.VITE_API_URL}:8889/${stream}`}
+                    width="480"
+                    height="270"
+                    className="object-fill w-full h-full"
+                    allow="autoplay; fullscreen"
+                    style={{
+                        transformOrigin: "center",
+                        transition: "transform 0.3s ease",
+                    }}
+                />
+                <div className="absolute top-1 left-1">
+                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-${color}-600 text-white`}>
+                        <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+                        LIVE
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-2 flex items-center gap-1">
+                <Eye className={`h-2.5 w-2.5 text-${color}-400`} />
+                <span className="text-xs text-gray-400">{name} Feed</span>
+            </div>
         </div>
-      </div>
-
-      <div className="relative bg-black rounded-lg overflow-hidden border border-gray-600  aspect-video max-w-screen-sm  ">
-        <iframe
-          src={`http://192.168.10.57:8889/${stream}`}
-          width="480"
-          height="270"
-          className="object-fill w-full h-full"
-          allow="autoplay; fullscreen"
-          style={{
-            transformOrigin: "center",
-            transition: "transform 0.3s ease",
-          }}
-        />
-        <div className="absolute top-1 left-1">
-          <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-${color}-600 text-white`}>
-            <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
-            LIVE
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-2 flex items-center gap-1">
-        <Eye className={`h-2.5 w-2.5 text-${color}-400`} />
-        <span className="text-xs text-gray-400">{name} Feed</span>
-      </div>
-    </div>
-  )
+    )
 }
 
 export function VideoFeedContent() {
-  const [selectedCameras, setSelectedCameras] = useState<string[]>(["Normal", "Thermal"])
+    const [selectedCameras, setSelectedCameras] = useState<string[]>(["Normal", "Thermal"])
 
-  const handleCameraChange = (cameraId: string) => {
-    setSelectedCameras(prev =>
-      prev.includes(cameraId) ? prev.filter(id => id !== cameraId) : [...prev, cameraId]
-    )
-  }
+    const handleCameraChange = (cameraId: string) => {
+        setSelectedCameras(prev =>
+            prev.includes(cameraId) ? prev.filter(id => id !== cameraId) : [...prev, cameraId]
+        )
+    }
 
-  const isSelected = (cameraId: string) => selectedCameras.includes(cameraId)
+    const isSelected = (cameraId: string) => selectedCameras.includes(cameraId)
 
-  const getCameraGridClass = () => selectedCameras.length === 1 ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2"
+    const getCameraGridClass = () => selectedCameras.length === 1 ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2"
 
-  return (
-    <div className="h-[calc(100vh-5rem)] p-2 sm:p-3 lg:p-4">
-      <div className="mx-auto space-y-4">
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
-          <h2 className="text-base font-medium text-white mb-2 flex items-center gap-1">
-            <BarChart3 className="h-4 w-4 text-green-400" />
-            Camera Selection
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {cameraOptions.map((camera) => {
-              const IconComponent = camera.icon
-              const selected = isSelected(camera.id)
-              return (
-                <label
-                  key={camera.id}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
-                    selected
-                      ? `border-${camera.color}-500 bg-${camera.color}-500/10 text-${camera.color}-400`
-                      : "border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-500 hover:bg-gray-600"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected}
-                    onChange={() => handleCameraChange(camera.id)}
-                    className="sr-only"
-                  />
-                  <IconComponent className="h-4 w-4" />
-                  <span className="text-sm font-medium">{camera.name}</span>
-                  {selected && (
-                    <div className={`w-1.5 h-1.5 bg-${camera.color}-400 rounded-full animate-pulse`}></div>
-                  )}
-                </label>
-              )
-            })}
-          </div>
+    return (
+        <div className="h-[calc(100vh-5rem)] p-2 sm:p-3 lg:p-4">
+            <div className="mx-auto space-y-4">
+                <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
+                    <h2 className="text-base font-medium text-white mb-2 flex items-center gap-1">
+                        <BarChart3 className="h-4 w-4 text-green-400" />
+                        Camera Selection
+                    </h2>
+                    <div className="flex flex-wrap gap-2">
+                        {cameraOptions.map((camera) => {
+                            const IconComponent = camera.icon
+                            const selected = isSelected(camera.id)
+                            return (
+                                <label
+                                    key={camera.id}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${selected
+                                            ? `border-${camera.color}-500 bg-${camera.color}-500/10 text-${camera.color}-400`
+                                            : "border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-500 hover:bg-gray-600"
+                                        }`}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={selected}
+                                        onChange={() => handleCameraChange(camera.id)}
+                                        className="sr-only"
+                                    />
+                                    <IconComponent className="h-4 w-4" />
+                                    <span className="text-sm font-medium">{camera.name}</span>
+                                    {selected && (
+                                        <div className={`w-1.5 h-1.5 bg-${camera.color}-400 rounded-full animate-pulse`}></div>
+                                    )}
+                                </label>
+                            )
+                        })}
+                    </div>
+                </div>
+
+                {selectedCameras.length > 0 ? (
+                    <div className={`grid ${getCameraGridClass()} gap-3`}>
+                        {cameraOptions.map(cam =>
+                            isSelected(cam.id) ? (
+                                <CameraPlayer
+                                    key={cam.id}
+                                    stream={cam.stream}
+                                    cameraId={cam.id}
+                                    name={cam.name}
+                                    icon={cam.icon}
+                                    rtspUrl={cam.rtspUrl}
+                                    color={cam.color}
+                                />
+                            ) : null
+                        )}
+                    </div>
+                ) : (
+                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 text-center text-gray-400 text-sm">
+                        No camera selected
+                    </div>
+                )}
+            </div>
         </div>
-
-        {selectedCameras.length > 0 ? (
-          <div className={`grid ${getCameraGridClass()} gap-3`}>
-            {cameraOptions.map(cam =>
-              isSelected(cam.id) ? (
-                <CameraPlayer
-                  key={cam.id}
-                  stream={cam.stream}
-                  cameraId={cam.id}
-                  name={cam.name}
-                  icon={cam.icon}
-                  rtspUrl={cam.rtspUrl}
-                  color={cam.color}
-                />
-              ) : null
-            )}
-          </div>
-        ) : (
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 text-center text-gray-400 text-sm">
-            No camera selected
-          </div>
-        )}
-      </div>
-    </div>
-  )
+    )
 }
