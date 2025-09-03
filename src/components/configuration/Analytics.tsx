@@ -98,7 +98,7 @@ const Analytics: React.FC = () => {
   }
 
   return (
-    <div className="h-full bg-black p-2 ">
+    <div className=" h-[calc(100vh-5rem)] bg-black p-2 overflow-hidden rounded-xl">
       <div className=" mx-auto">
         <div className="mb-4 lg:mb-6">
           <ul className="flex space-x-2 sm:space-x-6 text-sm sm:text-lg lg:text-xl text-center border-b border-gray-700 overflow-x-auto" role="tablist">

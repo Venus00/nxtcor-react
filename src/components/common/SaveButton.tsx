@@ -11,7 +11,7 @@ const SaveButton = (props: SaveParams) => {
         <button
             type="button"
             onClick={props.onClick}
-            className="flex items-center justify-center text-white text-md font-bold bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-md p-4"
+            className="flex items-center justify-center text-white text-sm font-bold bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-md p-4"
             disabled={props.loading}
         >
             {props.loading ? (

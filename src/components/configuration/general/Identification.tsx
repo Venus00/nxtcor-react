@@ -52,62 +52,58 @@ const Identification = () => {
 
       if (response.data.includes("success")) {
         setIsSaving(false)
-        setToast({ message: "Name changed successufuly", type: "success" })
+        setToast({ message: "Name changed successfully", type: "success" })
       } else {
         setIsSaving(false)
-        setToast({ message: "Not valid : Empty value", type: "error" })
+        setToast({ message: "Not valid: Empty value", type: "error" })
       }
     } catch (error) {
       setIsSaving(false)
-      setToast({ message: "Error ", type: "error" })
+      setToast({ message: "Error", type: "error" })
     }
   }
 
   return (
-    <div className="space-y-4 bg-black text-white p-6 rounded-lg">
-      <div className="flex items-center space-x-4">
-        <div className="w-1/4">
-          <Select
-            label="Type Camera"
-            value={cameraType}
-            setValue={setCameraType}
-            options={cameraTypeOptions}
-            labelClassName="text-white"
-          />
-          <TextField
-            label="Camera name"
-            value={deviceName}
-            setValue={setdeviceName}
-            placeholder=""
-            isEditable={true}
-            labelClassName="text-white"
-          />
-        </div>
-        <button
-          className="h-11 w-36 px-6 mt-6 py-1 bg-blue-300 text-white font-medium text-md rounded hover:bg-blue-500 flex items-center justify-center"
-          onClick={handelCameraNameChange}
-        >
-          {isSaving ? (
-            <svg
-              className="animate-spin h-5 w-5 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-            </svg>
-          ) : (
-            "Change"
-          )}
-        </button>
+    <div className="space-y-4 bg-white text-black p-6 rounded-lg gap-2">
+      <div className="flex items-center space-x-4 gap-2">
+  <div className="w-1/4 flex flex-col space-y-4">
+  <Select
+    label="Type Camera"
+    value={cameraType}
+    setValue={setCameraType}
+    options={cameraTypeOptions}
+    labelClassName="text-black"
+  />
+  <TextField
+    label="Camera name"
+    value={deviceName}
+    setValue={setdeviceName}
+    placeholder=""
+    isEditable={true}
+    labelClassName="text-black"
+  />
+</div>
+
+      
       </div>
 
       <div className="w-1/4 space-y-4">
-        <TextField label="Camera IP" value={deviceIP} placeholder="" isEditable={false} labelClassName="text-white" />
-        <TextField label="Camera MAC" value={deviceMAC} placeholder="" isEditable={false} labelClassName="text-white" />
-        <TextField label="Web version" value={webVersion} placeholder="" isEditable={false} labelClassName="text-white" />
+        <TextField label="Camera IP" value={deviceIP} placeholder="" isEditable={false} labelClassName="text-black" />
+        <TextField label="Camera MAC" value={deviceMAC} placeholder="" isEditable={false} labelClassName="text-black" />
+        <TextField label="Web version" value={webVersion} placeholder="" isEditable={false} labelClassName="text-black" />
+        <div className="pt-4">
+          <button
+            type="button"
+            onClick={handelCameraNameChange}
+            disabled={isSaving}
+            className="flex items-center justify-center text-white text-sm  bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-md p-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSaving ? "Saving..." : "SAVE CHANGES"}
+          </button>
       </div>
+      </div>
+
+      {/* Render Toast */}
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: "info" })} />
     </div>
   )

@@ -83,18 +83,19 @@ const Video = () => {
 
     return (
         <div className={`space-y-2
+
             w-full   /* Default for mobile */
             sm:w-1/2 /* Tablet size (640px and up) */
             md:w-1/3 /* Desktop size (768px and up) */
             lg:w-1/4 /* Larger screens (1024px and up) */
            `}
         >
-            <Select label="Video Resolution" value={videoResolution} setValue={setVideoResolution} options={VideoResoltionOptions}labelClassName="text-white" />
-            <Select label="Video Encoding" value={videoEncoding} setValue={setVideoEncoding} options={VideoEncodingOptions} labelClassName="text-white" />
-            <TextField label="Frame rate (FPS)" value={videoFPS} placeholder="20" setValue={setVideoFPS} labelClassName="text-white" />
-            <TextField label="Video Bitrate" value={videoBitrate} placeholder="4096" setValue={setVideoBitrate} labelClassName="text-white" />
-            <Select label="Rate control mode" value={rateControlMode} setValue={setRateControlMode} options={RateControlModeOptions} labelClassName="text-white" />
-            <Select label="Video Profile" value={videoProfile} setValue={setVideoProfile} options={VideoProfileOptions} labelClassName="text-white" />
+            <Select label="Video Resolution" value={videoResolution} setValue={setVideoResolution} options={VideoResoltionOptions}labelClassName="text-black" />
+            <Select label="Video Encoding" value={videoEncoding} setValue={setVideoEncoding} options={VideoEncodingOptions} labelClassName="text-black" />
+            <TextField label="Frame rate (FPS)" value={videoFPS} placeholder="20" setValue={setVideoFPS} labelClassName="text-black " />
+            <TextField label="Video Bitrate" value={videoBitrate} placeholder="4096" setValue={setVideoBitrate} labelClassName="text-black" />
+            <Select label="Rate control mode" value={rateControlMode} setValue={setRateControlMode} options={RateControlModeOptions} labelClassName="text-black" />
+            <Select label="Video Profile" value={videoProfile} setValue={setVideoProfile} options={VideoProfileOptions} labelClassName="text-black" />
             <SaveButton onClick={submitVideoConfig}  loading={isSaving} label='SAVE CHANGES' />
             <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
 

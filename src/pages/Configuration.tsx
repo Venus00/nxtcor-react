@@ -6,13 +6,14 @@ import NetworkComponent from '../components/configuration/Network';
 import Events from '../components/configuration/Events';
 import Storage from '../components/configuration/Storage';
 import Analytics from '../components/configuration/Analytics';
+import Sidebar from '../components/configuration/Sidebar';
 
 interface ConfigurationProps {
   activeConfigTab: string;
   setActiveConfigTab: (tab: string) => void;
 }
 
-const Configuration: React.FC<ConfigurationProps> = ({ activeConfigTab }) => {
+const Configuration: React.FC<ConfigurationProps> = ({ activeConfigTab, setActiveConfigTab }) => {
   const configComponents = {
     General: <General />,
     Analytics: <Analytics />,
@@ -24,30 +25,24 @@ const Configuration: React.FC<ConfigurationProps> = ({ activeConfigTab }) => {
   }
 
   return (
-    <div className="p-6 h-full bg-black text-white">
-      {/* <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white mb-2">Configuration</h1>
-        <p className="text-white">
-          Gérez les paramètres de votre système de surveillance
-        </p>
-      </div>
+    <div className="flex h-[calc(100vh-5rem)] bg-gray-200">
+      <Sidebar 
+        activeConfigTab={activeConfigTab}
+        setActiveConfigTab={setActiveConfigTab}
+      />
 
-      <div className="mb-6">
-        <nav className="text-sm text-white">
-          Configuration / <span className="text-red-600 font-medium">{activeConfigTab}</span>
-        </nav>
-      </div> */}
-
-      <div className="bg-black rounded-lg shadow-sm border border-gray-950 min-h-[calc(100vh-12rem)]">
-        <div className="p-6">
-          {/* <h2 className="text-xl font-semibold text-white mb-4 border-b border-gray-950 pb-2">
-            {activeConfigTab}
-          </h2> */}
-          {configComponents[activeConfigTab as keyof typeof configComponents]}
+      {/* Contenu principal sans overflow */}
+      <div className="flex-1 h-[calc(100vh-5rem)]">
+        <div className="p-6 h-full bg-gray-100">
+          <div className="bg-white rounded-lg shadow-sm h-full">
+            <div className="p-6 h-full">
+              {configComponents[activeConfigTab as keyof typeof configComponents]}
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default Configuration;

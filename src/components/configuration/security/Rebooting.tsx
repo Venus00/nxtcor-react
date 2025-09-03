@@ -21,7 +21,7 @@ const Rebooting = () => {
         <div className="space-y-4 w-3/4 flex justify-center flex-col">
 
 
-            <p className="text-white text-xl">Reboot camera to apply new settings and reset temporary files.</p>
+            <p className="text-black text-xl">Reboot camera to apply new settings and reset temporary files.</p>
             <button
                 onClick={handleReboot}
                 className="px-6 py-3  w-1/6  bg-red-500 text-white font-semibold rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75"

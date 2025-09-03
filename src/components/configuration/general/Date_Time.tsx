@@ -126,105 +126,106 @@ const Date_Time: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4 w-1/4 ">
-      <div className="space-y-4">
-        {/* Device Date Section */}
-        <div className="flex items-center space-x-2">
-          <label className="text-md font-medium text-black mr-3">Camera Date</label>
-          <div className="flex items-center space-x-2">
-            <input
-              type="text"
-              id="date_year"
-              className="bg-gray-50 border border-gray-300 text-center text-md text-gray-900 rounded-md w-[80px] p-2"
-              readOnly
-              value={date.year || "----"}
-            />
-            <div className="text-md">-</div>
-            <input
-              type="text"
-              id="date_month"
-              className="bg-gray-50 border border-gray-300 text-center text-md text-gray-900 rounded-md w-[70px] p-2"
-              readOnly
-              value={date.month || "--"}
-            />
-            <div className="text-md">-</div>
-            <input
-              type="text"
-              id="date_day_num"
-              className="bg-gray-50 border border-gray-300 text-center text-md text-gray-900 rounded-md w-[70px] p-2"
-              readOnly
-              value={date.day || "--"}
-            />
-          </div>
-        </div>
-
-        {/* Device Time Section */}
-        <div className="flex items-center space-x-2">
-          <label className="text-md font-semibold text-black mr-3">Camera Time</label>
-          <div className="flex items-center space-x-1">
-            <input
-              type="text"
-              id="time_hour"
-              className="bg-gray-50 border border-gray-300 text-center text-md text-gray-900 rounded-md w-[78px] p-2"
-              readOnly
-              value={time.hours || "00"}
-            />
-            <div className="text-md p-1.5">:</div>
-            <input
-              type="text"
-              id="time_minute"
-              className="bg-gray-50 border border-gray-300 text-center text-md text-gray-900 rounded-md w-[70px] p-2"
-              readOnly
-              value={time.minutes || "00"}
-            />
-            <div className="text-md p-1.5">:</div>
-            <input
-              type="text"
-              id="time_second"
-              className="bg-gray-50 border border-gray-300 text-center text-md text-gray-900 rounded-md w-[70px] p-2"
-              readOnly
-              value={time.seconds || "00"}
-            />
-          </div>
-        </div>
+  <div className="space-y-4 w-1/4 text-sm">
+  <div className="space-y-3">
+    {/* Device Date Section */}
+    <div className="flex items-center space-x-2">
+      <label className="text-sm font-medium text-black mr-2">Camera Date</label>
+      <div className="flex items-center space-x-2">
+        <input
+          type="text"
+          id="date_year"
+          className="bg-gray-50 border border-gray-300 text-center text-sm text-gray-900 rounded-md w-[70px] p-1.5"
+          readOnly
+          value={date.year || "----"}
+        />
+        <div className="text-sm">-</div>
+        <input
+          type="text"
+          id="date_month"
+          className="bg-gray-50 border border-gray-300 text-center text-sm text-gray-900 rounded-md w-[60px] p-1.5"
+          readOnly
+          value={date.month || "--"}
+        />
+        <div className="text-sm">-</div>
+        <input
+          type="text"
+          id="date_day_num"
+          className="bg-gray-50 border border-gray-300 text-center text-sm text-gray-900 rounded-md w-[60px] p-1.5"
+          readOnly
+          value={date.day || "--"}
+        />
       </div>
-
-      <Select label="Timezone" value={timezone} setValue={setTimezone} options={TZ} />
-
-      <button
-        type="button"
-        onClick={syncToBrowser}
-        className="text-blue-500 bg-blue-200 hover:bg-blue-500 hover:text-white focus:ring-4 focus:ring-blue-300 font-medium rounded-md text-md p-2 w-full"
-      >
-        Sync to Browser Timezone
-      </button>
-
-      <TextField
-        label="Primary NTP server"
-        value={primaryNTP}
-        placeholder="0.time.openipc.org"
-        setValue={setPrimaryNTP}
-      />
-      <TextField
-        label="Secondary NTP server"
-        value={secondaryNTP}
-        placeholder="1.time.openipc.org"
-        setValue={setSecondaryNTP}
-      />
-
-      <button
-        type="button"
-        onClick={SyncNTP}
-        className="text-blue-500 bg-blue-200 hover:bg-blue-500 hover:text-white focus:ring-4 focus:ring-blue-300 font-medium rounded-md text-md p-2 w-full"
-      >
-        {isSyncing ? "Syncing ..." : " Sync to NTP Server"}
-      </button>
-
-      <SaveButton onClick={handleSave} loading={isSaving} label="SAVE CHANGES" />
-
-      {/* Render Toast */}
-      <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: "info" })} />
     </div>
+
+    {/* Device Time Section */}
+    <div className="flex items-center space-x-2">
+      <label className="text-sm font-semibold text-black mr-2">Camera Time</label>
+      <div className="flex items-center space-x-1">
+        <input
+          type="text"
+          id="time_hour"
+          className="bg-gray-50 border border-gray-300 text-center text-sm text-gray-900 rounded-md w-[65px] p-1.5"
+          readOnly
+          value={time.hours || "00"}
+        />
+        <div className="text-sm p-1">:</div>
+        <input
+          type="text"
+          id="time_minute"
+          className="bg-gray-50 border border-gray-300 text-center text-sm text-gray-900 rounded-md w-[55px] p-1.5"
+          readOnly
+          value={time.minutes || "00"}
+        />
+        <div className="text-sm p-1">:</div>
+        <input
+          type="text"
+          id="time_second"
+          className="bg-gray-50 border border-gray-300 text-center text-sm text-gray-900 rounded-md w-[55px] p-1.5"
+          readOnly
+          value={time.seconds || "00"}
+        />
+      </div>
+    </div>
+  </div>
+
+  <Select label="Timezone" value={timezone} setValue={setTimezone} options={TZ}  />
+
+  <button
+    type="button"
+    onClick={syncToBrowser}
+    className="text-blue-500 bg-blue-200 hover:bg-blue-500 hover:text-white focus:ring-4 focus:ring-blue-300 font-medium rounded-md text-sm p-2 w-full"
+  >
+    Sync to Browser Timezone
+  </button>
+
+  <TextField
+    label="Primary NTP server"
+    value={primaryNTP}
+    placeholder="0.time.openipc.org"
+    setValue={setPrimaryNTP}
+  />
+  <TextField
+    label="Secondary NTP server"
+    value={secondaryNTP}
+    placeholder="1.time.openipc.org"
+    setValue={setSecondaryNTP}
+  />
+
+  <button
+    type="button"
+    onClick={SyncNTP}
+    className="text-blue-500 bg-blue-200 hover:bg-blue-500 hover:text-white focus:ring-4 focus:ring-blue-300 font-medium rounded-md text-sm p-2 w-full"
+  >
+    {isSyncing ? "Syncing ..." : " Sync to NTP Server"}
+  </button>
+
+  <SaveButton onClick={handleSave} loading={isSaving} label="SAVE CHANGES"  />
+
+  {/* Render Toast */}
+  <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: "info" })} />
+</div>
+
   )
 }
 

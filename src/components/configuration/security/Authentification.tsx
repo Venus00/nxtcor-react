@@ -62,6 +62,7 @@ const Authentification = () => {
 
     return (
         <div className={`space-y-4
+            
             w-full   /* Default for mobile */
             sm:w-1/2 /* Tablet size (640px and up) */
             md:w-1/3 /* Desktop size (768px and up) */

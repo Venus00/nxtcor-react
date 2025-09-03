@@ -16,7 +16,7 @@ interface SiderParams {
  
     return (
       <div>
-        <label className="block mb-1 text-md font-medium text-white ">{props.label}</label>
+        <label className="block mb-1 text-md font-medium text-black ">{props.label}</label>
         <div className="flex items-center ">
           <input
             type="range"

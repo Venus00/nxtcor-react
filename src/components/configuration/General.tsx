@@ -14,17 +14,17 @@ const General = () => {
     // { name: 'User Management', content: <User_Management />}
   ]
 
-  return (
-    <div className="bg-black text-white h-[calc(100vh-5rem)] ">
-      <div className="mb-4 ">
-        <ul className="flex  space-x-6 text-xl text-center " role="tablist">
+ return (
+    <div className="bg-white text-black  flex flex-col">
+      <div className="mb-4 flex-shrink-0">
+        <ul className="flex space-x-6 text-base text-center" role="tablist">
           {tabs.map((tab) => (
             <li className="me-2" role="presentation" key={tab.name}>
               <button
-                className={`inline-block p-4  rounded-t-lg ${
+                className={`inline-block p-4 rounded-t-lg ${
                   activeTab === tab.name
-                    ? "text-white border-white border-b-2"
-                    : "text-gray-400 hover:text-gray-200 hover:border-gray-500 "
+                    ? "text-black border-black border-b-2"
+                    : "text-gray-600 hover:text-black hover:border-gray-300"
                 }`}
                 onClick={() => setActiveTab(tab.name)}
                 type="button"
@@ -37,10 +37,17 @@ const General = () => {
           ))}
         </ul>
       </div>
-      <div>
+      
+      <div className="flex-1 overflow-hidden">
         {tabs.map((tab) => (
-          <div key={tab.name} className={`p-4 rounded-lg   ${activeTab === tab.name ? "" : "hidden"}`} role="tabpanel">
-            <div>{tabs.find((tab) => tab.name === activeTab)?.content}</div>
+          <div 
+            key={tab.name} 
+            className={`h-full ${activeTab === tab.name ? "" : "hidden"}`} 
+            role="tabpanel"
+          >
+            <div className="p-4 rounded-lg h-full">
+              {tabs.find((tab) => tab.name === activeTab)?.content}
+            </div>
           </div>
         ))}
       </div>

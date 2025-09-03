@@ -1,4 +1,4 @@
-import  { useState } from 'react';
+import { useState } from 'react';
 import Video from './camera/Video';
 import Audio from './camera/Audio';
 import Image from './camera/Image';
@@ -15,16 +15,16 @@ const Camera = () => {
   ]
 
   return (
-    <div className="bg-black h-[calc(100vh-4rem)] ">
-      <div className="mb-4">
-        <ul className="flex space-x-6 text-xl text-center border-b border-gray-700" role="tablist">
+    <div className="bg-white  flex flex-col">
+      <div className="mb-2 flex-shrink-0">
+        <ul className="flex space-x-4 text-base text-center border-b border-gray-200" role="tablist">
           {tabs.map((tab) => (
             <li className="me-2" role="presentation" key={tab.name}>
               <button
-                className={`inline-block p-4 rounded-t-lg transition-colors ${
+                className={`inline-block p-2 rounded-t-lg transition-colors ${
                   activeTab === tab.name
-                    ? "text-white border-blue-500 border-b-2 bg-gray-800"
-                    : "text-gray-400 hover:text-gray-200 hover:border-gray-500 hover:bg-gray-900"
+                    ? "text-black border-blue-500 border-b-2 bg-gray-50"
+                    : "text-gray-600 hover:text-black hover:bg-gray-100 hover:border-gray-300"
                 }`}
                 onClick={() => setActiveTab(tab.name)}
                 type="button"
@@ -37,7 +37,7 @@ const Camera = () => {
           ))}
         </ul>
       </div>
-      <div className="bg-black rounded-lg p-6 border border-gray-700">
+      <div className="flex-1 overflow-auto bg-white rounded-lg p-4">
         {tabs.map((tab) => (
           <div key={tab.name} className={`${activeTab === tab.name ? "" : "hidden"}`} role="tabpanel">
             <div>{tabs.find((tab) => tab.name === activeTab)?.content}</div>
