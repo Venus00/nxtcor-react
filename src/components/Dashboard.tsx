@@ -20,7 +20,7 @@ const MainLayout: React.FC = () => {
           setActiveConfigTab={setActiveConfigTab}
         /> */}
         
-        <div className="flex-1 overflow-auto ml-4 mr-4  ">
+        <div className="flex-1 overflow-auto   ">
           <Routes>
             <Route path="/live/:id" element={<Live />} />
             <Route path="/live" element={<Live />} />

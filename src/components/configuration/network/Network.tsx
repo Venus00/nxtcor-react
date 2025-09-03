@@ -91,15 +91,17 @@ const NetworkAccess = () => {
         <div className="bg-white"
         >
             <div className="">
-                <Select label="Network Interface" value={networkInterface} setValue={setnetworkInterface} options={networkInterfaceOptions} labelClassName="text-white" />
-                <Toggle label="Enable DHCP" value={isCheckedDHCP} setValue={setIsCheckedDHCP} />
+                <Select label="Network Interface" value={networkInterface} setValue={setnetworkInterface} options={networkInterfaceOptions} labelClassName="text-black" />
+                <div className="pt-4">
+                <Toggle label="Enable DHCP" value={isCheckedDHCP} setValue={setIsCheckedDHCP}  />
+                </div>
             </div>
             <div className={`${isCheckedDHCP ? 'hidden' : 'block'} `} >
                 <div className="text-xl font-semibold  mb-3">IPv4</div>
                 <div className="grid grid-cols-3    gap-10">
-                    <TextField label="IP address" value={ipv4Address} setValue={setipv4Address} placeholder="192.168.10.22"      isEditable={true} labelClassName="text-white"/>
-                    <TextField label="Subnet mask" value={ipv4Mask} setValue={setipv4Mask} placeholder="255.255.255.0"     isEditable={true} labelClassName="text-white" />
-                    <TextField label="Gatway" value={ipv4Gateway} setValue={setipv4Gateway} placeholder="192.168.10.254"      isEditable={true} labelClassName="text-white" />
+                    <TextField label="IP address" value={ipv4Address} setValue={setipv4Address} placeholder="192.168.10.22"      isEditable={true} labelClassName="text-black"/>
+                    <TextField label="Subnet mask" value={ipv4Mask} setValue={setipv4Mask} placeholder="255.255.255.0"     isEditable={true} labelClassName="text-black" />
+                    <TextField label="Gatway" value={ipv4Gateway} setValue={setipv4Gateway} placeholder="192.168.10.254"      isEditable={true} labelClassName="text-black" />
                 </div>
             </div>
             <div className={`${isCheckedDHCP ? 'hidden' : 'hidden'} `} >
