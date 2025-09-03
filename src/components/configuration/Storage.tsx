@@ -165,7 +165,6 @@ const Storage: React.FC = () => {
                 </div>
              
 
-            div
             <div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-xs text-gray-700">Weekly recording schedule</span>
