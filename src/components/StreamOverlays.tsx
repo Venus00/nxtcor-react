@@ -39,6 +39,7 @@ export default function StreamOverlays({
         return () => {
             socket.disconnect();
         };
+
     }, [wsUrl, streamId]);
 
     // useEffect(() => {
