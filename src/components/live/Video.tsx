@@ -27,40 +27,21 @@ const VideoStream: React.FC = () => {
   };
   const rotateLeft = () => setRotation((prev) => prev - 90);
   const rotateRight = () => setRotation((prev) => prev + 90);
-  const move = (direction: 'up' | 'down' | 'left' | 'right') => {
+  const move = async (direction: 'up' | 'down' | 'left' | 'right') => {
     // const movementStep = 20; // Amount of pixels to move
     console.log(direction)
-    // setPosition((prevPosition) => {
-    //   const videoElement = videoRef.current;
-    //   if (!videoElement) return prevPosition;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}:3000/ptz/${camId}/move`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ direction, time: 1 }),
+      });
+      const data = await res.json();
+      console.log(data);
+    } catch (err) {
+      console.error(err);
+    }
 
-    //   const videoWidth = videoElement.videoWidth * scale;
-    //   const videoHeight = videoElement.videoHeight * scale;
-    //   const containerWidth = videoElement.parentElement!.offsetWidth;
-    //   const containerHeight = videoElement.parentElement!.offsetHeight;
-
-    //   let newX = prevPosition.x;
-    //   let newY = prevPosition.y;
-
-    //   switch (direction) {
-    //     case 'up':
-    //       newY = Math.min(newY + movementStep, 0);
-    //       break;
-    //     case 'down':
-    //       newY = Math.max(newY - movementStep, containerHeight - videoHeight);
-    //       break;
-    //     case 'left':
-    //       newX = Math.min(newX + movementStep, 0);
-    //       break;
-    //     case 'right':
-    //       newX = Math.max(newX - movementStep, containerWidth - videoWidth);
-    //       break;
-    //     default:
-    //       break;
-    //   }
-
-    //   return { x: newX, y: newY };
-    // });
   };
 
   return (
