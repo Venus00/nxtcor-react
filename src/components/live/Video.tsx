@@ -111,7 +111,7 @@ const VideoStream: React.FC = () => {
 
               <div className="flex items-center justify-center space-x-3 mb-5">
                 <button
-                  onClick={move("zoom_out")}
+                  onClick={() => move("zoom_out")}
                   className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   aria-label="Zoom Out"
                 >
@@ -119,7 +119,7 @@ const VideoStream: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={move("zoom_in")}
+                  onClick={() => move("zoom_in")}
                   className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   aria-label="Zoom In"
                 >
