@@ -31,7 +31,7 @@ const VideoStream: React.FC = () => {
     // const movementStep = 20; // Amount of pixels to move
     console.log(direction)
     try {
-      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}:3000/ptz/${camId}/move`, {
+      const res = await fetch(`http://${import.meta.env.VITE_SERVER_URL}:3000/ptz/${camId}/move`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ direction, time: 1 }),
