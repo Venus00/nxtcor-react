@@ -22,16 +22,20 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{
-      backgroundImage: `url('/assets/loginImage.png')`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center'
-    }}>
+     <div
+      className="min-h-screen flex relative"
+      style={{
+        backgroundImage: `url('/assets/login1.jpg')`,
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+      }}
+    >
       <div className="absolute inset-0 bg-black/40"></div>
       
-      <div className="relative z-10 w-full flex justify-center items-center px-8">
-        <div className="ml-auto mr-32">
-          <div className="bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gray-700/50 p-8 w-96 shadow-2xl">
+           <div className="relative z-10 w-full flex justify-end items-center px-8">
+        <div className="max-w-md w-full mr-0 ml-auto">
+          <div className="bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gray-700/50 p-8 shadow-2xl">
             <div className="text-center mb-8">
               <div className="flex items-center justify-center mb-4">
                 <div className="w-8 h-8 bg-red-600 rounded-lg mr-3 flex items-center justify-center">
