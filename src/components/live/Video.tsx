@@ -27,40 +27,21 @@ const VideoStream: React.FC = () => {
   };
   const rotateLeft = () => setRotation((prev) => prev - 90);
   const rotateRight = () => setRotation((prev) => prev + 90);
-  const move = (direction: 'up' | 'down' | 'left' | 'right') => {
+  const move = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out') => {
     // const movementStep = 20; // Amount of pixels to move
     console.log(direction)
-    // setPosition((prevPosition) => {
-    //   const videoElement = videoRef.current;
-    //   if (!videoElement) return prevPosition;
+    try {
+      const res = await fetch(`http://${import.meta.env.VITE_SERVER_URL}:3000/ptz/${camId}/move`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ direction, time: 1 }),
+      });
+      const data = await res.json();
+      console.log(data);
+    } catch (err) {
+      console.error(err);
+    }
 
-    //   const videoWidth = videoElement.videoWidth * scale;
-    //   const videoHeight = videoElement.videoHeight * scale;
-    //   const containerWidth = videoElement.parentElement!.offsetWidth;
-    //   const containerHeight = videoElement.parentElement!.offsetHeight;
-
-    //   let newX = prevPosition.x;
-    //   let newY = prevPosition.y;
-
-    //   switch (direction) {
-    //     case 'up':
-    //       newY = Math.min(newY + movementStep, 0);
-    //       break;
-    //     case 'down':
-    //       newY = Math.max(newY - movementStep, containerHeight - videoHeight);
-    //       break;
-    //     case 'left':
-    //       newX = Math.min(newX + movementStep, 0);
-    //       break;
-    //     case 'right':
-    //       newX = Math.max(newX - movementStep, containerWidth - videoWidth);
-    //       break;
-    //     default:
-    //       break;
-    //   }
-
-    //   return { x: newX, y: newY };
-    // });
   };
 
   return (
@@ -130,7 +111,7 @@ const VideoStream: React.FC = () => {
 
               <div className="flex items-center justify-center space-x-3 mb-5">
                 <button
-                  onClick={zoomOut}
+                  onClick={() => move("zoom_out")}
                   className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   aria-label="Zoom Out"
                 >
@@ -138,7 +119,7 @@ const VideoStream: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={zoomIn}
+                  onClick={() => move("zoom_in")}
                   className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   aria-label="Zoom In"
                 >
