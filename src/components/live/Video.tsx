@@ -7,6 +7,14 @@ const VideoStream: React.FC = () => {
   const [position,] = useState({ x: 0, y: 0 });
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [rotation, setRotation] = useState(0);
+  const [speed, setSpeed] = useState(1);
+  
+  const upIntervalRef = useRef<number | null>(null);
+  const downIntervalRef = useRef<number | null>(null);
+  const leftIntervalRef = useRef<number | null>(null);
+  const rightIntervalRef = useRef<number | null>(null);
+  const zoomInIntervalRef = useRef<number | null>(null);
+  const zoomOutIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -21,38 +29,70 @@ const VideoStream: React.FC = () => {
   const zoomIn = () => {
     setScale((prevScale) => prevScale + 0.2);
   };
-  const camId = useParams().id
+  
+  const camId = useParams().id;
+  
   const zoomOut = () => {
     setScale((prevScale) => Math.max(prevScale - 0.2, 1));
   };
+  
   const rotateLeft = () => setRotation((prev) => prev - 90);
   const rotateRight = () => setRotation((prev) => prev + 90);
+  
   const move = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out') => {
-    // const movementStep = 20; // Amount of pixels to move
-    console.log(direction)
+    console.log(direction, `speed: ${speed}`);
     try {
       const res = await fetch(`http://${import.meta.env.VITE_SERVER_URL}:3000/ptz/${camId}/move`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ direction, time: 1 }),
+        body: JSON.stringify({ direction, time: 1, speed }), 
       });
       const data = await res.json();
       console.log(data);
     } catch (err) {
       console.error(err);
     }
-
   };
+
+  const createHoldHandlers = (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out', intervalRef: React.MutableRefObject<number | null>) => {
+    const handleStart = () => {
+      move(direction); 
+      intervalRef.current = setInterval(() => move(direction), 200); 
+    };
+
+    const handleStop = () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+
+    return { handleStart, handleStop };
+  };
+
+  const upHandlers = createHoldHandlers('up', upIntervalRef);
+  const downHandlers = createHoldHandlers('down', downIntervalRef);
+  const leftHandlers = createHoldHandlers('left', leftIntervalRef);
+  const rightHandlers = createHoldHandlers('right', rightIntervalRef);
+  const zoomInHandlers = createHoldHandlers('zoom_in', zoomInIntervalRef);
+  const zoomOutHandlers = createHoldHandlers('zoom_out', zoomOutIntervalRef);
+
+  useEffect(() => {
+    return () => {
+      [upIntervalRef, downIntervalRef, leftIntervalRef, rightIntervalRef, zoomInIntervalRef, zoomOutIntervalRef].forEach(ref => {
+        if (ref.current) {
+          clearInterval(ref.current);
+        }
+      });
+    };
+  }, []);
 
   return (
     <div className="flex h-[calc(100vh-5rem)] border rounded-xl overflow-hidden bg-black">
-
       <div className="flex-grow flex justify-center items-center relative bg-black">
         <div className="relative w-full h-full overflow-hidden bg-black">
-
           <div className="absolute bottom-4 right-10 z-20">
             <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 min-w-[160px]">
-
               <div className="flex items-center justify-between mb-5 pb-3 border-b border-white/10">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
@@ -62,8 +102,12 @@ const VideoStream: React.FC = () => {
 
               <div className="flex flex-col items-center space-y-2 mb-6">
                 <button
-                  onClick={() => move("up")}
-                  className="group w-12 h-12 bg-white/5 hover:bg-white/15 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                  onMouseDown={upHandlers.handleStart}
+                  onMouseUp={upHandlers.handleStop}
+                  onMouseLeave={upHandlers.handleStop}
+                  onTouchStart={upHandlers.handleStart}
+                  onTouchEnd={upHandlers.handleStop}
+                  className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                   aria-label="Tilt Up"
                 >
                   <ChevronUp size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
@@ -71,8 +115,12 @@ const VideoStream: React.FC = () => {
 
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => move("left")}
-                    className="group w-12 h-12 bg-white/5 hover:bg-white/15 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                    onMouseDown={leftHandlers.handleStart}
+                    onMouseUp={leftHandlers.handleStop}
+                    onMouseLeave={leftHandlers.handleStop}
+                    onTouchStart={leftHandlers.handleStart}
+                    onTouchEnd={leftHandlers.handleStop}
+                    className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                     aria-label="Pan Left"
                   >
                     <ChevronLeft size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
@@ -83,8 +131,12 @@ const VideoStream: React.FC = () => {
                   </div>
 
                   <button
-                    onClick={() => move("right")}
-                    className="group w-12 h-12 bg-white/5 hover:bg-white/15 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                    onMouseDown={rightHandlers.handleStart}
+                    onMouseUp={rightHandlers.handleStop}
+                    onMouseLeave={rightHandlers.handleStop}
+                    onTouchStart={rightHandlers.handleStart}
+                    onTouchEnd={rightHandlers.handleStop}
+                    className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                     aria-label="Pan Right"
                   >
                     <ChevronRight size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
@@ -92,8 +144,12 @@ const VideoStream: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => move("down")}
-                  className="group w-12 h-12 bg-white/5 hover:bg-white/15 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                  onMouseDown={downHandlers.handleStart}
+                  onMouseUp={downHandlers.handleStop}
+                  onMouseLeave={downHandlers.handleStop}
+                  onTouchStart={downHandlers.handleStart}
+                  onTouchEnd={downHandlers.handleStop}
+                  className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                   aria-label="Tilt Down"
                 >
                   <ChevronDown size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
@@ -109,22 +165,57 @@ const VideoStream: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-center space-x-3 mb-5">
+              <div className="flex items-center justify-center space-x-3 mb-6">
                 <button
-                  onClick={() => move("zoom_out")}
-                  className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                  onMouseDown={zoomOutHandlers.handleStart}
+                  onMouseUp={zoomOutHandlers.handleStop}
+                  onMouseLeave={zoomOutHandlers.handleStop}
+                  onTouchStart={zoomOutHandlers.handleStart}
+                  onTouchEnd={zoomOutHandlers.handleStop}
+                  className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   aria-label="Zoom Out"
                 >
                   <ZoomOut size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
 
                 <button
-                  onClick={() => move("zoom_in")}
-                  className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                  onMouseDown={zoomInHandlers.handleStart}
+                  onMouseUp={zoomInHandlers.handleStop}
+                  onMouseLeave={zoomInHandlers.handleStop}
+                  onTouchStart={zoomInHandlers.handleStart}
+                  onTouchEnd={zoomInHandlers.handleStop}
+                  className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   aria-label="Zoom In"
                 >
                   <ZoomIn size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
+              </div>
+
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">SPEED</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center mb-6">
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  step="1"
+                  value={speed}
+                  onChange={(e) => setSpeed(Number(e.target.value))}
+                  className="w-32 accent-blue-500 cursor-pointer"
+                  aria-label="Speed Control"
+                />
+                <div className="flex justify-between w-32 mt-2 text-white/60 text-xs font-medium">
+                  <span>1</span>
+                  <span>3</span>
+                  <span>5</span>
+                </div>             
               </div>
 
               <div className="flex items-center justify-center pt-3 border-t border-white/10">
@@ -136,7 +227,6 @@ const VideoStream: React.FC = () => {
             </div>
           </div>
 
-          {/* Video iframe */}
           <iframe
             src={`http://${import.meta.env.VITE_SERVER_URL}:8889/${camId}`}
             width="640"
@@ -154,8 +244,7 @@ const VideoStream: React.FC = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default VideoStream;
-
