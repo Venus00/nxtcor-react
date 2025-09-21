@@ -7,7 +7,7 @@ const VideoStream: React.FC = () => {
   const [position,] = useState({ x: 0, y: 0 });
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [rotation, setRotation] = useState(0);
-  const [speed, setSpeed] = useState(1);
+  const [speed, setSpeed] = useState(50);
   
   const upIntervalRef = useRef<number | null>(null);
   const downIntervalRef = useRef<number | null>(null);
@@ -248,8 +248,8 @@ const VideoStream: React.FC = () => {
                 <input
                   type="range"
                   min="1"
-                  max="5"
-                  step="1"
+                  max="100"
+                  step="5"
                   value={speed}
                   onChange={(e) => setSpeed(Number(e.target.value))}
                   className="w-32 accent-blue-500 cursor-pointer"
