@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Minus, Plus, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -15,6 +15,8 @@ const VideoStream: React.FC = () => {
   const rightIntervalRef = useRef<number | null>(null);
   const zoomInIntervalRef = useRef<number | null>(null);
   const zoomOutIntervalRef = useRef<number | null>(null);
+  const focusInIntervalRef = useRef<number | null>(null);
+  const focusOutIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -39,7 +41,7 @@ const VideoStream: React.FC = () => {
   const rotateLeft = () => setRotation((prev) => prev - 90);
   const rotateRight = () => setRotation((prev) => prev + 90);
   
-  const move = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out') => {
+  const move = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
     console.log(direction, `speed: ${speed}`);
     try {
       const res = await fetch(`http://${import.meta.env.VITE_SERVER_URL}:3000/ptz/${camId}/move`, {
@@ -54,7 +56,7 @@ const VideoStream: React.FC = () => {
     }
   };
 
-  const createHoldHandlers = (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out', intervalRef: React.MutableRefObject<number | null>) => {
+  const createHoldHandlers = (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out', intervalRef: React.MutableRefObject<number | null>) => {
     const handleStart = () => {
       move(direction); 
       intervalRef.current = setInterval(() => move(direction), 200); 
@@ -76,10 +78,11 @@ const VideoStream: React.FC = () => {
   const rightHandlers = createHoldHandlers('right', rightIntervalRef);
   const zoomInHandlers = createHoldHandlers('zoom_in', zoomInIntervalRef);
   const zoomOutHandlers = createHoldHandlers('zoom_out', zoomOutIntervalRef);
-
+  const focusInHandlers = createHoldHandlers('focus_in', focusInIntervalRef);
+  const focusOutHandlers = createHoldHandlers('focus_out', focusOutIntervalRef);
   useEffect(() => {
     return () => {
-      [upIntervalRef, downIntervalRef, leftIntervalRef, rightIntervalRef, zoomInIntervalRef, zoomOutIntervalRef].forEach(ref => {
+      [upIntervalRef, downIntervalRef, leftIntervalRef, rightIntervalRef, zoomInIntervalRef, zoomOutIntervalRef, focusInIntervalRef, focusOutIntervalRef].forEach(ref => {
         if (ref.current) {
           clearInterval(ref.current);
         }
@@ -155,6 +158,7 @@ const VideoStream: React.FC = () => {
                   <ChevronDown size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
               </div>
+              {/* ZOOM */}
 
               <div className="relative mb-6">
                 <div className="absolute inset-0 flex items-center">
@@ -190,7 +194,41 @@ const VideoStream: React.FC = () => {
                   <ZoomIn size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
               </div>
+              {/* FOCUS */}
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">FOCUS</span>
+                </div>
+              </div>
 
+              <div className="flex items-center justify-center space-x-3 mb-6">
+                <button
+                  onMouseDown={focusInHandlers.handleStart}
+                  onMouseUp={focusInHandlers.handleStop}
+                  onMouseLeave={focusInHandlers.handleStop}
+                  onTouchStart={focusInHandlers.handleStart}
+                  onTouchEnd={focusInHandlers.handleStop}
+                  className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                  aria-label="Zoom Out"
+                >
+                  <Minus size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                </button>
+
+                <button
+                  onMouseDown={focusOutHandlers.handleStart}
+                  onMouseUp={focusOutHandlers.handleStop}
+                  onMouseLeave={focusOutHandlers.handleStop}
+                  onTouchStart={focusOutHandlers.handleStart}
+                  onTouchEnd={focusOutHandlers.handleStop}
+                  className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                  aria-label="Zoom In"
+                >
+                  <Plus size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                </button>
+              </div>
               <div className="relative mb-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>
