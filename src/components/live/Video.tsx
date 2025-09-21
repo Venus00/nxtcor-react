@@ -34,16 +34,22 @@ const VideoStream: React.FC = () => {
   
   const camId = useParams().id;
   
-  const zoomOut = () => {
-    setScale((prevScale) => Math.max(prevScale - 0.2, 1));
-  };
-  
-  const rotateLeft = () => setRotation((prev) => prev - 90);
-  const rotateRight = () => setRotation((prev) => prev + 90);
+
+
   
   const move = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
     console.log(direction, `speed: ${speed}`);
     try {
+      if(direction === 'focus_in' || direction === 'focus_out') {
+        const res = await fetch(`http://${import.meta.env.VITE_SERVER_URL}:3000/focus/${camId}/move`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ direction, time: 1, speed }), 
+        });
+        const data = await res.json();
+        console.log(data);
+        return;
+      }
       const res = await fetch(`http://${import.meta.env.VITE_SERVER_URL}:3000/ptz/${camId}/move`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
