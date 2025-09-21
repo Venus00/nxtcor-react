@@ -7,7 +7,7 @@ const VideoStream: React.FC = () => {
   const [position,] = useState({ x: 0, y: 0 });
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [rotation, setRotation] = useState(0);
-  const [speed, setSpeed] = useState(50);
+  const [speed, setSpeed] = useState(5);
   
   const upIntervalRef = useRef<number | null>(null);
   const downIntervalRef = useRef<number | null>(null);
@@ -62,6 +62,31 @@ const VideoStream: React.FC = () => {
     }
   };
 
+  const stop = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
+    console.log(direction, `speed: ${speed}`);
+    try {
+      if(direction === 'focus_in' || direction === 'focus_out') {
+        const res = await fetch(`http://${import.meta.env.VITE_SERVER_URL}:3000/focus/${camId}/stop`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ direction, time: 1, speed }), 
+        });
+        const data = await res.json();
+        console.log(data);
+        return;
+      }
+      const res = await fetch(`http://${import.meta.env.VITE_SERVER_URL}:3000/ptz/${camId}/stop`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ direction, time: 1, speed }), 
+      });
+      const data = await res.json();
+      console.log(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const createHoldHandlers = (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out', intervalRef: React.MutableRefObject<number | null>) => {
     const handleStart = () => {
       move(direction); 
@@ -69,6 +94,7 @@ const VideoStream: React.FC = () => {
     };
 
     const handleStop = () => {
+      stop(direction)
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -248,8 +274,8 @@ const VideoStream: React.FC = () => {
                 <input
                   type="range"
                   min="1"
-                  max="100"
-                  step="5"
+                  max="8"
+                  step="1"
                   value={speed}
                   onChange={(e) => setSpeed(Number(e.target.value))}
                   className="w-32 accent-blue-500 cursor-pointer"
@@ -259,6 +285,7 @@ const VideoStream: React.FC = () => {
                   <span>1</span>
                   <span>3</span>
                   <span>5</span>
+                  <span>8</span>
                 </div>             
               </div>
 
