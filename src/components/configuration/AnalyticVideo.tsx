@@ -99,9 +99,9 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
                         ))
                     ) : (
                         [
-                            { preset: 1, style: { top: '50%', left: '20%', transform: 'translateY(-50%)' } },
-                            { preset: 2, style: { top: '50%', left: '50%', transform: 'translateY(-50%)' } },
-                            { preset: 3, style: { top: '50%', left: '80%', transform: 'translateY(-50%)' } },
+                            { preset: 6, style: { top: '50%', left: '20%', transform: 'translateY(-50%)' } },
+                            { preset: 7, style: { top: '50%', left: '50%', transform: 'translateY(-50%)' } },
+                            { preset: 8, style: { top: '50%', left: '80%', transform: 'translateY(-50%)' } },
                         ].map(({ preset, style }) => (
                             <button
                                 key={preset}
