@@ -8,7 +8,7 @@ const VideoStream: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [rotation, setRotation] = useState(0);
   const [speed, setSpeed] = useState(5);
-  
+
   const upIntervalRef = useRef<number | null>(null);
   const downIntervalRef = useRef<number | null>(null);
   const leftIntervalRef = useRef<number | null>(null);
@@ -31,29 +31,29 @@ const VideoStream: React.FC = () => {
   const zoomIn = () => {
     setScale((prevScale) => prevScale + 0.2);
   };
-  
+
   const camId = useParams().id;
-  
 
 
-  
+
+
   const move = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
     console.log(direction, `speed: ${speed}`);
     try {
-      if(direction === 'focus_in' || direction === 'focus_out') {
-        const res = await fetch(`http://${import.meta.env.VITE_SERVER_URL}:3000/focus/${camId}/move`, {
+      if (direction === 'focus_in' || direction === 'focus_out') {
+        const res = await fetch(`http://${window.location.hostname}:3000/focus/${camId}/move`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ direction, time: 1, speed }), 
+          body: JSON.stringify({ direction, time: 1, speed }),
         });
         const data = await res.json();
         console.log(data);
         return;
       }
-      const res = await fetch(`http://${import.meta.env.VITE_SERVER_URL}:3000/ptz/${camId}/move`, {
+      const res = await fetch(`http://${import.meta.env.}:3000/ptz/${camId}/move`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ direction, time: 1, speed }), 
+        body: JSON.stringify({ direction, time: 1, speed }),
       });
       const data = await res.json();
       console.log(data);
@@ -65,20 +65,20 @@ const VideoStream: React.FC = () => {
   const stop = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
     console.log(direction, `speed: ${speed}`);
     try {
-      if(direction === 'focus_in' || direction === 'focus_out') {
-        const res = await fetch(`http://${import.meta.env.VITE_SERVER_URL}:3000/focus/${camId}/stop`, {
+      if (direction === 'focus_in' || direction === 'focus_out') {
+        const res = await fetch(`http://${window.location.hostname}:3000/focus/${camId}/stop`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ direction, time: 1, speed }), 
+          body: JSON.stringify({ direction, time: 1, speed }),
         });
         const data = await res.json();
         console.log(data);
         return;
       }
-      const res = await fetch(`http://${import.meta.env.VITE_SERVER_URL}:3000/ptz/${camId}/stop`, {
+      const res = await fetch(`http://${window.location.hostname}:3000/ptz/${camId}/stop`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ direction, time: 1, speed }), 
+        body: JSON.stringify({ direction, time: 1, speed }),
       });
       const data = await res.json();
       console.log(data);
@@ -89,8 +89,8 @@ const VideoStream: React.FC = () => {
 
   const createHoldHandlers = (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out', intervalRef: React.MutableRefObject<number | null>) => {
     const handleStart = () => {
-      move(direction); 
-      intervalRef.current = setInterval(() => move(direction), 200); 
+      move(direction);
+      intervalRef.current = setInterval(() => move(direction), 200);
     };
 
     const handleStop = () => {
@@ -286,7 +286,7 @@ const VideoStream: React.FC = () => {
                   <span>3</span>
                   <span>5</span>
                   <span>8</span>
-                </div>             
+                </div>
               </div>
 
               <div className="flex items-center justify-center pt-3 border-t border-white/10">
@@ -299,7 +299,7 @@ const VideoStream: React.FC = () => {
           </div>
 
           <iframe
-            src={`http://${import.meta.env.VITE_SERVER_URL}:8889/${camId}`}
+            src={`http://${window.location.hostname}:8889/${camId}`}
             width="640"
             height="360"
             className="object-fill"
