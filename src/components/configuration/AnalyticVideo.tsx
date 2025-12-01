@@ -8,6 +8,14 @@ const cameraOptions = [
 ]
 
 function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: any) {
+    // Send PTZ move command to backend for the selected camera and preset
+    const handlePresetClick = async (preset: number) => {
+        try {
+            await axios.post(`/ptz/${cameraId}/preset`, { preset });
+        } catch (err) {
+            alert('Failed to move PTZ camera to preset.');
+        }
+    };
     const [hlsUrl, setHlsUrl] = useState<string | null>(null)
     const videoRef = useRef<HTMLVideoElement | null>(null)
 
@@ -54,6 +62,8 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
     //     }
     // }, [hlsUrl, name])
 
+    const [showPresetModal, setShowPresetModal] = useState(false);
+
     return (
         <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
             <div className="flex items-center justify-between mb-2">
@@ -61,35 +71,66 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
                     <Icon className={`h-3.5 w-3.5 text-${color}-400`} />
                     {name}
                 </h3>
-                <div className="text-xs text-gray-400">
-                    {cameraId === "thermal" ? "640×480px" : "1920×1080px"}
-                </div>
-            </div>
-
-            <div className="relative bg-black rounded-lg overflow-hidden border border-gray-600  aspect-video max-w-screen-sm  ">
-                <iframe
-                    src={`http://${import.meta.env.VITE_API_URL}:8889/${stream}`}
-                    width="480"
-                    height="270"
-                    className="object-fill w-full h-full"
-                    allow="autoplay; fullscreen"
-                    style={{
-                        transformOrigin: "center",
-                        transition: "transform 0.3s ease",
-                    }}
-                />
-                <div className="absolute top-1 left-1">
-                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-${color}-600 text-white`}>
-                        <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
-                        LIVE
+                <div className="flex items-center gap-2">
+                    <div className="text-xs text-gray-400">
+                        {cameraId === "thermal" ? "640×480px" : "1920×1080px"}
                     </div>
                 </div>
             </div>
-
-            <div className="mt-2 flex items-center gap-1">
-                <Eye className={`h-2.5 w-2.5 text-${color}-400`} />
-                <span className="text-xs text-gray-400">{name} Feed</span>
+            {/* Image and live view side by side */}
+            <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
+                {/* Live view - much larger */}
+                <div className="flex-1 min-w-[400px] max-w-4xl aspect-video flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
+                    <iframe
+                        src={`http://${import.meta.env.VITE_API_URL}:8889/${stream}`}
+                        width="1000"
+                        height="562"
+                        className="object-fill w-full h-full rounded-lg border-2 border-blue-700 shadow-xl"
+                        allow="autoplay; fullscreen"
+                        style={{
+                            transformOrigin: "center",
+                            transition: "transform 0.3s ease",
+                        }}
+                    />
+                </div>
+                {/* Image and markers - smaller */}
+                <div className="relative w-full max-w-xs aspect-video" style={{ aspectRatio: '16/9' }}>
+                    <img src={`/assets/background${name === 'Normal Camera' ? '' : '2'}.jpeg`} alt="Preset Background" className="rounded-lg w-full h-auto border" />
+                    {/* Markers: 5 for Normal (one center), 3 horizontal for Thermal */}
+                    {name === 'Normal Camera' ? (
+                        [
+                            { preset: 1, style: { top: '15%', left: '20%' } },
+                            { preset: 2, style: { top: '15%', left: '75%' } },
+                            { preset: 3, style: { top: '75%', left: '20%' } },
+                            { preset: 4, style: { top: '75%', left: '75%' } },
+                            { preset: 5, style: { top: '45%', left: '48%' } }, // center
+                        ].map(({ preset, style }) => (
+                            <button
+                                key={preset}
+                                className="absolute bg-blue-600 hover:bg-blue-800 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg border-2 border-white text-base font-bold"
+                                style={style}
+                                title={`Preset ${preset}`}
+                                onClick={() => handlePresetClick(preset)}
+                            >{preset}</button>
+                        ))
+                    ) : (
+                        [
+                            { preset: 1, style: { top: '50%', left: '20%', transform: 'translateY(-50%)' } },
+                            { preset: 2, style: { top: '50%', left: '50%', transform: 'translateY(-50%)' } },
+                            { preset: 3, style: { top: '50%', left: '80%', transform: 'translateY(-50%)' } },
+                        ].map(({ preset, style }) => (
+                            <button
+                                key={preset}
+                                className="absolute bg-red-600 hover:bg-red-800 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg border-2 border-white text-base font-bold"
+                                style={style}
+                                title={`Preset ${preset}`}
+                                onClick={() => handlePresetClick(preset)}
+                            >{preset}</button>
+                        ))
+                    )}
+                </div>
             </div>
+            <span className="text-xs text-gray-500 block text-center mt-2">Click a marker to move PTZ camera to preset</span>
         </div>
     )
 }
@@ -123,8 +164,8 @@ export function VideoFeedContent() {
                                 <label
                                     key={camera.id}
                                     className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${selected
-                                            ? `border-${camera.color}-500 bg-${camera.color}-500/10 text-${camera.color}-400`
-                                            : "border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-500 hover:bg-gray-600"
+                                        ? `border-${camera.color}-500 bg-${camera.color}-500/10 text-${camera.color}-400`
+                                        : "border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-500 hover:bg-gray-600"
                                         }`}
                                 >
                                     <input
