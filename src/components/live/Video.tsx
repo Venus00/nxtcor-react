@@ -50,7 +50,7 @@ const VideoStream: React.FC = () => {
         console.log(data);
         return;
       }
-      const res = await fetch(`http://${import.meta.env.}:3000/ptz/${camId}/move`, {
+      const res = await fetch(`http://${window.location.hostname}:3000/ptz/${camId}/move`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ direction, time: 1, speed }),
