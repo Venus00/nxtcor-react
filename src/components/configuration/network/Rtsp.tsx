@@ -14,7 +14,7 @@ const Rtsp = () => {
 
     const [isCheckedRtsp, setIsCheckedRtsp] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [Rtsp,] = useState(`rtsp://root:<your-password>@${window.location.hostname}/stream=0`);
+    const [Rtsp,] = useState(`rtsp://root:<your-password>@${window.location.host}/stream=0`);
 
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' }>({
         message: '',
