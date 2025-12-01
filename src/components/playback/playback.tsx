@@ -26,7 +26,7 @@ const VideoListSidebar = () => {
             })
             .catch(error => {
                 console.error('Error fetching videos list:', error);
-                setError('Failed to fetch videos list');
+                // setError('Failed to fetch videos list');
             });
     }, []);
 
