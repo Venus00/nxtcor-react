@@ -11,7 +11,7 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
     // Send PTZ move command to backend for the selected camera and preset
     const handlePresetClick = async (preset: number) => {
         try {
-            await axios.post(`http://${window.location.hostname}:3000/ptz/${cameraId}/preset`, { preset });
+            await axios.post(`http://${window.location.hostname}:3000/ptz/cam2/preset`, { preset });
         } catch (err) {
             alert('Failed to move PTZ camera to preset.');
         }
