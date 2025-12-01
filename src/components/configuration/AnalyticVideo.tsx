@@ -17,7 +17,6 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
         }
     };
     const [hlsUrl, setHlsUrl] = useState<string | null>(null)
-    import { Camera, Thermometer, BarChart3 } from "lucide-react"
 
     // useEffect(() => {
     //     const fetchStreamUrl = async () => {
