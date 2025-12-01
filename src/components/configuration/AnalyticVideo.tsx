@@ -8,57 +8,37 @@ const cameraOptions = [
 ]
 
 function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: any) {
+    // State for preset action
+    const [activePreset, setActivePreset] = useState<number | null>(null);
+    const [isPresetRunning, setIsPresetRunning] = useState(false);
+
     // Send PTZ move command to backend for the selected camera and preset
     const handlePresetClick = async (preset: number) => {
+        setActivePreset(preset);
+        setIsPresetRunning(true);
         try {
             await axios.post(`http://${window.location.hostname}:3000/ptz/cam1/preset`, { preset });
         } catch (err) {
             alert('Failed to move PTZ camera to preset.');
+            setIsPresetRunning(false);
+            setActivePreset(null);
         }
     };
-    const [hlsUrl, setHlsUrl] = useState<string | null>(null)
 
-    // useEffect(() => {
-    //     const fetchStreamUrl = async () => {
-    //         try {
-    //             const res = await axios.post("http://${VITE}:8000/stream_rtsp", {
-    //                 rtsp_url: rtspUrl,
-    //                 type: cameraId
-    //             }, {
-    //                 headers: {
-    //                     'Content-Type': 'multipart/form-data'
-    //                 }
-    //             })
-    //             console.log(res.data)
-    //             const url = `http://${VITE}:8000${res.data.hls_playlist}`
-    //             console.log(url)
-    //             setHlsUrl(url)
-    //         } catch (err) {
-    //     }
-    //     fetchStreamUrl()
-    // }, [])
+    const handleStopClick = async () => {
+        // Stop PTZ, zoom, and focus
+        setIsPresetRunning(false);
+        setActivePreset(null);
+        try {
+            await axios.post(`http://${window.location.hostname}:3000/ptz/cam1/stop`, { direction: 'stop' });
+            await axios.post(`http://${window.location.hostname}:3000/focus/cam1/stop`, { direction: 'focus_in' });
+            await axios.post(`http://${window.location.hostname}:3000/focus/cam1/stop`, { direction: 'focus_out' });
+        } catch (err) {
+            // ignore errors for stop
+        }
+    };
 
-    // useEffect(() => {
-    //     if (!hlsUrl || !videoRef.current) return
-    //     if (Hls.isSupported()) {
-    //         const hls = new Hls({
-    //             maxBufferLength: 60,
-    //             maxMaxBufferLength: 120,
-    //             maxBufferSize: 60 * 1000 * 1000,
-    //             liveSyncDuration: 10,
-    //             liveMaxLatencyDuration: 30,
-    //         });
-    //         hls.loadSource(hlsUrl)
-    //         hls.attachMedia(videoRef.current)
-    //         hls.on(Hls.Events.ERROR, (_, data) => {
-    //             console.error(`HLS error (${name}):`, data)
-    //         })
-    //         return () => hls.destroy()
-    //     } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
-    //         videoRef.current.src = hlsUrl
-    //     }
-    // }, [hlsUrl, name])
-
+    // ...existing code...
     const [showPresetModal, setShowPresetModal] = useState(false);
 
     return (
@@ -94,7 +74,13 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
                 <div className="relative w-full max-w-xs aspect-video" style={{ aspectRatio: '16/9' }}>
                     <img src={`/assets/background${name === 'Normal Camera' ? '' : '2'}.jpeg`} alt="Preset Background" className="rounded-lg w-full h-auto border" />
                     {/* Markers: 5 for Normal (one center), 3 horizontal for Thermal */}
-                    {name === 'Normal Camera' ? (
+                    {isPresetRunning && activePreset !== null ? (
+                        <button
+                            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg px-6 py-2 shadow-lg border-2 border-white text-base font-bold z-20"
+                            style={{ minWidth: 80, minHeight: 40 }}
+                            onClick={handleStopClick}
+                        >Stop</button>
+                    ) : name === 'Normal Camera' ? (
                         [
                             { preset: 1, style: { top: '15%', left: '20%' } },
                             { preset: 2, style: { top: '15%', left: '75%' } },
@@ -104,10 +90,11 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
                         ].map(({ preset, style }) => (
                             <button
                                 key={preset}
-                                className="absolute bg-blue-600 hover:bg-blue-800 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg border-2 border-white text-base font-bold"
+                                className={`absolute bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg border-2 border-white text-base font-bold ${isPresetRunning ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:bg-blue-800'}`}
                                 style={style}
                                 title={`Preset ${preset}`}
-                                onClick={() => handlePresetClick(preset)}
+                                onClick={() => !isPresetRunning && handlePresetClick(preset)}
+                                disabled={isPresetRunning}
                             >{preset}</button>
                         ))
                     ) : (
@@ -118,10 +105,11 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
                         ].map(({ preset, style }) => (
                             <button
                                 key={preset}
-                                className="absolute bg-red-600 hover:bg-red-800 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg border-2 border-white text-base font-bold"
+                                className={`absolute bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg border-2 border-white text-base font-bold ${isPresetRunning ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:bg-red-800'}`}
                                 style={style}
                                 title={`Preset ${preset}`}
-                                onClick={() => handlePresetClick(preset)}
+                                onClick={() => !isPresetRunning && handlePresetClick(preset)}
+                                disabled={isPresetRunning}
                             >{preset}</button>
                         ))
                     )}
