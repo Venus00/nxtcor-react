@@ -38,9 +38,9 @@ const Navbar = () => {
 
     <nav className="bg-black backdrop-blur-sm shadow-2xl relative z-[100] border rounded-xl  ">
       <div className="flex items-center justify-between mx-auto px-8 py-4">
-          <div className="relative">
-            <img src="/assets/logoNav.png" className="h-10 transition-transform group-hover:scale-105" alt="NEXTCOR Logo" />
-          </div>
+        <div className="relative">
+          <img src="/assets/logoNav.png" className="h-10 transition-transform group-hover:scale-105" alt="NEXTCOR Logo" />
+        </div>
 
         <div className="flex items-center">
           <ul className="flex items-center space-x-6">
@@ -53,7 +53,7 @@ const Navbar = () => {
                   }`}
               >
                 <Thermometer className="h-4 w-4" />
-                Thermique
+                Optique
               </Link>
             </li>
 

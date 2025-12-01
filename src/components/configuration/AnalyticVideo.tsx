@@ -17,7 +17,7 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
         }
     };
     const [hlsUrl, setHlsUrl] = useState<string | null>(null)
-    const videoRef = useRef<HTMLVideoElement | null>(null)
+    import { Camera, Thermometer, BarChart3 } from "lucide-react"
 
     // useEffect(() => {
     //     const fetchStreamUrl = async () => {
@@ -35,8 +35,6 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
     //             console.log(url)
     //             setHlsUrl(url)
     //         } catch (err) {
-    //             console.error(`Failed to fetch HLS URL for ${name}:`, err)
-    //         }
     //     }
     //     fetchStreamUrl()
     // }, [])
