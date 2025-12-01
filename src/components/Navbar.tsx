@@ -53,7 +53,7 @@ const Navbar = () => {
                   }`}
               >
                 <Thermometer className="h-4 w-4" />
-                Optique
+                Thermique
               </Link>
             </li>
 
@@ -67,7 +67,7 @@ const Navbar = () => {
                   }`}
               >
                 <Camera className="h-4 w-4" />
-                Normale
+                Optique
               </Link>
             </li>
 
