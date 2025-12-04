@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { Thermometer, Camera, Play, Settings, ChevronDown, LogOut, Shield, BarChart3 } from "lucide-react"
+import { Thermometer, Camera, Play, Settings, ChevronDown, LogOut, Shield, BarChart3, Sliders } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 
 const Navbar = () => {
@@ -112,6 +112,52 @@ const Navbar = () => {
               >
                 <Settings className="h-4 w-4" />
                 Configuration
+              </Link>
+            </li>
+
+            {/* Camera Settings */}
+            <li>
+              <Link
+                to="/camera-settings"
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/camera-settings")
+                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                  }`}
+              >
+                <Sliders className="h-4 w-4" />
+                Paramètres de la Caméra Optique
+              </Link>
+            </li>
+
+            {/* PTZ Settings */}
+            <li>
+              <Link
+                to="/ptz-settings"
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/ptz-settings")
+                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                  }`}
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+                Paramètres PTZ
+              </Link>
+            </li>
+
+            {/* Events Management */}
+            <li>
+              <Link
+                to="/events-management"
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/events-management")
+                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                  }`}
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                Événements
               </Link>
             </li>
           </ul>

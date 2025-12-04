@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './Navbar';
-import Sidebar from './configuration/Sidebar';
 import Live from '../pages/Live';
 import Playback from '../pages/playback';
 import Configuration from '../pages/Configuration';
 import Analytics from './configuration/Analytics';
+import CameraSettingsPage from '../pages/CameraSettings.tsx';
+import PTZSettings from '../pages/PTZSettings';
+import EventsManagement from '../pages/EventsManagement';
 
 const MainLayout: React.FC = () => {
   const [activeConfigTab, setActiveConfigTab] = useState("General");
@@ -35,6 +37,9 @@ const MainLayout: React.FC = () => {
               } 
             />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/camera-settings" element={<CameraSettingsPage />} />
+            <Route path="/ptz-settings" element={<PTZSettings />} />
+            <Route path="/events-management" element={<EventsManagement />} />
             <Route path="/" element={<Navigate to="/live" replace />} />
           </Routes>
         </div>
