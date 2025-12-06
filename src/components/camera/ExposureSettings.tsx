@@ -93,23 +93,23 @@ const uiToApi = (ui: ExposureUIState, profileIndex: number) => {
 // COMPONENT
 // =============================================================================
 
-const ExposureSettings: React.FC<ExposureSettingsProps>  = ({}) => {
+const ExposureSettings: React.FC<ExposureSettingsProps> = ({}) => {
   const camId = useCamId();
   const { data: apiData, isLoading, error, refetch } = useExposure(camId);
   const mutation = useSetExposure(camId);
 
   // 2. Local State
   // Active Profile Index: 0:Day, 1:Night, 2:Normal
-  // const [activeProfile, setActiveProfile] = useState<0 | 1 | 2>(0);
+  const [activeProfile, setActiveProfile] = useState<0 | 1 | 2>(0);
   const [settings, setSettings] = useState<ExposureUIState>(defaultState);
 
   // 3. Synchronization: Update local settings when API data arrives or Profile changes
   useEffect(() => {
     if (apiData) {
-      const parsed = apiToUI(apiData, 0);
+      const parsed = apiToUI(apiData, activeProfile);
       setSettings(parsed);
     }
-  }, [apiData]);
+  }, [apiData, activeProfile]);
 
   // 4. Handlers
   const handleSettingChange = (key: keyof ExposureUIState, value: number) => {
@@ -117,7 +117,7 @@ const ExposureSettings: React.FC<ExposureSettingsProps>  = ({}) => {
   };
 
   const handleSave = () => {
-    const payload = uiToApi(settings, 0);
+    const payload = uiToApi(settings, activeProfile);
     mutation.mutate(payload);
   };
 
@@ -158,7 +158,7 @@ const ExposureSettings: React.FC<ExposureSettingsProps>  = ({}) => {
         </div>
       )}
 
-      {/* 1. PROFILE SELECTION
+      {/* 1. PROFILE SELECTION */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Profil d'Exposition</h2>
         <p className="text-gray-400 text-sm mb-6">
@@ -193,7 +193,7 @@ const ExposureSettings: React.FC<ExposureSettingsProps>  = ({}) => {
             );
           })}
         </div>
-      </div> */}
+      </div>
 
       {/* 2. MODE SELECTION */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
