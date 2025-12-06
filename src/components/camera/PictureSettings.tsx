@@ -49,53 +49,36 @@ const DEFAULTS: PictureSettingsData = {
   eis: false,
 };
 
+function parseVideoColor(api: any) {
+  const cfg = api?.config || {};
 
-function parseVideoColorApi(api: any, channel = 0) {
-  if (!api) return null;
-
-  // helper to pick value with fallbacks
-  const getVal = (obj: any, cfgIndex: number, key: string, fallback = DEFAULTS[key as keyof typeof DEFAULTS]) => {
-    // possible api shapes:
-    // - parsed map: api['table.VideoColor[0][0].Brightness'] = "25"
-    // - nested: api.table?.VideoColor?.[0]?.[0]?.Brightness
-    const dotted = `table.VideoColor[${channel}][${cfgIndex}].${key}`;
-    if (obj && typeof obj === 'object') {
-      if (dotted in obj) return Number(obj[dotted]);
-      // try nested structure
-      try {
-        const nested = obj.table?.VideoColor?.[channel]?.[cfgIndex]?.[key];
-        if (nested !== undefined) return Number(nested);
-      } catch { /* ignore */ }
-    }
-    return Number(fallback);
+  const read = (idx: number, field: string, fallback: number = 50) => {
+    const key = `table.VideoColor[0][${idx}].${field}`;
+    const v = cfg[key];
+    return v !== undefined ? Number(v) : fallback;
   };
 
-  const keysMap: Array<[keyof PictureSettingsData, string]> = [
-    ['brightness','Brightness'],
-    ['contrast','Contrast'],
-    ['saturability','Saturation'],
-    ['chromaCNT','ChromaSuppress'],
-    ['gamma','Gamma'],
-    // you can add mappings for other parameters if the API exposes them
-  ];
+  const build = (idx: number): PictureSettingsData => ({
+    profile:
+      idx === 0 ? "daytime" :
+      idx === 1 ? "nighttime" :
+      "normal",
 
-  const buildProfile = (cfgIndex: number): PictureSettingsData => {
-    const out: any = { ...DEFAULTS };
+    brightness: read(idx, "Brightness", 50),
+    contrast: read(idx, "Contrast", 50),
+    saturability: read(idx, "Saturation", 50),
+    chromaCNT: read(idx, "ChromaSuppress", 50),
+    gamma: read(idx, "Gamma", 50),
 
-    // keep profile field consistent (we'll override after)
-    for (const [uiKey, apiKey] of keysMap) {
-      out[uiKey] = getVal(api, cfgIndex, apiKey, DEFAULTS[uiKey]);
-    }
-
-    // maintain other UI fields as defaults (or extend keysMap to include them)
-    out.profile = cfgIndex === 2 ? 'normal' : cfgIndex === 0 ? 'daytime' : 'nighttime';
-    return out as PictureSettingsData;
-  };
+    // Optional fields if you need them later:
+    // hue: read(idx, "Hue", 50),
+    // style: cfg[`table.VideoColor[0][${idx}].Style`] ?? "Standard",
+  });
 
   return {
-    daytime: buildProfile(0),
-    nighttime: buildProfile(1),
-    normal: buildProfile(2),
+    daytime: build(0),
+    nighttime: build(1),
+    normal: build(2),
   };
 }
 
@@ -143,56 +126,39 @@ const PictureSettings: React.FC<PictureSettingsProps> = ({ settings: propSetting
   // When apiData arrives (or propSettings provided), populate local; otherwise keep defaults
 useEffect(() => {
   if (apiData) {
-    // parse into separate profiles
-    const profiles = parseVideoColorApi(apiData, 0); // channel 0 for visible
-    if (profiles) {
-      // set the entire profiles object into a ref/local (optional) or pick current profile
-      // We'll pick the currently active profile (or default).
-      const pick = activeProfile === 'daytime' ? profiles.daytime
-                 : activeProfile === 'nighttime' ? profiles.nighttime
-                 : profiles.normal;
+    const profiles = parseVideoColor(apiData);
 
-      setLocal(pick);
-      setDirty(false);
-    } else {
-      // fallback to previous mapping function if you want:
-      const mapped = apiToUIColor(apiData);
-      setLocal(mapped);
-      setActiveProfile(mapped.profile);
-      setDirty(false);
-    }
-  } else if (propSettings && !apiData) {
-    setLocal(propSettings);
-    setActiveProfile(propSettings.profile);
-    setDirty(false);
-  } else {
-    setLocal(DEFAULTS);
-    setActiveProfile(DEFAULTS.profile);
+    const selected =
+      activeProfile === "daytime"
+        ? profiles.daytime
+        : activeProfile === "nighttime"
+        ? profiles.nighttime
+        : profiles.normal;
+
+    setLocal(selected);
     setDirty(false);
   }
-// keep the same deps but include activeProfile so if user switches tab and apiData arrives it will pick correctly
-}, [apiData, propSettings, activeProfile]);
+}, [apiData, activeProfile]);
+
 
 // --- modify handleProfileChange so switching tabs loads that profile values ---
-const handleProfileChange = (profile: 'normal' | 'daytime' | 'nighttime') => {
-  setActiveProfile(profile);
+const handleProfileChange = (p) => {
+  setActiveProfile(p);
 
-  // If we have apiData, replace local with the selected profile values.
   if (apiData) {
-    const profiles = parseVideoColorApi(apiData, 0);
-    if (profiles) {
-      const pick = profile === 'daytime' ? profiles.daytime
-                 : profile === 'nighttime' ? profiles.nighttime
-                 : profiles.normal;
-      setLocal(pick);
-      setDirty(false); // switching profile should show saved API values (no dirty)
-      return;
-    }
-  }
+    const profiles = parseVideoColor(apiData);
+    const selected =
+      p === "daytime"
+        ? profiles.daytime
+        : p === "nighttime"
+        ? profiles.nighttime
+        : profiles.normal;
 
-  // fallback: just update profile in local state (keeps current sliders)
-  updateLocal('profile', profile);
+    setLocal(selected);
+    setDirty(false);
+  }
 };
+
   // update local helper
   const updateLocal = <K extends keyof PictureSettingsData>(key: K, value: PictureSettingsData[K]) => {
     setLocal(prev => {
