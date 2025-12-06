@@ -51,11 +51,12 @@ const apiToUI = (data: any): ExposureUIState => {
   const config = data.config || data;
   
   // Fixed prefix for Index 0
-  // const prefix = "table.VideoInExposure[0][0].";
+  const prefix = "table.VideoInExposure[0][0].";
 
   const getVal = (key: string, def: number) => {
-    const fullKey =  key;
+    const fullKey = prefix + key;
     // Check if key exists in the flat map, otherwise return default
+    
     return config[fullKey] !== undefined ? Number(config[fullKey]) : def;
   };
 
