@@ -1,5 +1,13 @@
-import type React from "react"
-import SliderControl from "./SliderControl"
+// components/camera/DayNightSettings.tsx
+import React, { useEffect, useState } from "react";
+import SliderControl from "./SliderControl";
+import { useCamId } from "../../contexts/CameraContext";
+import { useDayNight } from "../../hooks/useCameraQueries";
+import { useSetDayNight } from "../../hooks/useCameraMutations";
+
+// =============================================================================
+// TYPES & INTERFACES
+// =============================================================================
 
 export interface DayNightSettingsData {
   type: 'icr' | 'electronic';
@@ -9,25 +17,131 @@ export interface DayNightSettingsData {
 }
 
 interface DayNightSettingsProps {
-  settings: DayNightSettingsData;
-  onSettingsChange: (settings: DayNightSettingsData) => void;
+  // Component manages its own data fetching now
 }
 
-const DayNightSettings: React.FC<DayNightSettingsProps> = ({ settings, onSettingsChange }) => {
+// =============================================================================
+// API MAPPING HELPERS
+// =============================================================================
+
+const defaultState: DayNightSettingsData = {
+  type: 'icr',
+  mode: 'auto',
+  sensitivity: 'medium',
+  latency: 10,
+};
+
+/**
+ * Parses the flat API response keys into a structured UI object.
+ * Hardcoded to [0][0] per request.
+ * * API References:
+ * Mode: Brightness(Auto), Color, BlackWhite, PhotoresistorExt
+ * Type: ICR, Electron
+ * Sensitivity: 1(High), 2(Middle), 3(Low)
+ */
+const apiToUI = (data: any): DayNightSettingsData => {
+  if (!data) return defaultState;
+
+  const config = data.config || data;
+  const prefix = "table.VideoInDayNight[0][0].";
+
+  const getVal = (key: string, def: any) => {
+    const fullKey = prefix + key;
+    return config[fullKey] !== undefined ? config[fullKey] : def;
+  };
+
+  // 1. Map Type
+  const apiType = getVal("Type", "ICR");
+  const type = apiType === "Electron" ? 'electronic' : 'icr';
+
+  // 2. Map Mode
+  const apiMode = getVal("Mode", "Brightness");
+  let mode: DayNightSettingsData['mode'] = 'auto';
+  if (apiMode === "Color") mode = 'color';
+  else if (apiMode === "BlackWhite") mode = 'black-white';
+  else if (apiMode === "PhotoresistorExt") mode = 'photoresistor';
+  else mode = 'auto'; // "Brightness" in API = Auto
+
+  // 3. Map Sensitivity (API: 1=High, 3=Low)
+  const apiSens = Number(getVal("Sensitivity", 2));
+  let sensitivity: DayNightSettingsData['sensitivity'] = 'medium';
+  if (apiSens === 3) sensitivity = 'low';
+  else if (apiSens === 1) sensitivity = 'high';
+
+  // 4. Map Latency (Delay)
+  const latency = Number(getVal("Delay", 10));
+
+  return { type, mode, sensitivity, latency };
+};
+
+/**
+ * Converts UI state back to API payload.
+ */
+const uiToApi = (ui: DayNightSettingsData) => {
+  const prefix = "table.VideoInDayNight[0][0].";
+  
+  // Map Type
+  const apiType = ui.type === 'electronic' ? "Electron" : "ICR";
+
+  // Map Mode
+  let apiMode = "Brightness";
+  if (ui.mode === 'color') apiMode = "Color";
+  else if (ui.mode === 'black-white') apiMode = "BlackWhite";
+  else if (ui.mode === 'photoresistor') apiMode = "PhotoresistorExt";
+
+  // Map Sensitivity (UI Low -> API 3, UI High -> API 1)
+  let apiSens = 2;
+  if (ui.sensitivity === 'low') apiSens = 3;
+  else if (ui.sensitivity === 'high') apiSens = 1;
+
+  return {
+    [`${prefix}Type`]: apiType,
+    [`${prefix}Mode`]: apiMode,
+    [`${prefix}Sensitivity`]: apiSens,
+    [`${prefix}Delay`]: ui.latency,
+  };
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+const DayNightSettings: React.FC<DayNightSettingsProps> = () => {
+  const camId = useCamId();
+  const { data: apiData, isLoading, error, refetch } = useDayNight(camId);
+  const mutation = useSetDayNight(camId);
+
+  // Local State
+  const [settings, setSettings] = useState<DayNightSettingsData>(defaultState);
+
+  // Sync API -> UI
+  useEffect(() => {
+    if (apiData) {
+      const parsed = apiToUI(apiData);
+      setSettings(parsed);
+    }
+  }, [apiData]);
+
+  // Handlers (Optimistic Updates + API Call)
+  const handleUpdate = (newSettings: DayNightSettingsData) => {
+    setSettings(newSettings);
+    mutation.mutate(uiToApi(newSettings));
+  };
+
   const handleTypeChange = (type: DayNightSettingsData['type']) => {
-    onSettingsChange({ ...settings, type });
+    handleUpdate({ ...settings, type });
   };
 
   const handleModeChange = (mode: DayNightSettingsData['mode']) => {
-    onSettingsChange({ ...settings, mode });
+    handleUpdate({ ...settings, mode });
   };
 
   const handleSensitivityChange = (sensitivity: DayNightSettingsData['sensitivity']) => {
-    onSettingsChange({ ...settings, sensitivity });
+    handleUpdate({ ...settings, sensitivity });
   };
 
   const handleLatencyChange = (latency: number) => {
-    onSettingsChange({ ...settings, latency });
+    handleUpdate({ ...settings, latency });
   };
 
   const getTypeDescription = (type: DayNightSettingsData['type']) => {
@@ -41,14 +155,39 @@ const DayNightSettings: React.FC<DayNightSettingsProps> = ({ settings, onSetting
     const descriptions = {
       'color': "Active la caméra pour ne produire que des images en couleur.",
       'black-white': "Active la caméra pour ne produire que des images en noir et blanc.",
-      'auto': "Sortie d'images en couleur ou en noir et blanc selon l'adaptation automatique à l'environnement.",
+      'auto': "Sortie d'images en couleur ou en noir et blanc selon l'adaptation automatique à l'environnement (Mode=Brightness).",
       'photoresistor': "Active la caméra pour produire des images en couleur ou en noir et blanc selon la luminosité ambiante détectée par photorésistance."
     };
     return descriptions[mode];
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Chargement DayNight...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Feedback Messages */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-900/50 border border-red-700 text-red-300">
+          Erreur: {(error as Error).message}
+          <button onClick={() => refetch()} className="ml-4 underline hover:no-underline">Réessayer</button>
+        </div>
+      )}
+      {mutation.isPending && (
+         <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-700 text-blue-300 flex items-center gap-2 text-sm">
+           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300"></div>
+           Enregistrement en cours...
+         </div>
+      )}
+
       {/* Switching Type Selection */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Type de Commutation Jour/Nuit</h2>
@@ -223,6 +362,7 @@ const DayNightSettings: React.FC<DayNightSettingsProps> = ({ settings, onSetting
               <div className="text-center">
                 <div className="text-2xl mb-2">🐢</div>
                 <div>Faible</div>
+                <div className="text-[10px] text-gray-300 mt-1">API: 3</div>
               </div>
             </button>
 
@@ -237,6 +377,7 @@ const DayNightSettings: React.FC<DayNightSettingsProps> = ({ settings, onSetting
               <div className="text-center">
                 <div className="text-2xl mb-2">🚶</div>
                 <div>Moyen</div>
+                <div className="text-[10px] text-gray-300 mt-1">API: 2</div>
               </div>
             </button>
 
@@ -251,6 +392,7 @@ const DayNightSettings: React.FC<DayNightSettingsProps> = ({ settings, onSetting
               <div className="text-center">
                 <div className="text-2xl mb-2">⚡</div>
                 <div>Élevé</div>
+                <div className="text-[10px] text-gray-300 mt-1">API: 1</div>
               </div>
             </button>
           </div>
@@ -302,9 +444,9 @@ const DayNightSettings: React.FC<DayNightSettingsProps> = ({ settings, onSetting
               <div className="p-4 bg-gray-900/30 rounded-lg">
                 <div className="text-gray-400 text-xs mb-1">Sensibilité</div>
                 <div className="text-white font-semibold capitalize">
-                  {settings.sensitivity === 'low' ? 'Faible' :
-                   settings.sensitivity === 'medium' ? 'Moyen' :
-                   'Élevé'}
+                  {settings.sensitivity === 'low' ? 'Faible (3)' :
+                   settings.sensitivity === 'medium' ? 'Moyen (2)' :
+                   'Élevé (1)'}
                 </div>
               </div>
 
