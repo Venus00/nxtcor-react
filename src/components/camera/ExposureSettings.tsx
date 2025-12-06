@@ -21,7 +21,7 @@ export interface ExposureUIState {
 }
 
 interface ExposureSettingsProps {
-  camId: boolean;
+  // Props not strictly needed if using context, but keeping interface for consistency
 }
 
 // =============================================================================
@@ -41,16 +41,16 @@ const defaultState: ExposureUIState = {
 
 /**
  * Parses the flat API response keys into a structured UI object.
- * Logic based on table.VideoInExposure[Channel][Config] structure.
+ * HARDCODED to Index [0][0] per request.
  */
-const apiToUI = (data: any, profileIndex: number): ExposureUIState => {
+const apiToUI = (data: any): ExposureUIState => {
   if (!data) return defaultState;
   
   // Handle both raw config object or wrapped response
   const config = data.config || data;
   
-  // Construct the specific prefix for the selected profile (0=Day, 1=Night, 2=Normal)
-  // const prefix = `table.VideoInExposure[0][${profileIndex}].`;
+  // Fixed prefix for Index 0
+  // const prefix = "table.VideoInExposure[0][0].";
 
   const getVal = (key: string, def: number) => {
     const fullKey =  key;
@@ -60,23 +60,23 @@ const apiToUI = (data: any, profileIndex: number): ExposureUIState => {
 
   return {
     mode: getVal("Mode", 0),
-    gainMax: getVal("GainMax", 50), //
-    gainMin: getVal("GainMin", 0), //
+    gainMax: getVal("GainMax", 50),
+    gainMin: getVal("GainMin", 0),
     shutterMin: getVal("Value1", 0), // Value1 = Min Shutter Speed
     shutterMax: getVal("Value2", 40), // Value2 = Max Shutter Speed
     iris: getVal("Iris", 50),
-    compensation: getVal("Compensation", 50), //
+    compensation: getVal("Compensation", 50),
     recoveryTime: getVal("RecoveryTime", 0),
   };
 };
 
 /**
- * Converts UI state back to the specific API keys for the current profile.
+ * Converts UI state back to the specific API keys.
+ * HARDCODED to Index [0][0] per request.
  */
-const uiToApi = (ui: ExposureUIState, profileIndex: number) => {
-  // const prefix = `table.VideoInExposure[0][${profileIndex}].`;
+const uiToApi = (ui: ExposureUIState) => {
+  // const prefix = "table.VideoInExposure[0][0].";
   
-  // We only send the keys relevant to the currently selected profile
   return {
     [`Mode`]: ui.mode,
     [`GainMax`]: ui.gainMax,
@@ -93,41 +93,30 @@ const uiToApi = (ui: ExposureUIState, profileIndex: number) => {
 // COMPONENT
 // =============================================================================
 
-const ExposureSettings: React.FC<ExposureSettingsProps> = ({}) => {
+const ExposureSettings: React.FC<ExposureSettingsProps> = () => {
   const camId = useCamId();
   const { data: apiData, isLoading, error, refetch } = useExposure(camId);
   const mutation = useSetExposure(camId);
 
-  // 2. Local State
-  // Active Profile Index: 0:Day, 1:Night, 2:Normal
-  const [activeProfile, setActiveProfile] = useState<0 | 1 | 2>(0);
+  // Local State (No profile state needed anymore)
   const [settings, setSettings] = useState<ExposureUIState>(defaultState);
 
-  // 3. Synchronization: Update local settings when API data arrives or Profile changes
+  // Sync API Data to Local State
   useEffect(() => {
     if (apiData) {
-      const parsed = apiToUI(apiData, activeProfile);
+      const parsed = apiToUI(apiData);
       setSettings(parsed);
     }
-  }, [apiData, activeProfile]);
+  }, [apiData]);
 
-  // 4. Handlers
+  // Handlers
   const handleSettingChange = (key: keyof ExposureUIState, value: number) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSave = () => {
-    const payload = uiToApi(settings, activeProfile);
+    const payload = uiToApi(settings);
     mutation.mutate(payload);
-  };
-
-  const getProfileLabel = (idx: number) => {
-    switch(idx) {
-      case 0: return { name: "Jour (Day)", desc: "Config[0]" };
-      case 1: return { name: "Nuit (Night)", desc: "Config[1]" };
-      case 2: return { name: "Normal", desc: "Config[2]" };
-      default: return { name: "Unknown", desc: "" };
-    }
   };
 
   // Loading State
@@ -158,44 +147,7 @@ const ExposureSettings: React.FC<ExposureSettingsProps> = ({}) => {
         </div>
       )}
 
-      {/* 1. PROFILE SELECTION */}
-      <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold text-white mb-4">Profil d'Exposition</h2>
-        <p className="text-gray-400 text-sm mb-6">
-          Sélectionnez le profil environnemental à configurer (VideoInExposure).
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[0, 1, 2].map((idx) => {
-            const { name, desc } = getProfileLabel(idx);
-            const isActive = activeProfile === idx;
-            return (
-              <button
-                key={idx}
-                onClick={() => setActiveProfile(idx as 0|1|2)}
-                disabled={mutation.isPending}
-                className={`group relative py-4 px-5 rounded-lg font-medium transition-all text-left ${
-                  isActive
-                    ? "bg-red-600 text-white shadow-lg shadow-red-500/25"
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isActive ? "bg-white/20" : "bg-gray-600"}`}>
-                    <span className="font-bold text-lg">{idx}</span>
-                  </div>
-                  <div>
-                    <div className="font-bold">{name}</div>
-                    <div className="text-xs opacity-80">{desc}</div>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 2. MODE SELECTION */}
+      {/* 1. MODE SELECTION */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Mode d'Exposition</h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -233,7 +185,7 @@ const ExposureSettings: React.FC<ExposureSettingsProps> = ({}) => {
         </div>
       </div>
 
-      {/* 3. PARAMETERS SLIDERS */}
+      {/* 2. PARAMETERS SLIDERS */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700 space-y-8">
         <h2 className="text-xl font-semibold text-white mb-6">Configuration Fine</h2>
 
@@ -295,7 +247,7 @@ const ExposureSettings: React.FC<ExposureSettingsProps> = ({}) => {
         </div>
       </div>
 
-      {/* 4. AUTO RECOVERY */}
+      {/* 3. AUTO RECOVERY */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Récupération Automatique</h2>
         <p className="text-gray-400 text-sm mb-6">
@@ -318,7 +270,7 @@ const ExposureSettings: React.FC<ExposureSettingsProps> = ({}) => {
         </div>
       </div>
 
-      {/* 5. APPLY BUTTON */}
+      {/* 4. APPLY BUTTON */}
       <div className="flex justify-end pt-2">
         <button
           onClick={handleSave}
