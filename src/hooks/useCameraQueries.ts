@@ -27,6 +27,7 @@ export const cameraKeys = {
   backlight: (camId: string) =>
     ["camera", camId, "video", "backlight"] as const,
   defog: (camId: string) => ["camera", camId, "video", "defog"] as const,
+  denoise: (camId: string) => ["camera", camId, "video", "denoise"] as const,
   encode: (camId: string) => ["camera", camId, "encode"] as const,
   osd: (camId: string) => ["camera", camId, "osd"] as const,
 
@@ -172,6 +173,21 @@ export function useVideoColor(camId: string, enabled = true) {
   });
 }
 
+export function useVideoInDenoise(camId: string, enabled = true) {
+    return useQuery({
+    queryKey: cameraKeys.denoise(camId),
+    queryFn: () => apiFetch(`/camera/${camId}/video/denoise`),
+    enabled,
+  });
+}
+
+export function useVideoImageControl(camId: string, enabled = true) {
+    return useQuery({
+    queryKey: cameraKeys.flip(camId),
+    queryFn: () => apiFetch(`/camera/${camId}/video/flip`),
+    enabled,
+  });
+}
 export function useVideoSharpness(camId: string, enabled = true) {
   return useQuery({
     queryKey: cameraKeys.videoSharpness(camId),

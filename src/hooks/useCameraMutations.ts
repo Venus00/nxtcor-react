@@ -62,6 +62,25 @@ export function useSetWhiteBalance(camId: string) {
     },
   });
 }
+export function useSetVideoImageControl(camId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/flip`, 'POST', params),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: cameraKeys.flip(camId) });
+        },
+    });
+}
+
+export function useSetVideoInDenoise(camId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/denoise`, 'POST', params),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: cameraKeys.denoise(camId) });
+        }
+    });
+}
 export function useSetDayNight(camId: string) {
   const queryClient = useQueryClient();
   return useMutation({
