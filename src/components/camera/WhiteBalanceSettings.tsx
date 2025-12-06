@@ -85,16 +85,16 @@ const apiToUI = (data: any): WhiteBalanceSettingsData => {
  * Converts UI state back to API payload
  */
 const uiToApi = (ui: WhiteBalanceSettingsData) => {
-  const prefix = "table.VideoInWhiteBalance[0][0].";
+  // const prefix = "table.VideoInWhiteBalance[0][0].";
   
   // We mainly update the Mode here based on the UI
   return {
-    [`${prefix}Mode`]: MODE_MAP_TO_API[ui.mode],
+    [`Mode`]: MODE_MAP_TO_API[ui.mode],
     // We include gains in the payload to ensure state consistency, 
     // though they are only effective in 'Manual' mode.
-    [`${prefix}GainRed`]: ui.gainRed,
-    [`${prefix}GainBlue`]: ui.gainBlue,
-    [`${prefix}GainGreen`]: ui.gainGreen,
+    [`GainRed`]: ui.gainRed,
+    [`GainBlue`]: ui.gainBlue,
+    [`GainGreen`]: ui.gainGreen,
   };
 };
 
