@@ -94,8 +94,8 @@ const apiToUI = (data: any): VideoEncodingData => {
  * Maps back to table.Encode[0].MainFormat[0]...
  */
 const uiToApi = (ui: VideoEncodingData) => {
-  const mainPfx = "table.Encode[0].MainFormat[0].Video.";
-  const subPfx = "table.Encode[0].ExtraFormat[0]."; // For enable toggle
+  const mainPfx = "Encode[0].MainFormat[0].Video.";
+  const subPfx = "Encode[0].ExtraFormat[0]."; // For enable toggle
 
   // Map Codec
   let apiCodec = ui.videoCodec;
