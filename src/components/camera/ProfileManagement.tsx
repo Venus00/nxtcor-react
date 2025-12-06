@@ -28,6 +28,7 @@ export interface ProfileManagementData {
 // Convert API data to UI format
 function apiToUI(api: VideoInModeRaw): ProfileManagementData {
   // Mode 0 = Full-time
+  console.log(api)
   if (api.mode === 0) {
     if (api.config0 === 2) {
       return { type: "normal" };
