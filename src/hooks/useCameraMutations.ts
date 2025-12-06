@@ -53,7 +53,15 @@ export function useSetExposure(camId: string) {
     },
   });
 }
-
+export function useSetWhiteBalance(camId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/whitebalance`, 'POST', params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cameraKeys.whitebalance(camId) });
+    },
+  });
+}
 export function useSetDayNight(camId: string) {
   const queryClient = useQueryClient();
   return useMutation({
