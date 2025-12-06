@@ -1,249 +1,342 @@
-import React, { useEffect } from "react";
-import SliderControl from "./SliderControl";
+// components/camera/ExposureSettings.tsx
+import React, { useEffect, useState } from "react";
+import SliderControl from "./SliderControl"; 
 import { useExposure } from "../../hooks/useCameraQueries";
+import { useSetExposure } from "../../hooks/useCameraMutations"; 
+import { useCamId } from "../../contexts/CameraContext";
 
-export interface ExposureSettingsData {
-  mode: 'auto' | 'manual' | 'aperture-priority' | 'shutter-priority' | 'gain-priority';
-  gainRange: number;
-  shutter: number;
-  shutterRange: number;
-  aperture: number;
-  exposureCompensation: number;
-  autoExposureRecovery: 'off' | '5min' | '15min' | '1hour';
+// =============================================================================
+// TYPES & INTERFACES
+// =============================================================================
+
+export interface ExposureUIState {
+  mode: number; // 0, 4, 5, 7, 8
+  gainMax: number;
+  gainMin: number;
+  shutterMin: number; // Mapped from Value1
+  shutterMax: number; // Mapped from Value2
+  iris: number; 
+  compensation: number;
+  recoveryTime: number; // 0, 300, 900, 3600
 }
 
 interface ExposureSettingsProps {
-  settings: ExposureSettingsData;
-  onSettingsChange: (settings: ExposureSettingsData) => void;
-  // optional: if camId provided the component will auto-fetch VideoInExposure and call onSettingsChange
-  camId?: string;
+  camId: boolean;
 }
 
-const ExposureSettings: React.FC<ExposureSettingsProps> = ({ settings, onSettingsChange, camId }) => {
-  // If camId is provided, the hook will GET the camera config automatically.
-  const { data: exposureRaw, isLoading } = useExposure(camId ?? "", Boolean(camId));
+// =============================================================================
+// API MAPPING HELPERS
+// =============================================================================
 
-  // parse mapping from camera config -> ExposureSettingsData
-  const parseVideoInExposure = (cfgRaw: any): ExposureSettingsData | null => {
-    if (!cfgRaw) return null;
-    // Default fallsbacks match original defaults in your UI
-    const get = (key: string, fallback: any = undefined) => {
-      if (!cfgRaw) return fallback;
-      return cfgRaw[key] !== undefined ? cfgRaw[key] : fallback;
-    };
+const defaultState: ExposureUIState = {
+  mode: 0,
+  gainMax: 50,
+  gainMin: 0,
+  shutterMin: 0,
+  shutterMax: 40,
+  iris: 50,
+  compensation: 50,
+  recoveryTime: 900
+};
 
-    // We assume the display uses channel 0 and profile index 0 for exposure (table.VideoInExposure[0][0].*)
-    // Many devices store exposures per [channel][profile] but your sample shows [0][0].
-    // If you need profile index switching add it later as we did for picture settings.
-    const prefix = "table.VideoInExposure[0][0].";
+/**
+ * Parses the flat API response keys into a structured UI object.
+ * Logic based on table.VideoInExposure[Channel][Config] structure.
+ */
+const apiToUI = (data: any, profileIndex: number): ExposureUIState => {
+  if (!data) return defaultState;
+  
+  // Handle both raw config object or wrapped response
+  const config = data.config || data;
+  
+  // Construct the specific prefix for the selected profile (0=Day, 1=Night, 2=Normal)
+  const prefix = `table.VideoInExposure[0][${profileIndex}].`;
 
-    const antiFlicker = Number(get(prefix + "AntiFlicker", 0));
-    const compensation = Number(get(prefix + "Compensation", 50));
-    const gainMax = Number(get(prefix + "GainMax", 50));
-    const gainMin = Number(get(prefix + "GainMin", 0));
-    const irisMax = Number(get(prefix + "IrisMax", 50));
-    const irisMin = Number(get(prefix + "IrisMin", 10));
-    const modeRaw = Number(get(prefix + "Mode", 0));
-    const recoveryTime = Number(get(prefix + "RecoveryTime", 900));
-    const value1 = Number(get(prefix + "Value1", 70));
-    const value2 = Number(get(prefix + "Value2", 70));
-
-    // Map numeric Mode to your mode enum (adjust if your camera uses different codes)
-    // Example mapping (common):
-    // 0 -> auto, 1 -> manual, 2 -> aperture-priority, 3 -> shutter-priority, 4 -> gain-priority
-    let mode: ExposureSettingsData['mode'] = 'auto';
-    switch (modeRaw) {
-      case 1: mode = 'manual'; break;
-      case 2: mode = 'aperture-priority'; break;
-      case 3: mode = 'shutter-priority'; break;
-      case 4: mode = 'gain-priority'; break;
-      default: mode = 'auto';
-    }
-
-    // Map recoveryTime to your autoExposureRecovery enum
-    let autoExposureRecovery: ExposureSettingsData['autoExposureRecovery'] = 'off';
-    if (recoveryTime === 300) autoExposureRecovery = '5min';
-    else if (recoveryTime === 900) autoExposureRecovery = '15min';
-    else if (recoveryTime === 3600) autoExposureRecovery = '1hour';
-    else autoExposureRecovery = 'off';
-
-    return {
-      mode,
-      gainRange: Math.round((gainMax + gainMin) / 2) || 50,
-      shutter: value1 || 0,              // mapping choice: Value1 maps to shutter (device-specific)
-      shutterRange: value2 || 0,         // using Value2 as second shutter-related value
-      aperture: Math.round((irisMax + irisMin) / 2) || 50,
-      exposureCompensation: compensation,
-      autoExposureRecovery,
-    };
+  const getVal = (key: string, def: number) => {
+    const fullKey = prefix + key;
+    // Check if key exists in the flat map, otherwise return default
+    return config[fullKey] !== undefined ? Number(config[fullKey]) : def;
   };
 
-  // When camera config arrives, send unified settings up via onSettingsChange (parent handles save)
+  return {
+    mode: getVal("Mode", 0),
+    gainMax: getVal("GainMax", 50), //
+    gainMin: getVal("GainMin", 0), //
+    shutterMin: getVal("Value1", 0), // Value1 = Min Shutter Speed
+    shutterMax: getVal("Value2", 40), // Value2 = Max Shutter Speed
+    iris: getVal("Iris", 50),
+    compensation: getVal("Compensation", 50), //
+    recoveryTime: getVal("RecoveryTime", 0),
+  };
+};
+
+/**
+ * Converts UI state back to the specific API keys for the current profile.
+ */
+const uiToApi = (ui: ExposureUIState, profileIndex: number) => {
+  const prefix = `table.VideoInExposure[0][${profileIndex}].`;
+  
+  // We only send the keys relevant to the currently selected profile
+  return {
+    [`${prefix}Mode`]: ui.mode,
+    [`${prefix}GainMax`]: ui.gainMax,
+    [`${prefix}GainMin`]: ui.gainMin,
+    [`${prefix}Value1`]: ui.shutterMin,
+    [`${prefix}Value2`]: ui.shutterMax,
+    [`${prefix}Iris`]: ui.iris,
+    [`${prefix}Compensation`]: ui.compensation,
+    [`${prefix}RecoveryTime`]: ui.recoveryTime,
+  };
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+const ExposureSettings: React.FC<ExposureSettingsProps>  = ({}) => {
+  const camId = useCamId();
+  const { data: apiData, isLoading, error, refetch } = useExposure(camId);
+  const mutation = useSetExposure(camId);
+
+  // 2. Local State
+  // Active Profile Index: 0:Day, 1:Night, 2:Normal
+  const [activeProfile, setActiveProfile] = useState<0 | 1 | 2>(0);
+  const [settings, setSettings] = useState<ExposureUIState>(defaultState);
+
+  // 3. Synchronization: Update local settings when API data arrives or Profile changes
   useEffect(() => {
-    if (exposureRaw) {
-      const parsed = parseVideoInExposure(exposureRaw);
-      if (parsed) onSettingsChange(parsed);
+    if (apiData) {
+      const parsed = apiToUI(apiData, activeProfile);
+      setSettings(parsed);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exposureRaw, camId]);
+  }, [apiData, activeProfile]);
 
-  // internal handlers still call onSettingsChange so parent keeps control for saving
-  const handleSliderChange = (key: keyof ExposureSettingsData, value: number) => {
-    onSettingsChange({ ...settings, [key]: value });
+  // 4. Handlers
+  const handleSettingChange = (key: keyof ExposureUIState, value: number) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleExposureModeChange = (mode: ExposureSettingsData['mode']) => {
-    onSettingsChange({ ...settings, mode });
+  const handleSave = () => {
+    const payload = uiToApi(settings, activeProfile);
+    mutation.mutate(payload);
   };
 
-  const handleAutoExposureRecoveryChange = (recovery: ExposureSettingsData['autoExposureRecovery']) => {
-    onSettingsChange({ ...settings, autoExposureRecovery: recovery });
-  };
-
-  const getModeDescription = () => {
-    switch (settings.mode) {
-      case 'auto':
-        return "En mode exposition automatique, la luminosité globale d'une image est automatiquement ajustée en fonction de différentes scènes dans la plage d'exposition normale.";
-      case 'aperture-priority':
-        return "En mode priorité d'ouverture, l'ouverture fixe est la valeur définie, et il est préférable d'atteindre automatiquement la valeur de luminosité en fonction de la priorité du temps d'exposition avant le gain.";
-      case 'shutter-priority':
-        return "En mode priorité d'obturateur, l'utilisateur peut personnaliser la plage d'obturateur, et le système ajuste automatiquement la taille de l'ouverture et le gain en fonction de la luminosité.";
-      case 'gain-priority':
-        return "En mode priorité de gain, la valeur de gain et la valeur de compensation d'exposition peuvent être ajustées manuellement.";
-      case 'manual':
-        return "En mode exposition manuelle, la valeur de gain, la valeur d'obturateur et la valeur d'ouverture peuvent être ajustées manuellement, et l'exposition longue est prise en charge.";
-      default:
-        return "";
+  const getProfileLabel = (idx: number) => {
+    switch(idx) {
+      case 0: return { name: "Jour (Day)", desc: "Config[0]" };
+      case 1: return { name: "Nuit (Night)", desc: "Config[1]" };
+      case 2: return { name: "Normal", desc: "Config[2]" };
+      default: return { name: "Unknown", desc: "" };
     }
   };
 
-  // show loading indicator when fetching from device
-  if (camId && isLoading) {
-    return <div>Loading exposure settings from camera...</div>;
+  // Loading State
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Chargement VideoInExposure...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      {/* Exposure Mode Selection */}
+      
+      {/* Error & Success Feedback */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-900/50 border border-red-700 text-red-300">
+          Erreur: {(error as Error).message}
+          <button onClick={() => refetch()} className="ml-4 underline hover:no-underline">Réessayer</button>
+        </div>
+      )}
+      {mutation.isSuccess && (
+        <div className="p-4 rounded-lg bg-green-900/50 border border-green-700 text-green-300">
+          ✓ Configuration enregistrée!
+        </div>
+      )}
+
+      {/* 1. PROFILE SELECTION */}
+      <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+        <h2 className="text-xl font-semibold text-white mb-4">Profil d'Exposition</h2>
+        <p className="text-gray-400 text-sm mb-6">
+          Sélectionnez le profil environnemental à configurer (VideoInExposure).
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[0, 1, 2].map((idx) => {
+            const { name, desc } = getProfileLabel(idx);
+            const isActive = activeProfile === idx;
+            return (
+              <button
+                key={idx}
+                onClick={() => setActiveProfile(idx as 0|1|2)}
+                disabled={mutation.isPending}
+                className={`group relative py-4 px-5 rounded-lg font-medium transition-all text-left ${
+                  isActive
+                    ? "bg-red-600 text-white shadow-lg shadow-red-500/25"
+                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isActive ? "bg-white/20" : "bg-gray-600"}`}>
+                    <span className="font-bold text-lg">{idx}</span>
+                  </div>
+                  <div>
+                    <div className="font-bold">{name}</div>
+                    <div className="text-xs opacity-80">{desc}</div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. MODE SELECTION */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Mode d'Exposition</h2>
-        <p className="text-gray-400 text-sm mb-4">
-          Définir les modes d'exposition de la caméra : automatique, manuel, priorité d'ouverture, priorité d'obturateur et priorité de gain.
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => handleExposureModeChange('auto')}
-            className={`py-3 px-6 rounded-lg font-medium transition-all ${settings.mode === 'auto' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            Automatique
-          </button>
-          <button
-            onClick={() => handleExposureModeChange('manual')}
-            className={`py-3 px-6 rounded-lg font-medium transition-all ${settings.mode === 'manual' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            Manuel
-          </button>
-          <button
-            onClick={() => handleExposureModeChange('aperture-priority')}
-            className={`py-3 px-6 rounded-lg font-medium transition-all ${settings.mode === 'aperture-priority' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            Priorité d'Ouverture
-          </button>
-          <button
-            onClick={() => handleExposureModeChange('shutter-priority')}
-            className={`py-3 px-6 rounded-lg font-medium transition-all ${settings.mode === 'shutter-priority' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            Priorité d'Obturateur
-          </button>
-          <button
-            onClick={() => handleExposureModeChange('gain-priority')}
-            className={`py-3 px-6 rounded-lg font-medium transition-all col-span-2 ${settings.mode === 'gain-priority' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            Priorité de Gain
-          </button>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {[
+            { val: 0, label: "Auto" },
+            { val: 4, label: "Manuel" },
+            { val: 5, label: "Prio. Iris" },
+            { val: 7, label: "Prio. Gain" },
+            { val: 8, label: "Prio. Obturateur" }
+          ].map((m) => (
+            <button
+              key={m.val}
+              onClick={() => handleSettingChange('mode', m.val)}
+              className={`py-3 px-2 rounded-lg text-sm font-medium transition-all ${
+                settings.mode === m.val
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25 border border-blue-500"
+                  : "bg-gray-700 text-gray-300 hover:bg-gray-600 border border-transparent"
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
         </div>
-
-        {/* Mode Description */}
-        <div className="mt-4 p-4 bg-gray-900/50 rounded-lg border border-gray-600">
-          <p className="text-gray-300 text-sm">{getModeDescription()}</p>
+        
+        {/* Contextual Help based on Mode */}
+        <div className="mt-4 p-4 bg-gray-900/50 rounded-lg border border-gray-600 flex items-start gap-3">
+           <svg className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+           <p className="text-gray-300 text-sm">
+             {settings.mode === 0 && "Mode Auto: Tous les paramètres (Gain, Iris, Obturateur) sont ajustés automatiquement par la caméra."}
+             {settings.mode === 4 && "Mode Manuel: Vous contrôlez manuellement le Gain, l'Iris et l'Obturateur."}
+             {settings.mode === 5 && "Priorité Iris: L'ouverture est fixe selon la valeur définie, la caméra ajuste le reste."}
+             {settings.mode === 7 && "Priorité Gain: Le gain est fixe, la caméra ajuste l'obturateur et l'iris."}
+             {settings.mode === 8 && "Priorité Obturateur: La vitesse d'obturation est fixe, la caméra ajuste le reste."}
+           </p>
         </div>
       </div>
 
-      {/* Exposure Parameters */}
-      <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold text-white mb-6">Paramètres d'Exposition</h2>
-        <div className="space-y-4">
-          <SliderControl
-            label="Plage de Gain (Gain Range)"
-            description="Définir la valeur de gain de l'exposition dans une plage de 0 à 100."
-            value={settings.gainRange}
-            onChange={(value) => handleSliderChange('gainRange', value)}
-          />
+      {/* 3. PARAMETERS SLIDERS */}
+      <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700 space-y-8">
+        <h2 className="text-xl font-semibold text-white mb-6">Configuration Fine</h2>
 
+        {/* Shutter Speed Group */}
+        <div className="space-y-6 p-4 bg-gray-900/30 rounded-lg border border-gray-700/50">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Obturateur (Shutter)</h3>
           <SliderControl
-            label="Obturateur (Shutter)"
-            description="Ajuster le temps d'exposition de la caméra. Une valeur d'obturateur plus élevée produit une image plus sombre, sinon plus claire."
-            value={settings.shutter}
-            onChange={(value) => handleSliderChange('shutter', value)}
+            label="Vitesse Min (ms)"
+            description="API: Value1 [0-1000]. Temps d'exposition minimum."
+            value={settings.shutterMin}
+            min={0} max={1000}
+            onChange={(v) => handleSettingChange('shutterMin', v)}
           />
-
           <SliderControl
-            label="Plage d'Obturateur (Shutter Range)"
-            description="Définir le temps d'exposition de la caméra dans une plage de 0 à 1000 ms."
-            value={settings.shutterRange}
-            onChange={(value) => handleSliderChange('shutterRange', value)}
-            min={0}
-            max={1000}
+            label="Vitesse Max (ms)"
+            description="API: Value2 [0-1000]. Temps d'exposition maximum."
+            value={settings.shutterMax}
+            min={0} max={1000}
+            onChange={(v) => handleSettingChange('shutterMax', v)}
           />
+        </div>
 
+        {/* Gain Group */}
+        <div className="space-y-6 p-4 bg-gray-900/30 rounded-lg border border-gray-700/50">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Gain</h3>
           <SliderControl
-            label="Ouverture (Aperture)"
-            description="Définir le flux lumineux de la caméra. Une valeur d'ouverture plus élevée produit une image plus claire, sinon plus sombre."
-            value={settings.aperture}
-            onChange={(value) => handleSliderChange('aperture', value)}
+            label="Gain Min"
+            description="API: GainMin [0-100]. Amplification minimale du signal."
+            value={settings.gainMin}
+            min={0} max={100}
+            onChange={(v) => handleSettingChange('gainMin', v)}
           />
-
           <SliderControl
-            label="Compensation d'Exposition (Exposure Compensation)"
-            description="Définir la valeur de compensation de l'exposition dans une plage de 0 à 100."
-            value={settings.exposureCompensation}
-            onChange={(value) => handleSliderChange('exposureCompensation', value)}
+            label="Gain Max"
+            description="API: GainMax [0-100]. Amplification maximale du signal."
+            value={settings.gainMax}
+            min={0} max={100}
+            onChange={(v) => handleSettingChange('gainMax', v)}
+          />
+        </div>
+
+        {/* Iris & Compensation Group */}
+        <div className="space-y-6 p-4 bg-gray-900/30 rounded-lg border border-gray-700/50">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Optique & Image</h3>
+          <SliderControl
+            label="Iris (Ouverture)"
+            description="API: Iris [0-100]. Contrôle l'ouverture du diaphragme."
+            value={settings.iris}
+            min={0} max={100}
+            onChange={(v) => handleSettingChange('iris', v)}
+          />
+          <SliderControl
+            label="Compensation d'Exposition"
+            description="API: Compensation [0-100]. Ajustement de la luminosité cible."
+            value={settings.compensation}
+            min={0} max={100}
+            onChange={(v) => handleSettingChange('compensation', v)}
           />
         </div>
       </div>
 
-      {/* Auto Exposure Recovery */}
+      {/* 4. AUTO RECOVERY */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold text-white mb-4">Récupération Automatique de l'Exposition</h2>
-        <p className="text-gray-400 text-sm mb-4">
-          Cette fonction permet de reprendre le mode d'exposition automatique après la période définie en mode d'exposition non automatique.
+        <h2 className="text-xl font-semibold text-white mb-4">Récupération Automatique</h2>
+        <p className="text-gray-400 text-sm mb-6">
+          Délai avant le retour automatique au mode Auto après une modification manuelle (RecoveryTime).
         </p>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => handleAutoExposureRecoveryChange('off')}
-            className={`py-3 px-6 rounded-lg font-medium transition-all ${settings.autoExposureRecovery === 'off' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            Désactivé
-          </button>
-          <button
-            onClick={() => handleAutoExposureRecoveryChange('5min')}
-            className={`py-3 px-6 rounded-lg font-medium transition-all ${settings.autoExposureRecovery === '5min' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            5 Minutes
-          </button>
-          <button
-            onClick={() => handleAutoExposureRecoveryChange('15min')}
-            className={`py-3 px-6 rounded-lg font-medium transition-all ${settings.autoExposureRecovery === '15min' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            15 Minutes
-          </button>
-          <button
-            onClick={() => handleAutoExposureRecoveryChange('1hour')}
-            className={`py-3 px-6 rounded-lg font-medium transition-all ${settings.autoExposureRecovery === '1hour' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            1 Heure
-          </button>
+        <div className="grid grid-cols-4 gap-4">
+          {[0, 300, 900, 3600].map((t) => (
+             <button
+             key={t}
+             onClick={() => handleSettingChange('recoveryTime', t)}
+             className={`py-3 rounded-lg text-sm font-medium transition-all ${
+               settings.recoveryTime === t
+                 ? "bg-green-600 text-white shadow-lg shadow-green-500/25"
+                 : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+             }`}
+           >
+             {t === 0 ? "Désactivé" : t === 300 ? "5 min" : t === 900 ? "15 min" : "1 heure"}
+           </button>
+          ))}
         </div>
+      </div>
+
+      {/* 5. APPLY BUTTON */}
+      <div className="flex justify-end pt-2">
+        <button
+          onClick={handleSave}
+          disabled={mutation.isPending}
+          className="px-8 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-3 shadow-lg shadow-red-900/20"
+        >
+          {mutation.isPending ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <span>Enregistrement...</span>
+            </>
+          ) : (
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+              <span>Appliquer les Paramètres</span>
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
