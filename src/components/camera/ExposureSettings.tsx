@@ -44,6 +44,7 @@ const defaultState: ExposureUIState = {
  * HARDCODED to Index [0][0] per request.
  */
 const apiToUI = (data: any): ExposureUIState => {
+  console.log("API Data for Exposure:", data);
   if (!data) return defaultState;
   
   // Handle both raw config object or wrapped response
