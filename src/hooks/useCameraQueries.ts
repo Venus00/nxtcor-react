@@ -15,6 +15,7 @@ export const cameraKeys = {
     videoMode: (camId: string) => ['camera', camId, 'video', 'mode'] as const,
   setup: (camId: string) => ['camera', camId, 'setup'] as const,
   videoColor: (camId: string) => ['camera', camId, 'video', 'color'] as const,
+  videoSharpness: (camId: string) => ['camera', camId, 'video', 'Sharpness'] as const,
   exposure: (camId: string) => ['camera', camId, 'video', 'exposure'] as const,
   dayNight: (camId: string) => ['camera', camId, 'video', 'daynight'] as const,
   focus: (camId: string) => ['camera', camId, 'video', 'focus'] as const,
@@ -156,6 +157,14 @@ export function useVideoColor(camId: string, enabled = true) {
   return useQuery({
     queryKey: cameraKeys.videoColor(camId),
     queryFn: () => apiFetch(`/camera/${camId}/video/color`),
+    enabled,
+  });
+}
+
+export function useVideoSharpness(camId: string, enabled = true) {
+  return useQuery({
+    queryKey: cameraKeys.videoSharpness(camId),
+    queryFn: () => apiFetch(`/camera/${camId}/video/sharpness`),
     enabled,
   });
 }

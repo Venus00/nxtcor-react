@@ -34,6 +34,15 @@ export function useSetVideoColor(camId: string) {
     },
   });
 }
+export function useSetVideoSharpness(camId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/sharpness`, 'POST', params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cameraKeys.videoSharpness(camId) });
+    },
+  });
+}
 
 export function useSetExposure(camId: string) {
   const queryClient = useQueryClient();
