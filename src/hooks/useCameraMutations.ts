@@ -140,7 +140,19 @@ export function useSetEncode(camId: string) {
     },
   });
 }
+export function useSetAudioEncode(camId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (params: any) => apiFetch(`/camera/${camId}/encode/audio`, 'POST', params),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: cameraKeys.audio(camId) });
+        },
+    });
+}
 
+// =============================================================================
+// OSD MUTATIONS
+// =============================================================================
 export function useSetOSD(camId: string) {
   const queryClient = useQueryClient();
   return useMutation({

@@ -30,7 +30,7 @@ export const cameraKeys = {
   denoise: (camId: string) => ["camera", camId, "video", "denoise"] as const,
   encode: (camId: string) => ["camera", camId, "encode"] as const,
   osd: (camId: string) => ["camera", camId, "osd"] as const,
-
+audio: (camId: string) => ["camera", camId, "encode", "audio"] as const,
   // Network
   network: (camId: string) => ["camera", camId, "network"] as const,
   tcpIp: (camId: string) => ["camera", camId, "network", "tcpip"] as const,
@@ -267,6 +267,16 @@ export function useEncode(camId: string, enabled = true) {
     enabled,
   });
 }
+
+export function useAudioEncode(camId: string) {
+    return useQuery({
+
+        queryKey: cameraKeys.audio(camId),
+
+    queryFn: () => apiFetch(`/camera/${camId}/encode/audio`),
+    });
+}
+// =============================================================================
 
 export function useOSD(camId: string, enabled = true) {
   return useQuery({

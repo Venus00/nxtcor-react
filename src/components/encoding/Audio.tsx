@@ -1,29 +1,143 @@
-"use client"
+// components/camera/Audio.tsx
+import React, { useEffect, useState } from "react";
+import { useCamId } from "../../contexts/CameraContext";
+import { useAudioEncode } from "../../hooks/useCameraQueries";
+import { useSetAudioEncode } from "../../hooks/useCameraMutations";
 
-import type React from "react"
+// =============================================================================
+// TYPES & INTERFACES
+// =============================================================================
 
 export interface AudioData {
-  audioEnabled: boolean;
-  channelNumber: number;
-  audioCodec: 'AAC' | 'MPEG2-Layer2';
-  samplingFrequency: '8K' | '16K';
-  audioInType: 'LineIn' | 'Mic';
-  noiseFilter: boolean;
-  microphoneVolume: number; // 0-100
-  speakerVolume: number; // 0-100
+  audioEnabled: boolean; // API: AudioEnable
+  channelNumber: number; // For UI selection, defaults to 1
+  audioCodec: 'AAC' | 'MPEG2-Layer2'; // API: Compression
+  samplingFrequency: '8K' | '16K'; // API: Frequency
+  audioInType: 'LineIn' | 'Mic'; // API: AudioInType
+  noiseFilter: boolean; // API: NoiseFilter
+  microphoneVolume: number; // 0-100 API: MicrophoneVolume
+  speakerVolume: number; // 0-100 API: SpeakerVolume
 }
 
-interface AudioProps {
-  settings: AudioData;
-  onSettingsChange: (settings: AudioData) => void;
-}
+const defaultState: AudioData = {
+  audioEnabled: false,
+  channelNumber: 1,
+  audioCodec: 'AAC',
+  samplingFrequency: '16K',
+  audioInType: 'LineIn',
+  noiseFilter: true,
+  microphoneVolume: 50,
+  speakerVolume: 50
+};
 
-const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
-  const updateSettings = (key: keyof AudioData, value: any) => {
-    onSettingsChange({
-      ...settings,
-      [key]: value,
-    });
+// =============================================================================
+// API MAPPING HELPERS
+// =============================================================================
+
+/**
+ * Parses API response to UI state.
+ * Fixed to Index [0] (Main Stream) for simplicity as per common use case.
+ * API Ref: table.Encode[0].MainFormat[0].Audio... and Attribute...
+ */
+const apiToUI = (data: any): AudioData => {
+  if (!data) return defaultState;
+  
+  const config = data.config || data;
+  const prefix = "table.Encode[0].MainFormat[0]."; // Main stream
+  // Note: Some attributes like Volume might be under a different structure in some firmware versions,
+  // but based on 3.2.11.1 Response example, they seem grouped or flat.
+  // The provided doc 3.2.11.1 Response shows `Attribute` fields like `MicrophoneVolume` separate or flat.
+  // Let's assume standard flat keys based on typical Dahua-like API structure often seen in these docs.
+  // Wait, checking 3.2.11.1 Response text specifically:
+  // "table.Encode[0].MainFormat[0].AudioEnable=false"
+  // "table.Encode[0].MainFormat[0].Audio.Compression=AAC"
+  // "table.Encode[0].MainFormat[0].Audio.Frequency=16000"
+  // "Attribute" fields:
+  // "table.Encode[0].Attribute.AudioInType=LineIn"
+  // "table.Encode[0].Attribute.NoiseFilter=Enable"
+  // "table.Encode[0].Attribute.MicrophoneVolume=50"
+  // "table.Encode[0].Attribute.SpeakerVolume=50"
+  // (Inferred from 3.2.11.1 Figure 3.1-27 context, though text response list was truncated in OCR, standard is Attribute struct)
+
+  const getVal = (key: string, def: any) => config[key] ?? def;
+
+  const audioEnabled = String(getVal(`${prefix}AudioEnable`, "false")) === "true";
+  const audioCodec = getVal(`${prefix}Audio.Compression`, "AAC");
+  const freqVal = getVal(`${prefix}Audio.Frequency`, "16000");
+  const samplingFrequency = freqVal === "8000" ? '8K' : '16K';
+
+  // Attribute keys (Assumed based on Figure 3.1-27)
+  // Use `table.Encode[0].Attribute.` if distinct, or check if flat.
+  // Let's try likely path `table.Encode[0].Attribute.`
+  const attrPrefix = "table.Encode[0].Attribute.";
+  const audioInType = getVal(`${attrPrefix}AudioInType`, "LineIn");
+  const noiseFilter = getVal(`${attrPrefix}NoiseFilter`, "Enable") === "Enable";
+  const microphoneVolume = Number(getVal(`${attrPrefix}MicrophoneVolume`, 50));
+  const speakerVolume = Number(getVal(`${attrPrefix}SpeakerVolume`, 50));
+
+  return {
+    audioEnabled,
+    channelNumber: 1, // Client-side only selection usually
+    audioCodec: audioCodec as AudioData['audioCodec'],
+    samplingFrequency,
+    audioInType: audioInType as AudioData['audioInType'],
+    noiseFilter,
+    microphoneVolume,
+    speakerVolume
+  };
+};
+
+/**
+ * Converts UI state to API payload.
+ * Maps back to table.Encode[0]...
+ */
+const uiToApi = (ui: AudioData) => {
+  const prefix = "table.Encode[0].MainFormat[0].";
+  const attrPrefix = "table.Encode[0].Attribute.";
+
+  return {
+    [`${prefix}AudioEnable`]: ui.audioEnabled,
+    [`${prefix}Audio.Compression`]: ui.audioCodec,
+    [`${prefix}Audio.Frequency`]: ui.samplingFrequency === '8K' ? 8000 : 16000,
+    [`${attrPrefix}AudioInType`]: ui.audioInType,
+    [`${attrPrefix}NoiseFilter`]: ui.noiseFilter ? "Enable" : "Disable",
+    [`${attrPrefix}MicrophoneVolume`]: ui.microphoneVolume,
+    [`${attrPrefix}SpeakerVolume`]: ui.speakerVolume
+  };
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+const Audio: React.FC = () => {
+  const camId = useCamId();
+  const { data: apiData, isLoading, error, refetch } = useAudioEncode(camId);
+  const mutation = useSetAudioEncode(camId);
+
+  // Local State
+  const [settings, setSettings] = useState<AudioData>(defaultState);
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Sync API -> UI
+  useEffect(() => {
+    if (apiData) {
+      const parsed = apiToUI(apiData);
+      setSettings(parsed);
+      setIsDirty(false);
+    }
+  }, [apiData]);
+
+  // Handlers
+  const handleUpdate = (key: keyof AudioData, value: any) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+    setIsDirty(true);
+  };
+
+  const handleSave = () => {
+    const payload = uiToApi(settings);
+    mutation.mutate(payload);
+    setIsDirty(false);
   };
 
   const getVolumeColor = (volume: number) => {
@@ -54,14 +168,54 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading Audio Configuration...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      
+      {/* Feedback Messages */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-900/50 border border-red-700 text-red-300">
+          Error: {(error as Error).message}
+          <button onClick={() => refetch()} className="ml-4 underline hover:no-underline">Retry</button>
+        </div>
+      )}
+      {mutation.isPending && (
+         <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-700 text-blue-300 flex items-center gap-2 text-sm">
+           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300"></div>
+           Saving changes...
+         </div>
+      )}
+      {mutation.isSuccess && (
+        <div className="p-3 rounded-lg bg-green-900/30 border border-green-700 text-green-300 text-sm">
+          ✓ Audio settings saved successfully!
+        </div>
+      )}
+
       {/* Header */}
-      <div className="border-b border-gray-700 pb-4">
-        <h2 className="text-2xl font-bold text-white mb-2">Audio Configuration</h2>
-        <p className="text-gray-400 text-sm">
-          Configure audio codec, sampling, input type, and volume settings for audio streaming
-        </p>
+      <div className="border-b border-gray-700 pb-4 flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Audio Configuration</h2>
+          <p className="text-gray-400 text-sm">
+            Configure audio codec, sampling, input type, and volume settings
+          </p>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={!isDirty || mutation.isPending}
+          className="px-6 py-2 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 shadow-lg transition-colors"
+        >
+          {mutation.isPending ? 'Saving...' : 'Save Settings'}
+        </button>
       </div>
 
       {/* Audio Enable */}
@@ -82,7 +236,7 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
             <input
               type="checkbox"
               checked={settings.audioEnabled}
-              onChange={(e) => updateSettings('audioEnabled', e.target.checked)}
+              onChange={(e) => handleUpdate('audioEnabled', e.target.checked)}
               className="sr-only peer"
             />
             <div className="w-14 h-7 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-600"></div>
@@ -116,44 +270,6 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
         )}
       </div>
 
-      {/* Channel Number */}
-      {settings.audioEnabled && (
-        <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-            </svg>
-            Audio Channel Number
-          </h3>
-          <p className="text-sm text-gray-400 mb-4">
-            Select the audio channel to be enabled for streaming
-          </p>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[1, 2, 3, 4].map((channel) => (
-              <button
-                key={channel}
-                onClick={() => updateSettings('channelNumber', channel)}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  settings.channelNumber === channel
-                    ? 'border-red-500 bg-red-500/10'
-                    : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-                }`}
-              >
-                <div className="text-center">
-                  <div className={`text-2xl font-bold mb-1 ${
-                    settings.channelNumber === channel ? 'text-red-400' : 'text-white'
-                  }`}>
-                    {channel}
-                  </div>
-                  <div className="text-xs text-gray-400">Channel {channel}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Audio Codec */}
       {settings.audioEnabled && (
         <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
@@ -169,7 +285,7 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
-              onClick={() => updateSettings('audioCodec', 'AAC')}
+              onClick={() => handleUpdate('audioCodec', 'AAC')}
               className={`p-5 rounded-lg border-2 transition-all ${
                 settings.audioCodec === 'AAC'
                   ? 'border-red-500 bg-red-500/10'
@@ -199,7 +315,7 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
             </button>
 
             <button
-              onClick={() => updateSettings('audioCodec', 'MPEG2-Layer2')}
+              onClick={() => handleUpdate('audioCodec', 'MPEG2-Layer2')}
               className={`p-5 rounded-lg border-2 transition-all ${
                 settings.audioCodec === 'MPEG2-Layer2'
                   ? 'border-red-500 bg-red-500/10'
@@ -243,7 +359,7 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
-              onClick={() => updateSettings('samplingFrequency', '8K')}
+              onClick={() => handleUpdate('samplingFrequency', '8K')}
               className={`p-5 rounded-lg border-2 transition-all ${
                 settings.samplingFrequency === '8K'
                   ? 'border-red-500 bg-red-500/10'
@@ -270,7 +386,7 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
             </button>
 
             <button
-              onClick={() => updateSettings('samplingFrequency', '16K')}
+              onClick={() => handleUpdate('samplingFrequency', '16K')}
               className={`p-5 rounded-lg border-2 transition-all ${
                 settings.samplingFrequency === '16K'
                   ? 'border-red-500 bg-red-500/10'
@@ -317,7 +433,7 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
-              onClick={() => updateSettings('audioInType', 'LineIn')}
+              onClick={() => handleUpdate('audioInType', 'LineIn')}
               className={`p-5 rounded-lg border-2 transition-all ${
                 settings.audioInType === 'LineIn'
                   ? 'border-red-500 bg-red-500/10'
@@ -347,7 +463,7 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
             </button>
 
             <button
-              onClick={() => updateSettings('audioInType', 'Mic')}
+              onClick={() => handleUpdate('audioInType', 'Mic')}
               className={`p-5 rounded-lg border-2 transition-all ${
                 settings.audioInType === 'Mic'
                   ? 'border-red-500 bg-red-500/10'
@@ -395,7 +511,7 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
               <input
                 type="checkbox"
                 checked={settings.noiseFilter}
-                onChange={(e) => updateSettings('noiseFilter', e.target.checked)}
+                onChange={(e) => handleUpdate('noiseFilter', e.target.checked)}
                 className="sr-only peer"
               />
               <div className="w-14 h-7 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-600"></div>
@@ -454,7 +570,7 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
                   min="0"
                   max="100"
                   value={settings.microphoneVolume}
-                  onChange={(e) => updateSettings('microphoneVolume', parseInt(e.target.value))}
+                  onChange={(e) => handleUpdate('microphoneVolume', parseInt(e.target.value))}
                   className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
                   style={{
                     background: `linear-gradient(to right, #DC2626 0%, #DC2626 ${settings.microphoneVolume}%, #374151 ${settings.microphoneVolume}%, #374151 100%)`
@@ -467,26 +583,6 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
                   <span>High</span>
                   <span>Max</span>
                 </div>
-              </div>
-
-              {/* Volume Visual Bars */}
-              <div className="flex gap-1 mt-4">
-                {Array.from({ length: 20 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`flex-1 h-6 rounded transition-colors ${
-                      i < settings.microphoneVolume / 5
-                        ? settings.microphoneVolume === 0
-                          ? 'bg-gray-600'
-                          : settings.microphoneVolume <= 30
-                          ? 'bg-yellow-500'
-                          : settings.microphoneVolume <= 70
-                          ? 'bg-green-500'
-                          : 'bg-red-500'
-                        : 'bg-gray-700'
-                    }`}
-                  />
-                ))}
               </div>
             </div>
 
@@ -513,7 +609,7 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
                   min="0"
                   max="100"
                   value={settings.speakerVolume}
-                  onChange={(e) => updateSettings('speakerVolume', parseInt(e.target.value))}
+                  onChange={(e) => handleUpdate('speakerVolume', parseInt(e.target.value))}
                   className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
                   style={{
                     background: `linear-gradient(to right, #DC2626 0%, #DC2626 ${settings.speakerVolume}%, #374151 ${settings.speakerVolume}%, #374151 100%)`
@@ -526,26 +622,6 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
                   <span>High</span>
                   <span>Max</span>
                 </div>
-              </div>
-
-              {/* Volume Visual Bars */}
-              <div className="flex gap-1 mt-4">
-                {Array.from({ length: 20 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`flex-1 h-6 rounded transition-colors ${
-                      i < settings.speakerVolume / 5
-                        ? settings.speakerVolume === 0
-                          ? 'bg-gray-600'
-                          : settings.speakerVolume <= 30
-                          ? 'bg-yellow-500'
-                          : settings.speakerVolume <= 70
-                          ? 'bg-green-500'
-                          : 'bg-red-500'
-                        : 'bg-gray-700'
-                    }`}
-                  />
-                ))}
               </div>
             </div>
           </div>
@@ -578,16 +654,6 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
             <>
               <div className="p-4 bg-gray-900/50 rounded border border-gray-700">
                 <div className="flex items-center gap-3 mb-2">
-                  <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                  </svg>
-                  <span className="text-sm font-semibold text-gray-300">Channel</span>
-                </div>
-                <p className="text-lg font-bold text-white">Channel {settings.channelNumber}</p>
-              </div>
-
-              <div className="p-4 bg-gray-900/50 rounded border border-gray-700">
-                <div className="flex items-center gap-3 mb-2">
                   <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                   </svg>
@@ -614,42 +680,6 @@ const Audio: React.FC<AudioProps> = ({ settings, onSettingsChange }) => {
                   <span className="text-sm font-semibold text-gray-300">Input Type</span>
                 </div>
                 <p className="text-lg font-bold text-white">{settings.audioInType === 'LineIn' ? 'Line In' : 'Microphone'}</p>
-              </div>
-
-              <div className={`p-4 rounded border ${
-                settings.noiseFilter ? 'bg-green-900/20 border-green-600/50' : 'bg-gray-900/50 border-gray-700'
-              }`}>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className={`w-3 h-3 rounded-full ${settings.noiseFilter ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-                  <span className="text-sm font-semibold text-gray-300">Noise Filter</span>
-                </div>
-                <p className={`text-lg font-bold ${settings.noiseFilter ? 'text-green-400' : 'text-gray-500'}`}>
-                  {settings.noiseFilter ? 'Enabled' : 'Disabled'}
-                </p>
-              </div>
-
-              <div className="p-4 bg-gray-900/50 rounded border border-gray-700">
-                <div className="flex items-center gap-3 mb-2">
-                  <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                  <span className="text-sm font-semibold text-gray-300">Mic Volume</span>
-                </div>
-                <p className={`text-lg font-bold ${getVolumeColor(settings.microphoneVolume)}`}>
-                  {settings.microphoneVolume}%
-                </p>
-              </div>
-
-              <div className="p-4 bg-gray-900/50 rounded border border-gray-700">
-                <div className="flex items-center gap-3 mb-2">
-                  <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    {getVolumeIcon(settings.speakerVolume)}
-                  </svg>
-                  <span className="text-sm font-semibold text-gray-300">Speaker Volume</span>
-                </div>
-                <p className={`text-lg font-bold ${getVolumeColor(settings.speakerVolume)}`}>
-                  {settings.speakerVolume}%
-                </p>
               </div>
             </>
           )}
