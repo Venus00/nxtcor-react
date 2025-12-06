@@ -12,7 +12,7 @@ export const cameraKeys = {
   systemTime: (camId: string) => ['camera', camId, 'system', 'time'] as const,
 
   // Video
-    videoMode: (camId: string) => ['camera', camId, 'video', 'mode'] as const,
+  videoMode: (camId: string) => ['camera', camId, 'video', 'mode'] as const,
   setup: (camId: string) => ['camera', camId, 'setup'] as const,
   videoColor: (camId: string) => ['camera', camId, 'video', 'color'] as const,
   videoSharpness: (camId: string) => ['camera', camId, 'video', 'Sharpness'] as const,
