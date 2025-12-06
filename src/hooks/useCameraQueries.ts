@@ -102,7 +102,7 @@ export interface VideoInModeRaw {
 function parseVideoInModeResponse(config: Record<string, any>, channel = 0): VideoInModeRaw {
   const data: VideoInModeRaw = {
     mode: 0,
-    config0: 2,
+    config0: 0,
     config1: 0,
     timeSection: Array(7).fill(null).map(() => Array(6).fill('0 00:00:00-23:59:59')),
   };
