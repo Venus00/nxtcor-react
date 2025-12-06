@@ -78,7 +78,7 @@ const apiToUI = (data: any): DayNightSettingsData => {
  * Converts UI state back to API payload.
  */
 const uiToApi = (ui: DayNightSettingsData) => {
-  const prefix = "table.VideoInDayNight[0][0].";
+  // const prefix = "table.VideoInDayNight[0][0].";
   
   // Map Type
   const apiType = ui.type === 'electronic' ? "Electron" : "ICR";
@@ -95,10 +95,10 @@ const uiToApi = (ui: DayNightSettingsData) => {
   else if (ui.sensitivity === 'high') apiSens = 1;
 
   return {
-    [`${prefix}Type`]: apiType,
-    [`${prefix}Mode`]: apiMode,
-    [`${prefix}Sensitivity`]: apiSens,
-    [`${prefix}Delay`]: ui.latency,
+    [`Type`]: apiType,
+    [`Mode`]: apiMode,
+    [`Sensitivity`]: apiSens,
+    [`Delay`]: ui.latency,
   };
 };
 
