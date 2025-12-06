@@ -117,23 +117,23 @@ const uiToApi = (ui: PictureSettingsData) => {
   
   return {
     color: {
-      [`table.VideoColor[0][${profileIdx}].Brightness`]: ui.brightness,
-      [`table.VideoColor[0][${profileIdx}].Contrast`]: ui.contrast,
-      [`table.VideoColor[0][${profileIdx}].Saturation`]: ui.saturability,
-      [`table.VideoColor[0][${profileIdx}].ChromaSuppress`]: ui.chromaCNT,
-      [`table.VideoColor[0][${profileIdx}].Gamma`]: ui.gamma,
+      [`Brightness`]: ui.brightness,
+      [`Contrast`]: ui.contrast,
+      [`Saturation`]: ui.saturability,
+      [`ChromaSuppress`]: ui.chromaCNT,
+      [`Gamma`]: ui.gamma,
     },
     sharpness: {
-      [`table.VideoInSharpness[0][${profileIdx}].Sharpness`]: ui.sharpness,
-      [`table.VideoInSharpness[0][${profileIdx}].Level`]: ui.sharpnessCNT,
+      [`Sharpness`]: ui.sharpness,
+      [`Level`]: ui.sharpnessCNT,
     },
     denoise: {
       [`table.VideoInDenoise[0][${profileIdx}].2DLevel`]: ui.nr2D,
       [`table.VideoInDenoise[0][${profileIdx}].3DAutoType.AutoLevel`]: ui.nr3D,
     },
     imageControl: {
-      [`table.VideoImageControl[0].Flip`]: ui.flip === "inverted",
-      [`table.VideoImageControl[0].Stable`]: ui.eis ? 1 : 0, // 1=Electronic Stabilizer
+      [`Flip`]: ui.flip === "inverted",
+      [`Stable`]: ui.eis ? 1 : 0, // 1=Electronic Stabilizer
     }
   };
 };
