@@ -50,10 +50,10 @@ const apiToUI = (data: any, profileIndex: number): ExposureUIState => {
   const config = data.config || data;
   
   // Construct the specific prefix for the selected profile (0=Day, 1=Night, 2=Normal)
-  const prefix = `table.VideoInExposure[0][${profileIndex}].`;
+  // const prefix = `table.VideoInExposure[0][${profileIndex}].`;
 
   const getVal = (key: string, def: number) => {
-    const fullKey = prefix + key;
+    const fullKey =  key;
     // Check if key exists in the flat map, otherwise return default
     return config[fullKey] !== undefined ? Number(config[fullKey]) : def;
   };
