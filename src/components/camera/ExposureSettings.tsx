@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import SliderControl from "./SliderControl";
-import { useVideoExposure } from "../hooks/useCameraQueries"; // new hook (code below)
+import { useExposure } from "../../hooks/useCameraQueries";
 
 export interface ExposureSettingsData {
   mode: 'auto' | 'manual' | 'aperture-priority' | 'shutter-priority' | 'gain-priority';
@@ -21,7 +21,7 @@ interface ExposureSettingsProps {
 
 const ExposureSettings: React.FC<ExposureSettingsProps> = ({ settings, onSettingsChange, camId }) => {
   // If camId is provided, the hook will GET the camera config automatically.
-  const { data: exposureRaw, isLoading } = useVideoExposure(camId ?? "", Boolean(camId));
+  const { data: exposureRaw, isLoading } = useExposure(camId ?? "", Boolean(camId));
 
   // parse mapping from camera config -> ExposureSettingsData
   const parseVideoInExposure = (cfgRaw: any): ExposureSettingsData | null => {
