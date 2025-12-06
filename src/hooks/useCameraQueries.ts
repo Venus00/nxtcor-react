@@ -112,7 +112,7 @@ function parseVideoInModeResponse(config: Record<string, any>, channel = 0): Vid
       data.mode = parseInt(String(value), 10) || 0;
     }
     if (key === `table.VideoInMode[${channel}].Config[0]`) {
-      data.config0 = parseInt(String(value), 10) || 2;
+      data.config0 = parseInt(String(value), 10) || 0;
     }
     if (key === `table.VideoInMode[${channel}].Config[1]`) {
       data.config1 = parseInt(String(value), 10) || 0;

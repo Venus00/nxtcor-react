@@ -75,8 +75,10 @@ function uiToApi(ui: ProfileManagementData): VideoInModeParams {
       // Create TimeSection for all 7 days
       const timeSection = Array(7)
         .fill(null)
-        .map(() => [
-          `1 ${dayStart}:00-${dayEnd}:00`,
+        .map((_,index) =>
+          
+          [
+          `${index === 0 ? '1' : '0'} ${dayStart}:00-${dayEnd}:00`,
           "0 00:00:00-23:59:59",
           "0 00:00:00-23:59:59",
           "0 00:00:00-23:59:59",
