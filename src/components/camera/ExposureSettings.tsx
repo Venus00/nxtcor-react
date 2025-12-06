@@ -74,18 +74,18 @@ const apiToUI = (data: any, profileIndex: number): ExposureUIState => {
  * Converts UI state back to the specific API keys for the current profile.
  */
 const uiToApi = (ui: ExposureUIState, profileIndex: number) => {
-  const prefix = `table.VideoInExposure[0][${profileIndex}].`;
+  // const prefix = `table.VideoInExposure[0][${profileIndex}].`;
   
   // We only send the keys relevant to the currently selected profile
   return {
-    [`${prefix}Mode`]: ui.mode,
-    [`${prefix}GainMax`]: ui.gainMax,
-    [`${prefix}GainMin`]: ui.gainMin,
-    [`${prefix}Value1`]: ui.shutterMin,
-    [`${prefix}Value2`]: ui.shutterMax,
-    [`${prefix}Iris`]: ui.iris,
-    [`${prefix}Compensation`]: ui.compensation,
-    [`${prefix}RecoveryTime`]: ui.recoveryTime,
+    [`Mode`]: ui.mode,
+    [`GainMax`]: ui.gainMax,
+    [`GainMin`]: ui.gainMin,
+    [`Value1`]: ui.shutterMin,
+    [`Value2`]: ui.shutterMax,
+    [`Iris`]: ui.iris,
+    [`Compensation`]: ui.compensation,
+    [`RecoveryTime`]: ui.recoveryTime,
   };
 };
 
