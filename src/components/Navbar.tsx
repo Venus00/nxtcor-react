@@ -102,7 +102,7 @@ const Navbar = () => {
             </li>
 
             {/* Configuration */}
-            <li>
+            {/* <li>
               <Link
                 to="/configuration"
                 className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/configuration")
@@ -113,7 +113,7 @@ const Navbar = () => {
                 <Settings className="h-4 w-4" />
                 Configuration
               </Link>
-            </li>
+            </li> */}
 
             {/* Camera Settings */}
             <li>
