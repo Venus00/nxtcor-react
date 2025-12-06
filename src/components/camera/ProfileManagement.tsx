@@ -152,7 +152,7 @@ const ProfileManagement: React.FC<ProfileManagementProps> = ({
   };
 
   const handleFullTimeModeChange = (mode: "day" | "night") => {
-    // saveSettings({ ...settings, fullTimeMode: mode });
+    saveSettings({ ...settings, fullTimeMode: mode });
   };
 
   const handleScheduleUpdate = () => {
