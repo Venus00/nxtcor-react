@@ -1,90 +1,251 @@
-import type React from "react"
-import { useState } from "react"
+// components/camera/VideoEncoding.tsx
+import React, { useEffect, useState } from "react";
+import { useCamId } from "../../contexts/CameraContext";
+import { useEncode as useVideoEncode } from "../../hooks/useCameraQueries";
+import { useSetEncode as  useSetVideoEncode } from "../../hooks/useCameraMutations";
+
+// =============================================================================
+// TYPES & INTERFACES
+// =============================================================================
 
 export interface VideoEncodingData {
-  videoCodec: 'H.264' | 'H.264H' | 'H.264B' | 'H.265' | 'MJPEG';
-  resolution: string;
-  frameRate: number; // 1-25 FPS
-  bitRateType: 'fixed' | 'variable';
-  pictureQuality?: number; // Only for variable bitrate, 1-10
-  referenceBitRate: number; // kbps
-  bitRate: number; // kbps
-  iFrameInterval: number; // 1-150
-  watermarkEnabled: boolean;
+  videoCodec: 'H.264' | 'H.264H' | 'H.264B' | 'H.265' | 'MJPEG'; // API: Compression
+  resolution: string; // API: resolution (e.g. 1920x1080)
+  frameRate: number; // API: FPS (1-25)
+  bitRateType: 'fixed' | 'variable'; // API: BitRateControl (CBR=fixed, VBR=variable)
+  pictureQuality?: number; // API: Quality (1-6) - Only for VBR
+  bitRate: number; // API: BitRate (kbps)
+  iFrameInterval: number; // API: GOP (1-150)
+  // These are handled separately or part of global config in some APIs, 
+  // but sticking to your UI request, we assume they are part of this flow or global.
+  // Note: Watermark is usually in VideoWidget/OSD, but kept here if part of your specific UI flow.
+  // API Ref 3.1.2.1 doesn't explicitly link Watermark to Encode struct, but UI often groups them.
+  watermarkEnabled: boolean; 
   watermarkText: string;
-  subStreamEnabled: boolean;
+  subStreamEnabled: boolean; // API: ExtraFormat[0].VideoEnable
 }
 
-interface VideoEncodingProps {
-  settings: VideoEncodingData;
-  onSettingsChange: (settings: VideoEncodingData) => void;
-}
+// Default state structure
+const defaultState: VideoEncodingData = {
+  videoCodec: 'H.264',
+  resolution: '1920x1080',
+  frameRate: 25,
+  bitRateType: 'fixed',
+  bitRate: 4096,
+  iFrameInterval: 50,
+  watermarkEnabled: false,
+  watermarkText: "DigitalCCTV",
+  subStreamEnabled: true
+};
 
-const VideoEncoding: React.FC<VideoEncodingProps> = ({ settings, onSettingsChange }) => {
-  const [watermarkInput, setWatermarkInput] = useState(settings.watermarkText);
+// Resolution mapping for bitrate recommendations
+const RESOLUTION_OPTIONS = [
+  { value: '3840x2160', label: '4K (3840x2160)', minBitrate: 8192, maxBitrate: 16384 },
+  { value: '2560x1440', label: '2K (2560x1440)', minBitrate: 4096, maxBitrate: 8192 },
+  { value: '1920x1080', label: 'Full HD (1920x1080)', minBitrate: 2048, maxBitrate: 6144 },
+  { value: '1280x720', label: 'HD (1280x720)', minBitrate: 1024, maxBitrate: 3072 },
+  { value: '1280x960', label: '1.3M (1280x960)', minBitrate: 1024, maxBitrate: 4096 }, // API specific
+  { value: '704x576', label: 'D1 (704x576)', minBitrate: 512, maxBitrate: 2048 },
+  { value: '640x480', label: 'VGA (640x480)', minBitrate: 384, maxBitrate: 1536 },
+  { value: '352x288', label: 'CIF (352x288)', minBitrate: 256, maxBitrate: 1024 },
+];
 
-  // Resolution options with recommended bitrates
-  const resolutionOptions = [
-    { value: '3840x2160', label: '4K (3840x2160)', minBitrate: 8192, maxBitrate: 16384 },
-    { value: '2560x1440', label: '2K (2560x1440)', minBitrate: 4096, maxBitrate: 8192 },
-    { value: '1920x1080', label: 'Full HD (1920x1080)', minBitrate: 2048, maxBitrate: 6144 },
-    { value: '1280x720', label: 'HD (1280x720)', minBitrate: 1024, maxBitrate: 3072 },
-    { value: '704x576', label: 'D1 (704x576)', minBitrate: 512, maxBitrate: 2048 },
-    { value: '640x480', label: 'VGA (640x480)', minBitrate: 384, maxBitrate: 1536 },
-    { value: '352x288', label: 'CIF (352x288)', minBitrate: 256, maxBitrate: 1024 },
-  ];
+/**
+ * Parses API response to UI state.
+ * Fixed to Index 0 (Main Stream) for primary settings, but checks ExtraFormat[0] for Sub Stream enabled status.
+ * API Ref: table.Encode[0].MainFormat[0].Video...
+ */
+const apiToUI = (data: any): VideoEncodingData => {
+  if (!data) return defaultState;
+  
+  const config = data.config || data;
+  
+  // Helpers
+  const getMain = (k: string, def: any) => config[`table.Encode[0].MainFormat[0].Video.${k}`] ?? def;
+  const getSub = (k: string, def: any) => config[`table.Encode[0].ExtraFormat[0].${k}`] ?? def;
+  
+  // Codec Mapping
+  let codec = getMain("Compression", "H.264");
+  if (codec === "H.264H") codec = "H.264H";
+  else if (codec === "H.264B") codec = "H.264B";
+  else if (codec === "H.265") codec = "H.265";
+  else if (codec === "MJPG") codec = "MJPEG";
 
-  const currentResolution = resolutionOptions.find(r => r.value === settings.resolution) || resolutionOptions[2];
+  return {
+    videoCodec: codec as VideoEncodingData['videoCodec'],
+    resolution: getMain("resolution", "1920x1080"),
+    frameRate: Number(getMain("FPS", 25)),
+    bitRateType: getMain("BitRateControl", "CBR") === "VBR" ? 'variable' : 'fixed',
+    pictureQuality: Number(getMain("Quality", 5)), // API range 1-6
+    bitRate: Number(getMain("BitRate", 4096)),
+    iFrameInterval: Number(getMain("GOP", 50)),
+    
+    // Substream status
+    subStreamEnabled: String(getSub("VideoEnable", "true")) === "true",
+
+    // Watermark is usually in a different struct (VideoWidget), but we'll keep local state/placeholder if API doesn't provide in this specific call
+    watermarkEnabled: false, 
+    watermarkText: "DigitalCCTV"
+  };
+};
+
+/**
+ * Converts UI state to API payload.
+ * Maps back to table.Encode[0].MainFormat[0]...
+ */
+const uiToApi = (ui: VideoEncodingData) => {
+  const mainPfx = "table.Encode[0].MainFormat[0].Video.";
+  const subPfx = "table.Encode[0].ExtraFormat[0]."; // For enable toggle
+
+  // Map Codec
+  let apiCodec = ui.videoCodec;
+  if (ui.videoCodec === 'MJPEG') apiCodec = 'MJPG' as any; // API uses MJPG
+
+  const payload: any = {
+    [`${mainPfx}Compression`]: apiCodec,
+    [`${mainPfx}resolution`]: ui.resolution,
+    [`${mainPfx}FPS`]: ui.frameRate,
+    [`${mainPfx}BitRateControl`]: ui.bitRateType === 'variable' ? "VBR" : "CBR",
+    [`${mainPfx}BitRate`]: ui.bitRate,
+    [`${mainPfx}GOP`]: ui.iFrameInterval,
+    [`${subPfx}VideoEnable`]: ui.subStreamEnabled
+  };
+
+  // Only send Quality if VBR
+  if (ui.bitRateType === 'variable') {
+    payload[`${mainPfx}Quality`] = ui.pictureQuality;
+  }
+
+  // Width/Height often required separately in some older APIs, but `resolution` string is standard in recent ones.
+  // If API requires discrete Width/Height, we'd split the resolution string here. 
+  // Based on your doc 3.2.1.3 Example, it uses Height/Width separately in the URL example?
+  // "Encode[0].MainFormat[0].Video.Height=1024&Encode[0].MainFormat[0].Video.Width=1280"
+  // Let's safe-guard by sending both if resolution string parsing is easy.
+  const [w, h] = ui.resolution.toLowerCase().split('x');
+  if (w && h) {
+    payload[`${mainPfx}Width`] = parseInt(w);
+    payload[`${mainPfx}Height`] = parseInt(h);
+  }
+
+  return payload;
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+const VideoEncoding: React.FC = () => {
+  const camId = useCamId();
+  const { data: apiData, isLoading, error, refetch } = useVideoEncode(camId);
+  const mutation = useSetVideoEncode(camId);
+
+  // Local State
+  const [settings, setSettings] = useState<VideoEncodingData>(defaultState);
+  const [watermarkInput, setWatermarkInput] = useState("");
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Sync API -> UI
+  useEffect(() => {
+    if (apiData) {
+      const parsed = apiToUI(apiData);
+      setSettings(parsed);
+      setWatermarkInput(parsed.watermarkText);
+      setIsDirty(false);
+    }
+  }, [apiData]);
+
+  // Handlers
+  const handleUpdate = (updates: Partial<VideoEncodingData>) => {
+    setSettings(prev => ({ ...prev, ...updates }));
+    setIsDirty(true);
+  };
+
+  const handleSave = () => {
+    const payload = uiToApi(settings);
+    mutation.mutate(payload);
+    setIsDirty(false);
+  };
 
   const handleCodecChange = (codec: VideoEncodingData['videoCodec']) => {
-    const newSettings = { ...settings, videoCodec: codec };
-    // MJPEG only supports fixed bitrate
+    const updates: Partial<VideoEncodingData> = { videoCodec: codec };
+    // MJPEG only supports fixed bitrate usually, forcing logic
     if (codec === 'MJPEG') {
-      newSettings.bitRateType = 'fixed';
-      delete newSettings.pictureQuality;
+      updates.bitRateType = 'fixed';
+      updates.pictureQuality = undefined;
     }
-    onSettingsChange(newSettings);
+    handleUpdate(updates);
   };
 
   const handleResolutionChange = (resolution: string) => {
-    const selectedRes = resolutionOptions.find(r => r.value === resolution);
+    const selectedRes = RESOLUTION_OPTIONS.find(r => r.value === resolution);
     if (selectedRes) {
       const recommendedBitrate = Math.floor((selectedRes.minBitrate + selectedRes.maxBitrate) / 2);
-      onSettingsChange({
-        ...settings,
+      handleUpdate({
         resolution,
-        referenceBitRate: recommendedBitrate,
         bitRate: recommendedBitrate
       });
     }
   };
 
   const handleBitRateTypeChange = (type: 'fixed' | 'variable') => {
-    const newSettings = { ...settings, bitRateType: type };
+    const updates: Partial<VideoEncodingData> = { bitRateType: type };
     if (type === 'variable') {
-      newSettings.pictureQuality = 5; // Default medium quality
+      updates.pictureQuality = 5; // Default medium quality
     } else {
-      delete newSettings.pictureQuality;
+      updates.pictureQuality = undefined;
     }
-    onSettingsChange(newSettings);
+    handleUpdate(updates);
   };
 
   const handleWatermarkToggle = () => {
-    onSettingsChange({ ...settings, watermarkEnabled: !settings.watermarkEnabled });
+    handleUpdate({ watermarkEnabled: !settings.watermarkEnabled });
   };
 
   const handleWatermarkTextChange = () => {
-    // Validate: only numbers, letters, underscores, and hyphens, max 128 chars
     const sanitized = watermarkInput.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 128);
-    onSettingsChange({ ...settings, watermarkText: sanitized });
+    handleUpdate({ watermarkText: sanitized });
   };
 
   const handleSubStreamToggle = () => {
-    onSettingsChange({ ...settings, subStreamEnabled: !settings.subStreamEnabled });
+    handleUpdate({ subStreamEnabled: !settings.subStreamEnabled });
   };
+
+  const currentResolution = RESOLUTION_OPTIONS.find(r => r.value === settings.resolution) || RESOLUTION_OPTIONS[2];
+
+  // Loading State
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Chargement de l'encodage vidéo...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      
+      {/* Feedback Messages */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-900/50 border border-red-700 text-red-300">
+          Erreur: {(error as Error).message}
+          <button onClick={() => refetch()} className="ml-4 underline hover:no-underline">Réessayer</button>
+        </div>
+      )}
+      {mutation.isPending && (
+         <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-700 text-blue-300 flex items-center gap-2 text-sm">
+           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300"></div>
+           Enregistrement en cours...
+         </div>
+      )}
+      {mutation.isSuccess && (
+        <div className="p-3 rounded-lg bg-green-900/30 border border-green-700 text-green-300 text-sm">
+          ✓ Configuration sauvegardée avec succès!
+        </div>
+      )}
+
       {/* Video Codec */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Codec Vidéo</h2>
@@ -130,7 +291,7 @@ const VideoEncoding: React.FC<VideoEncodingProps> = ({ settings, onSettingsChang
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {resolutionOptions.map((res) => (
+          {RESOLUTION_OPTIONS.map((res) => (
             <button
               key={res.value}
               onClick={() => handleResolutionChange(res.value)}
@@ -179,7 +340,7 @@ const VideoEncoding: React.FC<VideoEncodingProps> = ({ settings, onSettingsChang
             min="1"
             max="25"
             value={settings.frameRate}
-            onChange={(e) => onSettingsChange({ ...settings, frameRate: parseInt(e.target.value) })}
+            onChange={(e) => handleUpdate({ frameRate: parseInt(e.target.value) })}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
           />
           <div className="flex justify-between text-xs text-gray-500">
@@ -193,7 +354,7 @@ const VideoEncoding: React.FC<VideoEncodingProps> = ({ settings, onSettingsChang
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Type de Débit Binaire</h2>
         <p className="text-gray-400 text-sm mb-6">
-          Choisissez entre débit fixe (constant) ou variable (adaptatif). Le mode MJPEG ne prend en charge que le débit fixe.
+          Choisissez entre débit fixe (CBR) ou variable (VBR). Le mode MJPEG ne prend en charge que le débit fixe.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -249,27 +410,26 @@ const VideoEncoding: React.FC<VideoEncodingProps> = ({ settings, onSettingsChang
         {/* Picture Quality - Only for Variable Bitrate */}
         {settings.bitRateType === 'variable' && (
           <div className="p-4 bg-gray-900/50 rounded-lg border border-gray-600">
-            <h3 className="text-white font-medium mb-4">Qualité d'Image</h3>
+            <h3 className="text-white font-medium mb-4">Qualité d'Image (VBR)</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-gray-300">Niveau: {settings.pictureQuality}/10</label>
+                <label className="text-gray-300">Niveau: {settings.pictureQuality}/6</label>
                 <span className="text-sm text-gray-400">
-                  {(settings.pictureQuality || 5) >= 8 ? 'Excellente' : 
-                   (settings.pictureQuality || 5) >= 6 ? 'Bonne' : 
-                   (settings.pictureQuality || 5) >= 4 ? 'Moyenne' : 'Économique'}
+                  {(settings.pictureQuality || 5) >= 5 ? 'Excellente' : 
+                   (settings.pictureQuality || 5) >= 3 ? 'Bonne' : 'Moyenne'}
                 </span>
               </div>
               <input
                 type="range"
                 min="1"
-                max="10"
+                max="6"
                 value={settings.pictureQuality || 5}
-                onChange={(e) => onSettingsChange({ ...settings, pictureQuality: parseInt(e.target.value) })}
+                onChange={(e) => handleUpdate({ pictureQuality: parseInt(e.target.value) })}
                 className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
               />
               <div className="flex justify-between text-xs text-gray-500">
-                <span>Faible</span>
-                <span>Élevée</span>
+                <span>1 (Faible)</span>
+                <span>6 (Élevée)</span>
               </div>
             </div>
           </div>
@@ -292,11 +452,13 @@ const VideoEncoding: React.FC<VideoEncodingProps> = ({ settings, onSettingsChang
               <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <h3 className="text-white font-medium">Débit Référence</h3>
+              <h3 className="text-white font-medium">Plage Recommandée</h3>
             </div>
-            <div className="text-2xl font-bold text-blue-400">{settings.referenceBitRate} kbps</div>
+            <div className="text-2xl font-bold text-blue-400">
+              {currentResolution.minBitrate} - {currentResolution.maxBitrate} kbps
+            </div>
             <div className="text-xs text-blue-300 mt-2">
-              Recommandé: {currentResolution.minBitrate}-{currentResolution.maxBitrate} kbps
+              Basé sur la résolution {settings.resolution}
             </div>
           </div>
 
@@ -305,10 +467,10 @@ const VideoEncoding: React.FC<VideoEncodingProps> = ({ settings, onSettingsChang
             <h3 className="text-white font-medium mb-3">Débit Binaire (kbps)</h3>
             <input
               type="number"
-              min={currentResolution.minBitrate}
-              max={currentResolution.maxBitrate}
+              min={256}
+              max={16384}
               value={settings.bitRate}
-              onChange={(e) => onSettingsChange({ ...settings, bitRate: parseInt(e.target.value) || 0 })}
+              onChange={(e) => handleUpdate({ bitRate: parseInt(e.target.value) || 0 })}
               className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 transition-colors"
             />
             <div className="text-xs text-gray-400 mt-2">
@@ -322,7 +484,7 @@ const VideoEncoding: React.FC<VideoEncodingProps> = ({ settings, onSettingsChang
 
       {/* I Frame Interval */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold text-white mb-4">Intervalle d'Image I</h2>
+        <h2 className="text-xl font-semibold text-white mb-4">Intervalle d'Image I (GOP)</h2>
         <p className="text-gray-400 text-sm mb-6">
           Nombre d'images P entre deux images I. Recommandé: 2× la fréquence d'images (actuellement {settings.frameRate * 2}).
         </p>
@@ -343,7 +505,7 @@ const VideoEncoding: React.FC<VideoEncodingProps> = ({ settings, onSettingsChang
             min="1"
             max="150"
             value={settings.iFrameInterval}
-            onChange={(e) => onSettingsChange({ ...settings, iFrameInterval: parseInt(e.target.value) })}
+            onChange={(e) => handleUpdate({ iFrameInterval: parseInt(e.target.value) })}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
           />
           <div className="flex justify-between text-xs text-gray-500">
@@ -351,57 +513,6 @@ const VideoEncoding: React.FC<VideoEncodingProps> = ({ settings, onSettingsChang
             <span className="text-green-400">{settings.frameRate * 2} (Recommandé)</span>
             <span>150</span>
           </div>
-        </div>
-      </div>
-
-      {/* Watermark Settings */}
-      <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold text-white mb-4">Filigrane Vidéo</h2>
-        <p className="text-gray-400 text-sm mb-6">
-          Ajoutez un filigrane pour vérifier l'intégrité de la vidéo. Caractères autorisés: lettres, chiffres, tirets et underscores (max 128).
-        </p>
-
-        <div className="space-y-4">
-          {/* Enable Toggle */}
-          <div className="flex items-center justify-between p-4 bg-gray-900/30 rounded-lg">
-            <div>
-              <div className="text-white font-medium">Activer le Filigrane</div>
-              <div className="text-gray-400 text-sm mt-1">
-                {settings.watermarkEnabled ? 'Filigrane actif sur la vidéo' : 'Filigrane désactivé'}
-              </div>
-            </div>
-            <button
-              onClick={handleWatermarkToggle}
-              className={`relative inline-flex items-center h-10 rounded-full w-20 transition-colors focus:outline-none ${
-                settings.watermarkEnabled ? 'bg-red-600' : 'bg-gray-700'
-              }`}
-            >
-              <span
-                className={`inline-block w-8 h-8 transform rounded-full bg-white transition-transform ${
-                  settings.watermarkEnabled ? 'translate-x-11' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Watermark Text Input */}
-          {settings.watermarkEnabled && (
-            <div className="p-4 bg-gray-900/50 rounded-lg border border-gray-600">
-              <label className="block text-white font-medium mb-3">Texte du Filigrane</label>
-              <input
-                type="text"
-                value={watermarkInput}
-                onChange={(e) => setWatermarkInput(e.target.value)}
-                onBlur={handleWatermarkTextChange}
-                placeholder="DigitalCCTV"
-                maxLength={128}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 transition-colors"
-              />
-              <div className="text-xs text-gray-400 mt-2">
-                {watermarkInput.length}/128 caractères | Uniquement: a-z, A-Z, 0-9, - et _
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -436,44 +547,17 @@ const VideoEncoding: React.FC<VideoEncodingProps> = ({ settings, onSettingsChang
         </div>
       </div>
 
-      {/* Summary */}
-      <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold text-white mb-4">Résumé de la Configuration</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-3 bg-gray-900/50 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">Codec</div>
-            <div className="text-white font-semibold">{settings.videoCodec}</div>
-          </div>
-          <div className="p-3 bg-gray-900/50 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">Résolution</div>
-            <div className="text-white font-semibold text-xs">{settings.resolution}</div>
-          </div>
-          <div className="p-3 bg-gray-900/50 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">FPS</div>
-            <div className="text-white font-semibold">{settings.frameRate}</div>
-          </div>
-          <div className="p-3 bg-gray-900/50 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">Débit</div>
-            <div className="text-white font-semibold text-xs">{settings.bitRate} kbps</div>
-          </div>
-          <div className="p-3 bg-gray-900/50 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">Type</div>
-            <div className="text-white font-semibold text-xs">{settings.bitRateType === 'fixed' ? 'Fixe' : 'Variable'}</div>
-          </div>
-          <div className="p-3 bg-gray-900/50 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">I-Frame</div>
-            <div className="text-white font-semibold">{settings.iFrameInterval}</div>
-          </div>
-          <div className="p-3 bg-gray-900/50 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">Filigrane</div>
-            <div className="text-white font-semibold">{settings.watermarkEnabled ? 'ON' : 'OFF'}</div>
-          </div>
-          <div className="p-3 bg-gray-900/50 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">Sub Stream</div>
-            <div className="text-white font-semibold">{settings.subStreamEnabled ? 'ON' : 'OFF'}</div>
-          </div>
-        </div>
+      {/* Save Button */}
+      <div className="flex justify-end pt-2">
+        <button
+          onClick={handleSave}
+          disabled={!isDirty || mutation.isPending}
+          className="px-8 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-3 shadow-lg shadow-red-900/20"
+        >
+          {mutation.isPending ? 'Enregistrement...' : 'Appliquer la Configuration'}
+        </button>
       </div>
+
     </div>
   );
 };
