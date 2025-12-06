@@ -118,6 +118,7 @@ const ProfileManagement: React.FC<ProfileManagementProps> = ({
   // Sync from API to local state
   useEffect(() => {
     if (apiData) {
+      console.log(apiData)
       const uiData = apiToUI(apiData);
       setSettings(uiData);
 
