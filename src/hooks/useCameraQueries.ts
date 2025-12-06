@@ -12,6 +12,7 @@ export const cameraKeys = {
   systemTime: (camId: string) => ['camera', camId, 'system', 'time'] as const,
 
   // Video
+    videoMode: (camId: string) => ['camera', camId, 'video', 'mode'] as const,
   setup: (camId: string) => ['camera', camId, 'setup'] as const,
   videoColor: (camId: string) => ['camera', camId, 'video', 'color'] as const,
   exposure: (camId: string) => ['camera', camId, 'video', 'exposure'] as const,
@@ -82,6 +83,67 @@ export function useAllSystem(camId: string, enabled = true) {
 // =============================================================================
 // VIDEO QUERIES
 // =============================================================================
+
+
+
+// =============================================================================
+// VIDEO MODE TYPES
+// =============================================================================
+export interface VideoInModeRaw {
+  mode: number;           // 0 = full-time, 1 = schedule
+  config0: number;        // 0=Day, 1=Night, 2=Normal
+  config1: number;        // Used in schedule mode
+  timeSection: string[][]; // [7 days][6 periods] - "enabled HH:MM:SS-HH:MM:SS"
+}
+
+// =============================================================================
+// VIDEO MODE PARSER
+// =============================================================================
+function parseVideoInModeResponse(config: Record<string, any>, channel = 0): VideoInModeRaw {
+  const data: VideoInModeRaw = {
+    mode: 0,
+    config0: 2,
+    config1: 0,
+    timeSection: Array(7).fill(null).map(() => Array(6).fill('0 00:00:00-23:59:59')),
+  };
+
+  for (const [key, value] of Object.entries(config)) {
+    if (key === `table.VideoInMode[${channel}].Mode`) {
+      data.mode = parseInt(String(value), 10) || 0;
+    }
+    if (key === `table.VideoInMode[${channel}].Config[0]`) {
+      data.config0 = parseInt(String(value), 10) || 2;
+    }
+    if (key === `table.VideoInMode[${channel}].Config[1]`) {
+      data.config1 = parseInt(String(value), 10) || 0;
+    }
+    
+    const tsMatch = key.match(/table\.VideoInMode\[(\d+)\]\.TimeSection\[(\d+)\]\[(\d+)\]/);
+    if (tsMatch && parseInt(tsMatch[1], 10) === channel) {
+      const day = parseInt(tsMatch[2], 10);
+      const period = parseInt(tsMatch[3], 10);
+      if (day >= 0 && day < 7 && period >= 0 && period < 6) {
+        data.timeSection[day][period] = String(value);
+      }
+    }
+  }
+
+  return data;
+}
+
+// =============================================================================
+// VIDEO MODE QUERY
+// =============================================================================
+export function useVideoInMode(camId: string, enabled = true) {
+  return useQuery({
+    queryKey: cameraKeys.videoMode(camId),
+    queryFn: async () => {
+      const response = await apiFetch(`/camera/${camId}/video/mode`);
+      return parseVideoInModeResponse(response.config || {}, 0);
+    },
+    enabled,
+  });
+}
 export function useAllSetup(camId: string, enabled = true) {
   return useQuery({
     queryKey: cameraKeys.setup(camId),

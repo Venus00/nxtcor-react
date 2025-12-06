@@ -221,3 +221,32 @@ export function useGetTemperature(camId: string) {
       apiFetch(`/camera/${camId}/live/temperature`, 'POST', { x, y }),
   });
 }
+
+// =============================================================================
+// VIDEO MODE MUTATION
+// =============================================================================
+export interface VideoInModeParams {
+  channel?: number;
+  mode: number;
+  config0: number;
+  config1: number;
+  timeSection?: string[][];
+}
+
+export function useSetVideoInMode(camId: string) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (params: VideoInModeParams) => 
+      apiFetch(`/camera/${camId}/video/mode`, 'POST', {
+        channel: params.channel ?? 0,
+        mode: params.mode,
+        config0: params.config0,
+        config1: params.config1,
+        timeSection: params.timeSection,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cameraKeys.videoMode(camId) });
+    },
+  });
+}
