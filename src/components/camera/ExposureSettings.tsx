@@ -117,7 +117,7 @@ const ExposureSettings: React.FC<ExposureSettingsProps>  = ({}) => {
   };
 
   const handleSave = () => {
-    const payload = uiToApi(settings, activeProfile);
+    const payload = uiToApi(settings, 0);
     mutation.mutate(payload);
   };
 
