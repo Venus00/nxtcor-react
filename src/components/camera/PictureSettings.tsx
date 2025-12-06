@@ -128,8 +128,8 @@ const uiToApi = (ui: PictureSettingsData) => {
       [`Level`]: ui.sharpnessCNT,
     },
     denoise: {
-      [`table.VideoInDenoise[0][${profileIdx}].2DLevel`]: ui.nr2D,
-      [`table.VideoInDenoise[0][${profileIdx}].3DAutoType.AutoLevel`]: ui.nr3D,
+      [`2DLevel`]: ui.nr2D,
+      [`3DAutoType.AutoLevel`]: ui.nr3D,
     },
     imageControl: {
       [`Flip`]: ui.flip === "inverted",
