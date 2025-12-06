@@ -106,7 +106,7 @@ function parseVideoInModeResponse(config: Record<string, any>, channel = 0): Vid
     config1: 0,
     timeSection: Array(7).fill(null).map(() => Array(6).fill('0 00:00:00-23:59:59')),
   };
-
+  console.log(config)
   for (const [key, value] of Object.entries(config)) {
     if (key === `table.VideoInMode[${channel}].Mode`) {
       data.mode = parseInt(String(value), 10) || 0;
