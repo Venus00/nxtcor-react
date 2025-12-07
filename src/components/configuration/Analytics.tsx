@@ -11,6 +11,8 @@ interface TrackedObject {
   x: number;
   y: number;
   z: number;
+  x2: number;
+  y2: number;
 }
 
 interface TrackingData {
@@ -109,10 +111,12 @@ const Analytics: React.FC = () => {
         // Scale coordinates from camera resolution (640x480) to actual canvas size
         const boxX = (obj.x / cameraWidth) * canvas.width
         const boxY = (obj.y / cameraHeight) * canvas.height
+        const boxX2 = (obj.x2 / cameraWidth) * canvas.width
+        const boxY2 = (obj.y2 / cameraHeight) * canvas.height
 
-        // Scale box dimensions proportionally to canvas size
-        const boxWidth = (80 / cameraWidth) * canvas.width
-        const boxHeight = (120 / cameraHeight) * canvas.height
+        // Calculate box dimensions from diagonal coordinates
+        const boxWidth = boxX2 - boxX
+        const boxHeight = boxY2 - boxY
 
         // Determine color based on tracking status
         const isTracking = trackingId === obj.trackId
