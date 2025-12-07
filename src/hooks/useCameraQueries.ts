@@ -281,7 +281,7 @@ export function useAudioEncode(camId: string) {
 export function useVideoEncodeROI(camId: string, enabled = true) {
   return useQuery({
     queryKey: cameraKeys.videoROI(camId),
-    queryFn: () => apiFetch(`/camera/${camId}/videoROI`),
+    queryFn: () => apiFetch(`/camera/${camId}/vide/videoROI`),
     enabled,
   });
 }
