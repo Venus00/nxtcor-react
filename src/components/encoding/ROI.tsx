@@ -101,7 +101,7 @@ const apiToUI = (data: any): ROIData => {
  * Maps back to table.VideoEncodeROI[0]...
  */
 const uiToApi = (ui: ROIData) => {
-  const prefix = "table.VideoEncodeROI[0].";
+  const prefix = "VideoEncodeROI[0].";
   const payload: any = {
     [`${prefix}Main`]: ui.enabled,
     // Take quality from first region or default to 6 if none
