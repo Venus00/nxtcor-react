@@ -99,6 +99,7 @@ const PresetManagement: React.FC = () => {
   const handleAddPreset = () => {
     // Find first available ID (1-128)
     const usedIds = presets.map((p) => p.id);
+    console.log("Used IDs:", usedIds);
     let newId = 1;
     while (usedIds.includes(newId) && newId <= 128) newId++;
 
