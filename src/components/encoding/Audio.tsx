@@ -1,22 +1,22 @@
 // components/camera/Audio.tsx
 import React, { useEffect, useState } from "react";
 import { useCamId } from "../../contexts/CameraContext";
-import { useAudioEncode } from "../../hooks/useCameraQueries";
-import { useSetAudioEncode } from "../../hooks/useCameraMutations";
+import { useEncode as useVideoEncode } from "../../hooks/useCameraQueries"; // Audio settings are part of Encode config
+import { useSetEncode as useSetVideoEncode } from "../../hooks/useCameraMutations";
 
 // =============================================================================
 // TYPES & INTERFACES
 // =============================================================================
 
 export interface AudioData {
-  audioEnabled: boolean; // API: AudioEnable
-  channelNumber: number; // For UI selection, defaults to 1
-  audioCodec: 'AAC' | 'MPEG2-Layer2'; // API: Compression
-  samplingFrequency: '8K' | '16K'; // API: Frequency
-  audioInType: 'LineIn' | 'Mic'; // API: AudioInType
-  noiseFilter: boolean; // API: NoiseFilter
-  microphoneVolume: number; // 0-100 API: MicrophoneVolume
-  speakerVolume: number; // 0-100 API: SpeakerVolume
+  audioEnabled: boolean;           // API: table.Encode[0].MainFormat[0].AudioEnable
+  channelNumber: number;           // UI Only (usually fixed to 1 for config)
+  audioCodec: 'AAC' | 'MPEG2-Layer2' | 'G.711A'; // API: ...Audio.Compression
+  samplingFrequency: '8K' | '16K'; // API: ...Audio.Frequency
+  audioInType: 'LineIn' | 'Mic';   // API: table.Encode[0].Attribute.AudioInType
+  noiseFilter: boolean;            // API: table.Encode[0].Attribute.NoiseFilter
+  microphoneVolume: number;        // API: table.Encode[0].Attribute.MicrophoneVolume
+  speakerVolume: number;           // API: table.Encode[0].Attribute.SpeakerVolume
 }
 
 const defaultState: AudioData = {
@@ -36,73 +36,61 @@ const defaultState: AudioData = {
 
 /**
  * Parses API response to UI state.
- * Fixed to Index [0] (Main Stream) for simplicity as per common use case.
- * API Ref: table.Encode[0].MainFormat[0].Audio... and Attribute...
+ * Maps MainFormat Audio settings and global Attribute settings.
+ *
  */
 const apiToUI = (data: any): AudioData => {
   if (!data) return defaultState;
   
   const config = data.config || data;
-  const prefix = "table.Encode[0].MainFormat[0]."; // Main stream
-  // Note: Some attributes like Volume might be under a different structure in some firmware versions,
-  // but based on 3.2.11.1 Response example, they seem grouped or flat.
-  // The provided doc 3.2.11.1 Response shows `Attribute` fields like `MicrophoneVolume` separate or flat.
-  // Let's assume standard flat keys based on typical Dahua-like API structure often seen in these docs.
-  // Wait, checking 3.2.11.1 Response text specifically:
-  // "table.Encode[0].MainFormat[0].AudioEnable=false"
-  // "table.Encode[0].MainFormat[0].Audio.Compression=AAC"
-  // "table.Encode[0].MainFormat[0].Audio.Frequency=16000"
-  // "Attribute" fields:
-  // "table.Encode[0].Attribute.AudioInType=LineIn"
-  // "table.Encode[0].Attribute.NoiseFilter=Enable"
-  // "table.Encode[0].Attribute.MicrophoneVolume=50"
-  // "table.Encode[0].Attribute.SpeakerVolume=50"
-  // (Inferred from 3.2.11.1 Figure 3.1-27 context, though text response list was truncated in OCR, standard is Attribute struct)
+  const mainPfx = "table.Encode[0].MainFormat[0]."; 
+  const attrPfx = "table.Encode[0].Attribute."; 
 
   const getVal = (key: string, def: any) => config[key] ?? def;
 
-  const audioEnabled = String(getVal(`${prefix}AudioEnable`, "false")) === "true";
-  const audioCodec = getVal(`${prefix}Audio.Compression`, "AAC");
-  const freqVal = getVal(`${prefix}Audio.Frequency`, "16000");
-  const samplingFrequency = freqVal === "8000" ? '8K' : '16K';
+  // Main Stream Audio Config
+  const audioEnabled = String(getVal(`${mainPfx}AudioEnable`, "false")) === "true";
+  const comp = getVal(`${mainPfx}Audio.Compression`, "AAC");
+  const freq = getVal(`${mainPfx}Audio.Frequency`, "16000");
 
-  // Attribute keys (Assumed based on Figure 3.1-27)
-  // Use `table.Encode[0].Attribute.` if distinct, or check if flat.
-  // Let's try likely path `table.Encode[0].Attribute.`
-  const attrPrefix = "table.Encode[0].Attribute.";
-  const audioInType = getVal(`${attrPrefix}AudioInType`, "LineIn");
-  const noiseFilter = getVal(`${attrPrefix}NoiseFilter`, "Enable") === "Enable";
-  const microphoneVolume = Number(getVal(`${attrPrefix}MicrophoneVolume`, 50));
-  const speakerVolume = Number(getVal(`${attrPrefix}SpeakerVolume`, 50));
+  // Attributes (Volume/Input)
+  // Note: If these keys are missing in the specific JSON snippet but present in the full device state,
+  // we default them to safe values to keep the UI functional.
+  const audioInType = getVal(`${attrPfx}AudioInType`, "LineIn");
+  const noiseFilter = getVal(`${attrPfx}NoiseFilter`, "Enable") === "Enable";
+  const micVol = Number(getVal(`${attrPfx}MicrophoneVolume`, 50));
+  const spkVol = Number(getVal(`${attrPfx}SpeakerVolume`, 50));
 
   return {
     audioEnabled,
-    channelNumber: 1, // Client-side only selection usually
-    audioCodec: audioCodec as AudioData['audioCodec'],
-    samplingFrequency,
+    channelNumber: 1,
+    audioCodec: (comp === 'MPEG2' || comp === 'Layer2') ? 'MPEG2-Layer2' : 'AAC',
+    samplingFrequency: freq === "8000" ? '8K' : '16K',
     audioInType: audioInType as AudioData['audioInType'],
     noiseFilter,
-    microphoneVolume,
-    speakerVolume
+    microphoneVolume: micVol,
+    speakerVolume: spkVol
   };
 };
 
 /**
  * Converts UI state to API payload.
- * Maps back to table.Encode[0]...
  */
 const uiToApi = (ui: AudioData) => {
-  const prefix = "table.Encode[0].MainFormat[0].";
-  const attrPrefix = "table.Encode[0].Attribute.";
+  const mainPfx = "table.Encode[0].MainFormat[0].";
+  const attrPfx = "table.Encode[0].Attribute.";
 
   return {
-    [`${prefix}AudioEnable`]: ui.audioEnabled,
-    [`${prefix}Audio.Compression`]: ui.audioCodec,
-    [`${prefix}Audio.Frequency`]: ui.samplingFrequency === '8K' ? 8000 : 16000,
-    [`${attrPrefix}AudioInType`]: ui.audioInType,
-    [`${attrPrefix}NoiseFilter`]: ui.noiseFilter ? "Enable" : "Disable",
-    [`${attrPrefix}MicrophoneVolume`]: ui.microphoneVolume,
-    [`${attrPrefix}SpeakerVolume`]: ui.speakerVolume
+    // Main Stream Audio
+    [`${mainPfx}AudioEnable`]: ui.audioEnabled,
+    [`${mainPfx}Audio.Compression`]: ui.audioCodec === 'MPEG2-Layer2' ? 'MPEG2' : 'AAC',
+    [`${mainPfx}Audio.Frequency`]: ui.samplingFrequency === '8K' ? 8000 : 16000,
+    
+    // Attributes
+    [`${attrPfx}AudioInType`]: ui.audioInType,
+    [`${attrPfx}NoiseFilter`]: ui.noiseFilter ? "Enable" : "Disable",
+    [`${attrPfx}MicrophoneVolume`]: ui.microphoneVolume,
+    [`${attrPfx}SpeakerVolume`]: ui.speakerVolume
   };
 };
 
@@ -112,8 +100,9 @@ const uiToApi = (ui: AudioData) => {
 
 const Audio: React.FC = () => {
   const camId = useCamId();
-  const { data: apiData, isLoading, error, refetch } = useAudioEncode(camId);
-  const mutation = useSetAudioEncode(camId);
+  // We use the Encode API because Audio settings are part of the Encode configuration
+  const { data: apiData, isLoading, error, refetch } = useVideoEncode(camId); 
+  const mutation = useSetVideoEncode(camId);
 
   // Local State
   const [settings, setSettings] = useState<AudioData>(defaultState);
@@ -140,6 +129,7 @@ const Audio: React.FC = () => {
     setIsDirty(false);
   };
 
+  // Helper for UI visuals
   const getVolumeColor = (volume: number) => {
     if (volume === 0) return 'text-gray-400';
     if (volume <= 30) return 'text-yellow-400';
@@ -148,24 +138,10 @@ const Audio: React.FC = () => {
   };
 
   const getVolumeIcon = (volume: number) => {
-    if (volume === 0) {
-      return (
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-      );
-    }
-    if (volume <= 30) {
-      return (
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-      );
-    }
-    if (volume <= 70) {
-      return (
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-      );
-    }
-    return (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-    );
+    if (volume === 0) return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />;
+    if (volume <= 30) return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />;
+    if (volume <= 70) return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />;
+    return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />;
   };
 
   if (isLoading) {
@@ -173,7 +149,7 @@ const Audio: React.FC = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading Audio Configuration...</p>
+          <p className="text-gray-400">Chargement de la configuration audio...</p>
         </div>
       </div>
     );
@@ -185,28 +161,28 @@ const Audio: React.FC = () => {
       {/* Feedback Messages */}
       {error && (
         <div className="p-4 rounded-lg bg-red-900/50 border border-red-700 text-red-300">
-          Error: {(error as Error).message}
-          <button onClick={() => refetch()} className="ml-4 underline hover:no-underline">Retry</button>
+          Erreur: {(error as Error).message}
+          <button onClick={() => refetch()} className="ml-4 underline hover:no-underline">Réessayer</button>
         </div>
       )}
       {mutation.isPending && (
          <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-700 text-blue-300 flex items-center gap-2 text-sm">
            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300"></div>
-           Saving changes...
+           Enregistrement en cours...
          </div>
       )}
       {mutation.isSuccess && (
         <div className="p-3 rounded-lg bg-green-900/30 border border-green-700 text-green-300 text-sm">
-          ✓ Audio settings saved successfully!
+          ✓ Configuration audio enregistrée!
         </div>
       )}
 
       {/* Header */}
       <div className="border-b border-gray-700 pb-4 flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-2">Audio Configuration</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">Configuration Audio</h2>
           <p className="text-gray-400 text-sm">
-            Configure audio codec, sampling, input type, and volume settings
+            Configuration du codec, de l'échantillonnage, des entrées et du volume
           </p>
         </div>
         <button
@@ -214,7 +190,7 @@ const Audio: React.FC = () => {
           disabled={!isDirty || mutation.isPending}
           className="px-6 py-2 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 shadow-lg transition-colors"
         >
-          {mutation.isPending ? 'Saving...' : 'Save Settings'}
+          {mutation.isPending ? '...' : 'Sauvegarder'}
         </button>
       </div>
 
@@ -226,10 +202,10 @@ const Audio: React.FC = () => {
               <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
               </svg>
-              Audio Enable
+              Activer l'Audio
             </h3>
             <p className="text-sm text-gray-400">
-              Enable audio channel to transmit composite audio and video stream
+              Activer le canal audio pour transmettre le flux composite (Audio + Vidéo)
             </p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
@@ -243,293 +219,146 @@ const Audio: React.FC = () => {
           </label>
         </div>
 
-        {settings.audioEnabled && (
+        {settings.audioEnabled ? (
           <div className="mt-4 p-4 bg-green-900/20 border border-green-600/50 rounded-lg">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-sm text-green-200">
-                <strong>Audio Enabled:</strong> Network stream will include both audio and video data
+                <strong>Audio Activé:</strong> Le flux réseau inclura les données audio et vidéo.
               </p>
             </div>
           </div>
-        )}
-
-        {!settings.audioEnabled && (
+        ) : (
           <div className="mt-4 p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-sm text-gray-400">
-                Audio disabled - Only video images will be transmitted
+                Audio désactivé - Seules les images vidéo seront transmises.
               </p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Audio Codec */}
+      {/* Codec & Sampling */}
       {settings.audioEnabled && (
         <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
             </svg>
-            Audio Codec
+            Format Audio
           </h3>
-          <p className="text-sm text-gray-400 mb-4">
-            Select the audio compression codec (AAC recommended for better quality)
-          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             {/* Codec Selection */}
+             <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Codec</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleUpdate('audioCodec', 'AAC')}
+                    className={`p-3 rounded-lg border text-sm font-medium transition-all ${
+                      settings.audioCodec === 'AAC' 
+                        ? 'border-red-500 bg-red-500/10 text-white' 
+                        : 'border-gray-600 bg-gray-800/50 text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    AAC
+                  </button>
+                  <button
+                    onClick={() => handleUpdate('audioCodec', 'MPEG2-Layer2')}
+                    className={`p-3 rounded-lg border text-sm font-medium transition-all ${
+                      settings.audioCodec === 'MPEG2-Layer2'
+                        ? 'border-red-500 bg-red-500/10 text-white'
+                        : 'border-gray-600 bg-gray-800/50 text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    MPEG2
+                  </button>
+                </div>
+             </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-              onClick={() => handleUpdate('audioCodec', 'AAC')}
-              className={`p-5 rounded-lg border-2 transition-all ${
-                settings.audioCodec === 'AAC'
-                  ? 'border-red-500 bg-red-500/10'
-                  : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  settings.audioCodec === 'AAC'
-                    ? 'border-red-500 bg-red-500'
-                    : 'border-gray-500'
-                }`}>
-                  {settings.audioCodec === 'AAC' && (
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  )}
+             {/* Frequency Selection */}
+             <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Fréquence d'Échantillonnage</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleUpdate('samplingFrequency', '8K')}
+                    className={`p-3 rounded-lg border text-sm font-medium transition-all ${
+                      settings.samplingFrequency === '8K'
+                        ? 'border-red-500 bg-red-500/10 text-white'
+                        : 'border-gray-600 bg-gray-800/50 text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    8 kHz (Low)
+                  </button>
+                  <button
+                    onClick={() => handleUpdate('samplingFrequency', '16K')}
+                    className={`p-3 rounded-lg border text-sm font-medium transition-all ${
+                      settings.samplingFrequency === '16K'
+                        ? 'border-red-500 bg-red-500/10 text-white'
+                        : 'border-gray-600 bg-gray-800/50 text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    16 kHz (Std)
+                  </button>
                 </div>
-                <div className="flex-1 text-left">
-                  <h4 className="font-semibold text-white mb-1">AAC</h4>
-                  <p className="text-xs text-gray-400">
-                    Advanced Audio Coding - Better quality, default option
-                  </p>
-                </div>
-                <span className="px-2 py-1 bg-green-600/20 text-green-400 text-xs rounded font-semibold">
-                  Default
-                </span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleUpdate('audioCodec', 'MPEG2-Layer2')}
-              className={`p-5 rounded-lg border-2 transition-all ${
-                settings.audioCodec === 'MPEG2-Layer2'
-                  ? 'border-red-500 bg-red-500/10'
-                  : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  settings.audioCodec === 'MPEG2-Layer2'
-                    ? 'border-red-500 bg-red-500'
-                    : 'border-gray-500'
-                }`}>
-                  {settings.audioCodec === 'MPEG2-Layer2' && (
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <div className="flex-1 text-left">
-                  <h4 className="font-semibold text-white mb-1">MPEG2-Layer2</h4>
-                  <p className="text-xs text-gray-400">
-                    Legacy codec - Compatible with older systems
-                  </p>
-                </div>
-              </div>
-            </button>
+             </div>
           </div>
         </div>
       )}
 
-      {/* Sampling Frequency */}
+      {/* Input & Noise Filter */}
       {settings.audioEnabled && (
         <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-            </svg>
-            Sampling Frequency
-          </h3>
-          <p className="text-sm text-gray-400 mb-4">
-            Higher sampling frequency provides better audio quality but increases bandwidth
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-              onClick={() => handleUpdate('samplingFrequency', '8K')}
-              className={`p-5 rounded-lg border-2 transition-all ${
-                settings.samplingFrequency === '8K'
-                  ? 'border-red-500 bg-red-500/10'
-                  : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  settings.samplingFrequency === '8K'
-                    ? 'border-red-500 bg-red-500'
-                    : 'border-gray-500'
-                }`}>
-                  {settings.samplingFrequency === '8K' && (
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <div className="flex-1 text-left">
-                  <h4 className="font-semibold text-white mb-1">8 kHz</h4>
-                  <p className="text-xs text-gray-400">
-                    Lower quality - Reduced bandwidth usage
-                  </p>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleUpdate('samplingFrequency', '16K')}
-              className={`p-5 rounded-lg border-2 transition-all ${
-                settings.samplingFrequency === '16K'
-                  ? 'border-red-500 bg-red-500/10'
-                  : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  settings.samplingFrequency === '16K'
-                    ? 'border-red-500 bg-red-500'
-                    : 'border-gray-500'
-                }`}>
-                  {settings.samplingFrequency === '16K' && (
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <div className="flex-1 text-left">
-                  <h4 className="font-semibold text-white mb-1">16 kHz</h4>
-                  <p className="text-xs text-gray-400">
-                    Standard quality - Recommended setting
-                  </p>
-                </div>
-                <span className="px-2 py-1 bg-green-600/20 text-green-400 text-xs rounded font-semibold">
-                  Default
-                </span>
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Audio In Type */}
-      {settings.audioEnabled && (
-        <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
-            Audio Input Type
+            Entrée Audio & Traitement
           </h3>
-          <p className="text-sm text-gray-400 mb-4">
-            Select the audio input source type
-          </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-              onClick={() => handleUpdate('audioInType', 'LineIn')}
-              className={`p-5 rounded-lg border-2 transition-all ${
-                settings.audioInType === 'LineIn'
-                  ? 'border-red-500 bg-red-500/10'
-                  : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  settings.audioInType === 'LineIn'
-                    ? 'border-red-500 bg-red-500'
-                    : 'border-gray-500'
-                }`}>
-                  {settings.audioInType === 'LineIn' && (
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <div className="flex-1 text-left">
-                  <h4 className="font-semibold text-white mb-1">Line In</h4>
-                  <p className="text-xs text-gray-400">
-                    External audio source - Better quality, less noise
-                  </p>
-                </div>
-                <span className="px-2 py-1 bg-green-600/20 text-green-400 text-xs rounded font-semibold">
-                  Default
-                </span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleUpdate('audioInType', 'Mic')}
-              className={`p-5 rounded-lg border-2 transition-all ${
-                settings.audioInType === 'Mic'
-                  ? 'border-red-500 bg-red-500/10'
-                  : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  settings.audioInType === 'Mic'
-                    ? 'border-red-500 bg-red-500'
-                    : 'border-gray-500'
-                }`}>
-                  {settings.audioInType === 'Mic' && (
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <div className="flex-1 text-left">
-                  <h4 className="font-semibold text-white mb-1">Microphone</h4>
-                  <p className="text-xs text-gray-400">
-                    Built-in or external microphone input
-                  </p>
-                </div>
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Noise Filter */}
-      {settings.audioEnabled && (
-        <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-                </svg>
-                Noise Filter
-              </h3>
-              <p className="text-sm text-gray-400">
-                Enable to reduce background noise and improve audio clarity
-              </p>
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Input Type */}
+            <div className="flex-1">
+               <label className="block text-sm font-medium text-gray-300 mb-2">Source d'Entrée</label>
+               <div className="flex bg-gray-900/50 p-1 rounded-lg">
+                 <button
+                   onClick={() => handleUpdate('audioInType', 'LineIn')}
+                   className={`flex-1 py-2 rounded text-sm ${settings.audioInType === 'LineIn' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                 >
+                   Line In
+                 </button>
+                 <button
+                   onClick={() => handleUpdate('audioInType', 'Mic')}
+                   className={`flex-1 py-2 rounded text-sm ${settings.audioInType === 'Mic' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                 >
+                   Microphone
+                 </button>
+               </div>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.noiseFilter}
-                onChange={(e) => handleUpdate('noiseFilter', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-14 h-7 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-600"></div>
-            </label>
-          </div>
 
-          {settings.noiseFilter && (
-            <div className="mt-4 p-4 bg-blue-900/20 border border-blue-600/50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm text-blue-200">
-                  Noise filter active - Background noise will be automatically reduced
-                </p>
-              </div>
+            {/* Noise Filter */}
+            <div className="flex-1 flex items-center justify-between bg-gray-900/30 p-3 rounded-lg border border-gray-700">
+               <div>
+                 <span className="block text-white font-medium">Filtre de Bruit</span>
+                 <span className="text-xs text-gray-400">Réduction de bruit ambiant</span>
+               </div>
+               <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.noiseFilter}
+                  onChange={(e) => handleUpdate('noiseFilter', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -540,11 +369,8 @@ const Audio: React.FC = () => {
             <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {getVolumeIcon(50)}
             </svg>
-            Volume Controls
+            Contrôle du Volume
           </h3>
-          <p className="text-sm text-gray-400 mb-6">
-            Adjust microphone and speaker volume levels (0-100)
-          </p>
 
           <div className="space-y-6">
             {/* Microphone Volume */}
@@ -555,35 +381,21 @@ const Audio: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                   </svg>
                   <div>
-                    <h4 className="font-semibold text-white">Microphone Volume</h4>
-                    <p className="text-xs text-gray-400">Input audio level control</p>
+                    <h4 className="font-semibold text-white">Microphone (Entrée)</h4>
                   </div>
                 </div>
                 <span className={`text-2xl font-bold ${getVolumeColor(settings.microphoneVolume)}`}>
                   {settings.microphoneVolume}%
                 </span>
               </div>
-
-              <div className="relative">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={settings.microphoneVolume}
-                  onChange={(e) => handleUpdate('microphoneVolume', parseInt(e.target.value))}
-                  className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
-                  style={{
-                    background: `linear-gradient(to right, #DC2626 0%, #DC2626 ${settings.microphoneVolume}%, #374151 ${settings.microphoneVolume}%, #374151 100%)`
-                  }}
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
-                  <span>Muted</span>
-                  <span>Low</span>
-                  <span>Medium</span>
-                  <span>High</span>
-                  <span>Max</span>
-                </div>
-              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={settings.microphoneVolume}
+                onChange={(e) => handleUpdate('microphoneVolume', parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
+              />
             </div>
 
             {/* Speaker Volume */}
@@ -594,97 +406,25 @@ const Audio: React.FC = () => {
                     {getVolumeIcon(settings.speakerVolume)}
                   </svg>
                   <div>
-                    <h4 className="font-semibold text-white">Speaker Volume</h4>
-                    <p className="text-xs text-gray-400">Output audio level control</p>
+                    <h4 className="font-semibold text-white">Haut-parleur (Sortie)</h4>
                   </div>
                 </div>
                 <span className={`text-2xl font-bold ${getVolumeColor(settings.speakerVolume)}`}>
                   {settings.speakerVolume}%
                 </span>
               </div>
-
-              <div className="relative">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={settings.speakerVolume}
-                  onChange={(e) => handleUpdate('speakerVolume', parseInt(e.target.value))}
-                  className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
-                  style={{
-                    background: `linear-gradient(to right, #DC2626 0%, #DC2626 ${settings.speakerVolume}%, #374151 ${settings.speakerVolume}%, #374151 100%)`
-                  }}
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
-                  <span>Muted</span>
-                  <span>Low</span>
-                  <span>Medium</span>
-                  <span>High</span>
-                  <span>Max</span>
-                </div>
-              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={settings.speakerVolume}
+                onChange={(e) => handleUpdate('speakerVolume', parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
+              />
             </div>
           </div>
         </div>
       )}
-
-      {/* Configuration Summary */}
-      <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 rounded-lg p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          Audio Configuration Summary
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className={`p-4 rounded border ${
-            settings.audioEnabled ? 'bg-green-900/20 border-green-600/50' : 'bg-gray-900/50 border-gray-700'
-          }`}>
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`w-3 h-3 rounded-full ${settings.audioEnabled ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-              <span className="text-sm font-semibold text-gray-300">Audio Status</span>
-            </div>
-            <p className={`text-lg font-bold ${settings.audioEnabled ? 'text-green-400' : 'text-gray-500'}`}>
-              {settings.audioEnabled ? 'Enabled' : 'Disabled'}
-            </p>
-          </div>
-
-          {settings.audioEnabled && (
-            <>
-              <div className="p-4 bg-gray-900/50 rounded border border-gray-700">
-                <div className="flex items-center gap-3 mb-2">
-                  <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                  </svg>
-                  <span className="text-sm font-semibold text-gray-300">Codec</span>
-                </div>
-                <p className="text-lg font-bold text-white">{settings.audioCodec}</p>
-              </div>
-
-              <div className="p-4 bg-gray-900/50 rounded border border-gray-700">
-                <div className="flex items-center gap-3 mb-2">
-                  <svg className="w-4 h-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                  </svg>
-                  <span className="text-sm font-semibold text-gray-300">Sampling</span>
-                </div>
-                <p className="text-lg font-bold text-white">{settings.samplingFrequency === '8K' ? '8 kHz' : '16 kHz'}</p>
-              </div>
-
-              <div className="p-4 bg-gray-900/50 rounded border border-gray-700">
-                <div className="flex items-center gap-3 mb-2">
-                  <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                  <span className="text-sm font-semibold text-gray-300">Input Type</span>
-                </div>
-                <p className="text-lg font-bold text-white">{settings.audioInType === 'LineIn' ? 'Line In' : 'Microphone'}</p>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
     </div>
   );
 };
