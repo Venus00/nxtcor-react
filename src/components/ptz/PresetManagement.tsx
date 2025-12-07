@@ -71,7 +71,7 @@ const apiToUI = (data: any): Preset[] => {
 // =============================================================================
 
 const PresetManagement: React.FC = () => {
-  const camId = useCamId();
+  const camId = 'cam2';
 
   // 1. Data Fetching
   const { data: apiData, isLoading, error, refetch } = usePtzPreset(camId);
