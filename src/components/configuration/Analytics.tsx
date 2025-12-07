@@ -145,7 +145,7 @@ const Analytics: React.FC = () => {
 
   const enableTracking = async (id: number) => {
     try {
-      await fetch(`http://localhost:3000/track/object/${id}`, {
+      await fetch(`http://${window.location.hostname}:3000/track/object/${id}`, {
         method: 'POST',
       })
       setTrackingId(id)
