@@ -40,71 +40,100 @@ const Analytics: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
   const objectMapRef = useRef<Map<number, TrackedObjectWithTimestamp>>(new Map())
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // WebSocket connection
+  // WebSocket connection with auto-reconnect
   useEffect(() => {
-    const ws = new WebSocket(`ws://${window.location.hostname}:8080`)
+    let ws: WebSocket | null = null
+    let isUnmounting = false
 
-    ws.onopen = () => {
-      console.log('WebSocket connected')
-      setWsConnected(true)
-    }
-
-    ws.onmessage = (event) => {
-      try {
-        console.log(event)
-        const data: TrackingData = JSON.parse(event.data)
-        if (data.type === 'tracking_data') {
-          const now = Date.now()
-          const objectMap = objectMapRef.current
-
-          // Update or add objects with current timestamp
-          data.data.objects.forEach(obj => {
-            objectMap.set(obj.trackId, {
-              ...obj,
-              lastSeen: now
-            })
-          })
-
-          // Remove objects not seen for more than 5 seconds
-          const activeObjects: TrackedObjectWithTimestamp[] = []
-          objectMap.forEach((obj, trackId) => {
-            if (now - obj.lastSeen < 5000) {
-              activeObjects.push(obj)
-            } else {
-              objectMap.delete(trackId)
-              // If the removed object was being tracked, clear tracking
-              if (trackingId === trackId) {
-                setTrackingId(null)
-              }
-            }
-          })
-
-          setObjects(activeObjects)
-
-          if (!data.data.crcValid) {
-            console.warn('Checksum validation failed, but displaying objects anyway')
-          }
-        }
-      } catch (err) {
-        console.error('Error parsing WebSocket message:', err)
+    const connect = () => {
+      // Clear any existing reconnect timeout
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+        reconnectTimeoutRef.current = null
       }
+
+      ws = new WebSocket(`ws://${window.location.hostname}:8080`)
+
+      ws.onopen = () => {
+        console.log('WebSocket connected')
+        setWsConnected(true)
+      }
+
+      ws.onmessage = (event) => {
+        try {
+          console.log(event)
+          const data: TrackingData = JSON.parse(event.data)
+          if (data.type === 'tracking_data') {
+            const now = Date.now()
+            const objectMap = objectMapRef.current
+
+            // Update or add objects with current timestamp
+            data.data.objects.forEach(obj => {
+              objectMap.set(obj.trackId, {
+                ...obj,
+                lastSeen: now
+              })
+            })
+
+            // Remove objects not seen for more than 5 seconds
+            const activeObjects: TrackedObjectWithTimestamp[] = []
+            objectMap.forEach((obj, trackId) => {
+              if (now - obj.lastSeen < 5000) {
+                activeObjects.push(obj)
+              } else {
+                objectMap.delete(trackId)
+                // If the removed object was being tracked, clear tracking
+                if (trackingId === trackId) {
+                  setTrackingId(null)
+                }
+              }
+            })
+
+            setObjects(activeObjects)
+
+            if (!data.data.crcValid) {
+              console.warn('Checksum validation failed, but displaying objects anyway')
+            }
+          }
+        } catch (err) {
+          console.error('Error parsing WebSocket message:', err)
+        }
+      }
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error)
+        setWsConnected(false)
+      }
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected')
+        setWsConnected(false)
+
+        // Attempt to reconnect after 5 seconds if not unmounting
+        if (!isUnmounting) {
+          console.log('Attempting to reconnect in 5 seconds...')
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connect()
+          }, 5000)
+        }
+      }
+
+      wsRef.current = ws
     }
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error)
-      setWsConnected(false)
-    }
-
-    ws.onclose = () => {
-      console.log('WebSocket disconnected')
-      setWsConnected(false)
-    }
-
-    wsRef.current = ws
+    // Initial connection
+    connect()
 
     return () => {
-      ws.close()
+      isUnmounting = true
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+      }
+      if (ws) {
+        ws.close()
+      }
     }
   }, [trackingId])
 
