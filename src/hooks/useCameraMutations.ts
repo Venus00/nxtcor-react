@@ -149,7 +149,15 @@ export function useSetAudioEncode(camId: string) {
         },
     });
 }
-
+export function useSetVideoEncodeROI(camId: string) {
+  const queryClient = useQueryClient(); 
+    return useMutation({
+        mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/videoROI`, 'POST', params),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: cameraKeys.videoROI(camId) });
+        },
+    });
+}
 // =============================================================================
 // OSD MUTATIONS
 // =============================================================================

@@ -30,7 +30,8 @@ export const cameraKeys = {
   denoise: (camId: string) => ["camera", camId, "video", "denoise"] as const,
   encode: (camId: string) => ["camera", camId, "encode"] as const,
   osd: (camId: string) => ["camera", camId, "osd"] as const,
-audio: (camId: string) => ["camera", camId, "encode", "audio"] as const,
+  audio: (camId: string) => ["camera", camId, "encode", "audio"] as const,
+  videoROI: (camId: string) => ["camera", camId, "videoROI"] as const,
   // Network
   network: (camId: string) => ["camera", camId, "network"] as const,
   tcpIp: (camId: string) => ["camera", camId, "network", "tcpip"] as const,
@@ -174,7 +175,7 @@ export function useVideoColor(camId: string, enabled = true) {
 }
 
 export function useVideoInDenoise(camId: string, enabled = true) {
-    return useQuery({
+  return useQuery({
     queryKey: cameraKeys.denoise(camId),
     queryFn: () => apiFetch(`/camera/${camId}/video/denoise`),
     enabled,
@@ -182,7 +183,7 @@ export function useVideoInDenoise(camId: string, enabled = true) {
 }
 
 export function useVideoImageControl(camId: string, enabled = true) {
-    return useQuery({
+  return useQuery({
     queryKey: cameraKeys.flip(camId),
     queryFn: () => apiFetch(`/camera/${camId}/video/flip`),
     enabled,
@@ -269,15 +270,21 @@ export function useEncode(camId: string, enabled = true) {
 }
 
 export function useAudioEncode(camId: string) {
-    return useQuery({
-
-        queryKey: cameraKeys.audio(camId),
+  return useQuery({
+    queryKey: cameraKeys.audio(camId),
 
     queryFn: () => apiFetch(`/camera/${camId}/encode/audio`),
-    });
+  });
 }
 // =============================================================================
 
+export function useVideoEncodeROI(camId: string, enabled = true) {
+  return useQuery({
+    queryKey: cameraKeys.videoROI(camId),
+    queryFn: () => apiFetch(`/camera/${camId}/videoROI`),
+    enabled,
+  });
+}
 export function useOSD(camId: string, enabled = true) {
   return useQuery({
     queryKey: cameraKeys.osd(camId),
