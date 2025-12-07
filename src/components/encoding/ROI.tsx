@@ -101,11 +101,11 @@ const apiToUI = (data: any): ROIData => {
  * Maps back to table.VideoEncodeROI[0]...
  */
 const uiToApi = (ui: ROIData) => {
-  const prefix = "VideoEncodeROI[0].";
+  // const prefix = "VideoEncodeROI[0].";
   const payload: any = {
-    [`${prefix}Main`]: ui.enabled,
+    [`Main`]: ui.enabled,
     // Take quality from first region or default to 6 if none
-    [`${prefix}Quality`]: ui.regions.length > 0 ? ui.regions[0].quality : 6, 
+    [`Quality`]: ui.regions.length > 0 ? ui.regions[0].quality : 6, 
   };
 
   // Map regions back to 0-8192 space
@@ -117,16 +117,16 @@ const uiToApi = (ui: ROIData) => {
       const w = Math.round((region.width / 100) * API_COORD_MAX);
       const h = Math.round((region.height / 100) * API_COORD_MAX);
       
-      payload[`${prefix}Regions[${i}][0]`] = x1;
-      payload[`${prefix}Regions[${i}][1]`] = y1;
-      payload[`${prefix}Regions[${i}][2]`] = x1 + w;
-      payload[`${prefix}Regions[${i}][3]`] = y1 + h;
+      payload[`Regions[${i}][0]`] = x1;
+      payload[`Regions[${i}][1]`] = y1;
+      payload[`Regions[${i}][2]`] = x1 + w;
+      payload[`Regions[${i}][3]`] = y1 + h;
     } else {
-      // Clear unused regions
-      payload[`${prefix}Regions[${i}][0]`] = 0;
-      payload[`${prefix}Regions[${i}][1]`] = 0;
-      payload[`${prefix}Regions[${i}][2]`] = 0;
-      payload[`${prefix}Regions[${i}][3]`] = 0;
+      // Clear gions
+      payload[`Regions[${i}][0]`] = 0;
+      payload[`Regions[${i}][1]`] = 0;
+      payload[`Regions[${i}][2]`] = 0;
+      payload[`Regions[${i}][3]`] = 0;
     }
   }
 
