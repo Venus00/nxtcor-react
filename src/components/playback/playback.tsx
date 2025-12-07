@@ -1,124 +1,348 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
+import { Calendar, Search, Trash2, Clock, Video } from 'lucide-react';
+
+interface VideoFile {
+    name: string;
+    date: string;
+    hour: string;
+    size?: number;
+}
+
+interface VideosByDate {
+    [date: string]: VideoFile[];
+}
+
+const API_BASE_URL = 'http://localhost:3001';
 
 const VideoListSidebar = () => {
-    const [videos, setVideos] = useState<string[]>([]);
-    const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+    const [allVideos, setAllVideos] = useState<VideosByDate>({});
+    const [filteredVideos, setFilteredVideos] = useState<VideoFile[]>([]);
+    const [selectedVideo, setSelectedVideo] = useState<VideoFile | null>(null);
+    const [selectedDate, setSelectedDate] = useState<string>('');
+    const [searchQuery, setSearchQuery] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
 
+    // Fetch all files on mount
     useEffect(() => {
-        // Fetch the list of videos from the backend
-        axios.get('/cgi-bin/videosList.cgi')
-            .then(response => {
-                console.log('Response data:', response.data); // Inspect the response
-
-                // Ensure response.data.videos is an array
-                if (Array.isArray(response.data.videos)) {
-                    // Extract just the file names from the full paths
-                    const fileNames = response.data.videos.map((path: string) => {
-                        // Extract the base name from the full path
-                        return path.substring(path.lastIndexOf('/') + 1);
-                    });
-                    setVideos(fileNames);
-                } else {
-                    throw new Error('Response data.videos is not an array');
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching videos list:', error);
-                // setError('Failed to fetch videos list');
-            });
+        fetchAllFiles();
     }, []);
 
-    const handleSelectVideo = (video: string) => {
+    // Filter videos when date or search changes
+    useEffect(() => {
+        if (selectedDate) {
+            fetchVideosByDate(selectedDate);
+        } else {
+            // Show all videos if no date selected
+            const allVids: VideoFile[] = [];
+            Object.values(allVideos).forEach(dateVideos => {
+                allVids.push(...dateVideos);
+            });
+            setFilteredVideos(allVids);
+        }
+    }, [selectedDate, allVideos]);
+
+    const fetchAllFiles = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/files`);
+            setAllVideos(response.data);
+
+            // Extract and set initial filtered videos
+            const allVids: VideoFile[] = [];
+            Object.entries(response.data).forEach(([date, videos]) => {
+                (videos as VideoFile[]).forEach(video => {
+                    allVids.push({ ...video, date });
+                });
+            });
+            setFilteredVideos(allVids);
+        } catch (err: any) {
+            console.error('Error fetching all files:', err);
+            setError('Failed to fetch video files');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchVideosByDate = async (date: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/files/videos-by-date`, {
+                params: { date }
+            });
+            setFilteredVideos(response.data.videos.map((v: VideoFile) => ({ ...v, date })));
+        } catch (err: any) {
+            console.error('Error fetching videos by date:', err);
+            setError('Failed to fetch videos for selected date');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const searchVideo = async () => {
+        if (!searchQuery || !selectedDate) {
+            setError('Please select a date and enter a video name');
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/files/search-video`, {
+                params: {
+                    name: searchQuery,
+                    date: selectedDate
+                }
+            });
+
+            if (response.data.found) {
+                setFilteredVideos([{ ...response.data.video, date: selectedDate }]);
+            } else {
+                setFilteredVideos([]);
+                setError('Video not found');
+            }
+        } catch (err: any) {
+            console.error('Error searching video:', err);
+            setError('Failed to search video');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const deleteVideo = async (video: VideoFile) => {
+        if (!confirm(`Delete ${video.name}?`)) return;
+
+        try {
+            await axios.delete(`${API_BASE_URL}/files/delete-video`, {
+                params: {
+                    name: video.name,
+                    date: video.date
+                }
+            });
+
+            // Remove from list
+            setFilteredVideos(filteredVideos.filter(v => v.name !== video.name || v.date !== video.date));
+            if (selectedVideo?.name === video.name && selectedVideo?.date === video.date) {
+                setSelectedVideo(null);
+            }
+
+            // Refresh the file list
+            fetchAllFiles();
+        } catch (err: any) {
+            console.error('Error deleting video:', err);
+            setError('Failed to delete video');
+        }
+    };
+
+    const deleteByHour = async (date: string, hour: string) => {
+        if (!confirm(`Delete all videos from ${date} at hour ${hour}?`)) return;
+
+        try {
+            await axios.delete(`${API_BASE_URL}/files/delete-by-hour`, {
+                params: { date, hour }
+            });
+
+            // Refresh
+            fetchAllFiles();
+            if (selectedDate === date) {
+                fetchVideosByDate(date);
+            }
+        } catch (err: any) {
+            console.error('Error deleting by hour:', err);
+            setError('Failed to delete videos by hour');
+        }
+    };
+
+    const deleteByDate = async (date: string) => {
+        if (!confirm(`Delete ALL videos from ${date}?`)) return;
+
+        try {
+            await axios.delete(`${API_BASE_URL}/files/delete-by-date`, {
+                params: { date }
+            });
+
+            // Refresh
+            setSelectedDate('');
+            setFilteredVideos([]);
+            setSelectedVideo(null);
+            fetchAllFiles();
+        } catch (err: any) {
+            console.error('Error deleting by date:', err);
+            setError('Failed to delete videos by date');
+        }
+    };
+
+    const handleSelectVideo = (video: VideoFile) => {
         setSelectedVideo(video);
     };
 
-    const handleDelete = (videoName: string) => {
-        // Assuming the full path needs to be sent for deletion
-        const payload = { videoUrl: `/mnt/mmcblk0p1/${videoName}` };
-        const formData = new URLSearchParams();
-        formData.append('videoUrl', payload.videoUrl);
-
-        axios.post('/cgi-bin/deleteVideo.cgi', formData.toString(), {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-        })
-            .then(() => {
-                setVideos(videos.filter(v => v !== videoName)); // Remove video from list
-                if (selectedVideo === videoName) {
-                    setSelectedVideo(null); // Clear video if it's the currently selected one
-                }
-            })
-            .catch(error => {
-                console.error('Error deleting video:', error);
-                setError('Failed to delete video');
-            });
+    const getVideoUrl = (video: VideoFile) => {
+        return `${API_BASE_URL}/files/video/${video.date}/${video.name}`;
     };
 
-    if (error) {
-        return <div className="p-4 bg-red-400 text-black font-medium rounded-md mt-4">Error: {error}</div>;
-    }
+    // Get unique dates for date selector
+    const availableDates = Object.keys(allVideos).sort().reverse();
 
-    const sidebarWidthClass = window.innerWidth >= 1024 ? 'w-1/6' : window.innerWidth >= 768 ? 'w-1/4' : 'w-1/2';
+    // Group videos by hour for the current filtered list
+    const videosByHour: { [hour: string]: VideoFile[] } = {};
+    filteredVideos.forEach(video => {
+        const hour = video.hour || '00';
+        if (!videosByHour[hour]) {
+            videosByHour[hour] = [];
+        }
+        videosByHour[hour].push(video);
+    });
 
     return (
-        <div className="flex h-[calc(100vh-8rem)] mt-4 space-x-4">
-            {/* Sidebar with video list */}
-            <div className={`${sidebarWidthClass} h-full rounded-lg p-4 flex flex-col bg-white shadow-md border border-gray-200 overflow-auto`}>
-                <h2 className="text-xl font-semibold mb-4 text-gray-900">Video List</h2>
-                <ul className="space-y-2">
-                    {videos.length > 0 ? (
-                        videos.map((video, index) => (
-                            <li
-                                key={index}
-                                className={`flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-100 ${selectedVideo === video ? 'bg-blue-200' : ''}`}
-                                onClick={() => handleSelectVideo(video)}
+        <div className="bg-white flex flex-col h-full p-4 rounded-lg">
+            {/* Controls Bar */}
+            <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-4 flex-shrink-0">
+                <div className="flex flex-wrap gap-4 items-end">
+                    {/* Date Selector */}
+                    <div className="flex-1 min-w-[200px]">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <Calendar className="inline w-4 h-4 mr-1" />
+                            Select Date
+                        </label>
+                        <select
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                        >
+                            <option value="">All Dates</option>
+                            {availableDates.map(date => (
+                                <option key={date} value={date}>{date}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Search Input */}
+                    <div className="flex-1 min-w-[200px]">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <Search className="inline w-4 h-4 mr-1" />
+                            Search Video
+                        </label>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Enter video name..."
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                            />
+                            <button
+                                onClick={searchVideo}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                             >
-                                <span className="text-sm">{video}</span>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation(); // Prevent event bubbling to the list item
-                                        handleDelete(video);
-                                    }}
-                                    className="ml-2 text-red-600 hover:text-red-800"
-                                    aria-label="Delete Video"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="w-4 h-4 inline"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <path d="M3 6h18M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M4 6h16l1 14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1L4 6z" />
-                                    </svg>
-                                </button>
-                            </li>
-                        ))
-                    ) : (
-                        <li className="text-gray-500">No videos found</li>
+                                Search
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Delete by Date Button */}
+                    {selectedDate && (
+                        <button
+                            onClick={() => deleteByDate(selectedDate)}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            Delete All ({selectedDate})
+                        </button>
                     )}
-                </ul>
+                </div>
+
+                {error && (
+                    <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                        {error}
+                    </div>
+                )}
             </div>
 
-            {/* Video Player */}
-            <div className="flex-grow flex items-center justify-center bg-black rounded-lg overflow-hidden">
-                {selectedVideo ? (
-                    <video
-                        src={`/mnt/mmcblk0p1/${selectedVideo}`}
-                        controls
-                        className="object-contain h-[calc(100vh-8rem)] w-full"
-                    >
-                        Your browser does not support the video tag.
-                    </video>
-                ) : (
-                    <div className="text-white text-lg">Select a video to play</div>
-                )}
+            <div className="flex flex-1 gap-4 overflow-hidden min-h-0">
+                {/* Sidebar with video list */}
+                <div className="w-1/3 h-full rounded-lg p-4 flex flex-col bg-gray-50 border border-gray-200 overflow-auto">
+                    <h2 className="text-xl font-semibold mb-4 text-gray-900 flex items-center gap-2">
+                        <Video className="w-5 h-5" />
+                        Videos ({filteredVideos.length})
+                    </h2>
+
+                    {loading ? (
+                        <div className="text-center text-gray-500">Loading...</div>
+                    ) : Object.keys(videosByHour).length > 0 ? (
+                        <div className="space-y-4">
+                            {Object.entries(videosByHour).sort().reverse().map(([hour, videos]) => (
+                                <div key={hour} className="border-b border-gray-200 pb-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                                            <Clock className="w-4 h-4" />
+                                            Hour {hour}:00
+                                        </h3>
+                                        {selectedDate && (
+                                            <button
+                                                onClick={() => deleteByHour(selectedDate, hour)}
+                                                className="text-xs text-red-600 hover:text-red-800 flex items-center gap-1"
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                                Delete Hour
+                                            </button>
+                                        )}
+                                    </div>
+                                    <ul className="space-y-1">
+                                        {videos.map((video, index) => (
+                                            <li
+                                                key={`${video.date}-${video.name}-${index}`}
+                                                className={`flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-white transition-colors ${selectedVideo?.name === video.name && selectedVideo?.date === video.date
+                                                    ? 'bg-blue-100 border border-blue-300'
+                                                    : 'bg-white border border-transparent'
+                                                    }`}
+                                                onClick={() => handleSelectVideo(video)}
+                                            >
+                                                <div className="flex-1 min-w-0">
+                                                    <span className="text-sm block truncate font-medium">{video.name}</span>
+                                                    <span className="text-xs text-gray-500">{video.date}</span>
+                                                </div>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        deleteVideo(video);
+                                                    }}
+                                                    className="ml-2 text-red-600 hover:text-red-800 flex-shrink-0"
+                                                    aria-label="Delete Video"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center text-gray-500">No videos found</div>
+                    )}
+                </div>
+
+                {/* Video Player */}
+                <div className="flex-1 flex items-center justify-center bg-black rounded-lg overflow-hidden">
+                    {selectedVideo ? (
+                        <video
+                            key={`${selectedVideo.date}-${selectedVideo.name}`}
+                            src={getVideoUrl(selectedVideo)}
+                            controls
+                            className="w-full h-full"
+                        >
+                            Your browser does not support the video tag.
+                        </video>
+                    ) : (
+                        <div className="text-white text-lg flex flex-col items-center gap-4">
+                            <Video className="w-16 h-16 opacity-50" />
+                            <span>Select a video to play</span>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
