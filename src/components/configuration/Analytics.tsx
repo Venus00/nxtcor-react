@@ -99,7 +99,7 @@ const Analytics: React.FC = () => {
         // Scale from camera resolution to canvas size
         const cameraWidth = 640  // Adjust if camera has different resolution
         const cameraHeight = 480
-        
+
         const boxX = (obj.x / cameraWidth) * canvas.width
         const boxY = (obj.y / cameraHeight) * canvas.height
         const boxWidth = 80
