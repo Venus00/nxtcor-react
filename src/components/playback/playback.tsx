@@ -5,8 +5,10 @@ import { Calendar, Search, Trash2, Clock, Video } from 'lucide-react';
 interface VideoFile {
     name: string;
     date: string;
-    hour: string;
-    size?: number;
+    hour?: string;
+    size: number;
+    relativePath: string;
+    downloadUrl: string;
 }
 
 interface VideosByDate {
@@ -48,16 +50,23 @@ const VideoListSidebar = () => {
         setError(null);
         try {
             const response = await axios.get(`${API_BASE_URL}/files`);
-            setAllVideos(response.data.videos);
+            const videos: VideoFile[] = response.data.videos || [];
 
-            // Extract and set initial filtered videos
-            const allVids: VideoFile[] = [];
-            Object.entries(response.data.videos).forEach(([date, videos]) => {
-                (videos as VideoFile[]).forEach(video => {
-                    allVids.push({ ...video, date });
-                });
+            // Group videos by date and extract hour from filename or date
+            const videosByDate: VideosByDate = {};
+            videos.forEach(video => {
+                // Extract hour from filename (assuming format contains hour like HH_MM_SS)
+                const hourMatch = video.name.match(/(\d{2})_\d{2}_\d{2}/);
+                video.hour = hourMatch ? hourMatch[1] : '00';
+
+                if (!videosByDate[video.date]) {
+                    videosByDate[video.date] = [];
+                }
+                videosByDate[video.date].push(video);
             });
-            setFilteredVideos(allVids);
+
+            setAllVideos(videosByDate);
+            setFilteredVideos(videos);
         } catch (err: any) {
             console.error('Error fetching all files:', err);
             setError('Failed to fetch video files');
@@ -180,7 +189,8 @@ const VideoListSidebar = () => {
     };
 
     const getVideoUrl = (video: VideoFile) => {
-        return `${API_BASE_URL}/files/video/${video.date}/${video.name}`;
+        // Use downloadUrl from API response if available, otherwise construct URL
+        return video.downloadUrl || `${API_BASE_URL}/files/video/${video.date}/${video.name}`;
     };
 
     // Get unique dates for date selector
