@@ -212,6 +212,12 @@ export function usePtzFocusOut(camId: string) {
     mutationFn: () => apiFetch(`/camera/${camId}/ptz/focus/far`, 'POST', {}),
   });
 }
+
+export function usePtzFocusStop(camId: string) {
+  return useMutation({
+    mutationFn: () => apiFetch(`/camera/${camId}/ptz/focus/stop`, 'POST', {}),
+  });
+}
 export function usePtzZoomStop(camId: string) {
   return useMutation({
     mutationFn: () => apiFetch(`/camera/${camId}/ptz/zoom/stop`, 'POST', {}),

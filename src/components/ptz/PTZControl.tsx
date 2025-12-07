@@ -10,6 +10,7 @@ import {
   usePtzZoomStop,
   usePtzFocusOut,
   usePtzFocusIn,
+  usePtzFocusStop,
 } from "../../hooks/useCameraMutations";
 
 interface PTZControlProps {
@@ -25,8 +26,9 @@ const PTZControl: React.FC<PTZControlProps> = () => {
   const zoomInMutation = usePtzZoomIn(camId);
   const zoomOutMutation = usePtzZoomOut(camId);
   const stopZoomMutation = usePtzZoomStop(camId);
-  const focusMutation = usePtzFocusIn(camId);
-  const stopFocusMutation = usePtzFocusOut(camId);
+  const focusMutationIn = usePtzFocusIn(camId);
+  const focusMutationOut = usePtzFocusOut(camId);
+  const stopFocusMutation = usePtzFocusStop(camId);
   // Local state for active button styling
   const [activeButton, setActiveButton] = useState<string | null>(null);
 
@@ -85,15 +87,16 @@ const PTZControl: React.FC<PTZControlProps> = () => {
      const key = `focus${type}`;
     setActiveButton(key);
     if (type === "near") {
-      focusMutation.mutate();
+      focusMutationIn.mutate();
     } else {
-      stopFocusMutation.mutate();
+      focusMutationOut.mutate();
     }
   };
 
   const handleFocusStop = () => {
     // TODO: Implement usePtzFocusStop mutation when available
     setActiveButton(null);
+    stopFocusMutation.mutate();
   };
 
   // --- Aperture (Placeholder) ---
