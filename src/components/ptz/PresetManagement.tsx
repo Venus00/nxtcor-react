@@ -71,14 +71,14 @@ const apiToUI = (data: any): Preset[] => {
 // =============================================================================
 
 const PresetManagement: React.FC = () => {
-  const camId = 'cam2';
+  const camId = "cam2";
 
   // 1. Data Fetching
   const { data: apiData, isLoading, error, refetch } = usePtzPreset(camId);
 
   // 2. Mutations
   const setPresetMutation = useSetPtzPreset(camId);
-  const ptzActionMutation = useSetPTZStatus('cam2');
+  const ptzActionMutation = useSetPTZStatus("cam2");
   const clearPreset = useClearPreset(camId);
   // 3. Local State
   const [presets, setPresets] = useState<Preset[]>([]);
@@ -109,13 +109,13 @@ const PresetManagement: React.FC = () => {
     }
 
     const newTitle = `Preset${newId}`;
-    const apiIndex = newId -1 ; // 0-based index for API
+    const apiIndex = newId - 1; // 0-based index for API
 
     setPresetMutation.mutate(
       {
         Enable: true,
         Name: newTitle,
-        id : apiIndex
+        id: apiIndex,
       },
       {
         onSuccess: () => refetch(), // Refresh list to get new coordinates if API updates them
@@ -126,6 +126,7 @@ const PresetManagement: React.FC = () => {
   // GOTO: Moves camera to preset
   const handleGotoPreset = (id: number) => {
     setSelectedPresetId(id);
+    id = id + 1;
     ptzActionMutation.mutate({
       id,
     });
