@@ -77,8 +77,8 @@ const apiToUI = (data: any): AudioData => {
  * Converts UI state to API payload.
  */
 const uiToApi = (ui: AudioData) => {
-  const mainPfx = "table.Encode[0].MainFormat[0].";
-  const attrPfx = "table.Encode[0].Attribute.";
+  const mainPfx = "Encode[0].MainFormat[0].";
+  const attrPfx = "Encode[0].Attribute.";
 
   return {
     // Main Stream Audio
