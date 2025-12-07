@@ -5,25 +5,20 @@ import { usePresets as usePtzPreset } from "../../hooks/useCameraQueries";
 import { useSetPreset as useSetPtzPreset } from "../../hooks/useCameraMutations";
 import {useGotoPreset as useSetPTZStatus } from "../../hooks/useCameraMutations"; 
 
+
 // =============================================================================
 // TYPES & INTERFACES
 // =============================================================================
 
 export interface Preset {
-  id: number; // API: PresetId index (0-Max)
+  id: number; // API: PresetId index (0-127)
   title: string; // API: Name
   enabled: boolean; // API: Enable
-  // Position data is stored in the preset but typically read-only or set via "Add" (Save current pos)
-  // We decode it for display if available
   position: {
     pan: number; // API: Position[0]
     tilt: number; // API: Position[1]
     zoom: number; // API: Position[2]
   };
-}
-
-interface PresetManagementProps {
-  // Component manages data internally via hooks
 }
 
 // =============================================================================
@@ -33,26 +28,30 @@ interface PresetManagementProps {
 /**
  * Parses API response to UI state.
  * Iterates through table.PtzPreset[0][i] to find valid presets.
- *
+ * Based on provided JSON, max index goes up to 127.
  */
 const apiToUI = (data: any): Preset[] => {
   if (!data || !data.config) return [];
   
   const config = data.config;
   const presets: Preset[] = [];
-  const MAX_PRESETS = 128; // Usually 128 or 255 based on hardware
+  const MAX_PRESETS = 128; // 0-127 based on JSON
 
-  // Scan for enabled presets
   for (let i = 0; i < MAX_PRESETS; i++) {
     const prefix = `table.PtzPreset[0][${i}].`;
-    // If Name exists, we assume the preset exists/is valid slot
+    
+    // Check if the key exists in the flat config object
+    // Using Name as a primary check if the preset slot exists in config
     if (config[`${prefix}Name`] !== undefined) {
-       const enabled = String(config[`${prefix}Enable`] ?? "false") === "true";
-       // Only show enabled presets or those with a name set
-       if (enabled || config[`${prefix}Name`]) {
+       const enabledStr = String(config[`${prefix}Enable`] ?? "false");
+       const enabled = enabledStr === "true";
+       const name = config[`${prefix}Name`];
+
+       // Only show presets that are explicitly enabled OR have been named (indicating usage)
+       if (enabled || (name && name !== `Preset${i+1}`)) {
          presets.push({
-           id: i,
-           title: config[`${prefix}Name`] || `Preset ${i+1}`,
+           id: i + 1, // UI uses 1-based IDs for display usually, but API is 0-based index. Let's store 1-based ID for UI.
+           title: name || `Preset ${i + 1}`,
            enabled: enabled,
            position: {
              pan: Number(config[`${prefix}Position[0]`] ?? 0),
@@ -70,15 +69,15 @@ const apiToUI = (data: any): Preset[] => {
 // COMPONENT
 // =============================================================================
 
-const PresetManagement: React.FC<PresetManagementProps> = () => {
+const PresetManagement: React.FC = () => {
   const camId = useCamId();
   
   // 1. Data Fetching
   const { data: apiData, isLoading, error, refetch } = usePtzPreset(camId);
   
   // 2. Mutations
-  const setPresetMutation = useSetPtzPreset(camId); // For saving/renaming/deleting
-  const ptzActionMutation = useSetPTZStatus(camId); // For "Goto" action
+  const setPresetMutation = useSetPtzPreset(camId); 
+  const ptzActionMutation = useSetPTZStatus(camId);
 
   // 3. Local State
   const [presets, setPresets] = useState<Preset[]>([]);
@@ -97,37 +96,35 @@ const PresetManagement: React.FC<PresetManagementProps> = () => {
 
   // ADD: Saves CURRENT position to a new ID
   const handleAddPreset = () => {
-    // Find first available ID
+    // Find first available ID (1-128)
     const usedIds = presets.map(p => p.id);
     let newId = 1;
-    while (usedIds.includes(newId)) newId++;
+    while (usedIds.includes(newId) && newId <= 128) newId++;
 
     if (newId > 128) {
-      alert("Maximum presets reached");
+      alert("Maximum presets reached (128)");
       return;
     }
 
     const newTitle = `Preset ${newId}`;
+    const apiIndex = newId - 1; // 0-based index for API
 
-    // Mutation to SAVE current pos to this ID
-    // Note: The API usually sets the preset to *current* position when enabled/named if no coords sent,
-    // OR we use a specific PTZ command "SetPreset".
-    // 5.2.2 Table lists "SetPreset" code. That is the correct way to save current pos.
+    // 1. Send PTZ command to save current position to this ID
     ptzActionMutation.mutate({
         action: 'start',
         channel: 0,
         code: 'SetPreset', 
         arg1: 0, 
-        arg2: newId, // Preset ID
-        arg3: 0 // Arg3 often name index or 0
+        arg2: newId, // PTZ command usually takes 1-based ID or matches protocol. Assuming 1-based for command.
+        arg3: 0 
     }, {
         onSuccess: () => {
-             // After setting position, we update the config to set the Name and Enable it explicitly
+             // 2. Enable it in config and set name
              setPresetMutation.mutate({
-                [`table.PtzPreset[0][${newId}].Enable`]: "true",
-                [`table.PtzPreset[0][${newId}].Name`]: newTitle,
+                [`table.PtzPreset[0][${apiIndex}].Enable`]: "true",
+                [`table.PtzPreset[0][${apiIndex}].Name`]: newTitle,
              }, {
-                 onSuccess: () => refetch() // Refresh list
+                 onSuccess: () => refetch() // Refresh list to get new coordinates if API updates them
              });
         }
     });
@@ -136,20 +133,20 @@ const PresetManagement: React.FC<PresetManagementProps> = () => {
   // GOTO: Moves camera to preset
   const handleGotoPreset = (preset: Preset) => {
     setSelectedPresetId(preset.id);
-    // API 5.2.2: Code "GotoPreset", arg2 = Preset ID
     ptzActionMutation.mutate({
         action: 'start',
         channel: 0,
         code: 'GotoPreset',
         arg1: 0,
-        arg2: preset.id
+        arg2: preset.id // 1-based ID
     });
   };
 
   // DELETE: Clears preset
   const handleDeletePreset = (id: number) => {
-    // 5.2.2 "ClearPreset" code or just disable via config. 
-    // Using ClearPreset command is cleaner for PTZ.
+    const apiIndex = id - 1;
+    
+    // 1. Clear via PTZ command
     ptzActionMutation.mutate({
         action: 'start',
         channel: 0,
@@ -158,10 +155,10 @@ const PresetManagement: React.FC<PresetManagementProps> = () => {
         arg2: id
     }, {
         onSuccess: () => {
-             // Also disable in config to remove from list
+             // 2. Disable in config
              setPresetMutation.mutate({
-                [`table.PtzPreset[0][${id}].Enable`]: "false",
-                [`table.PtzPreset[0][${id}].Name`]: ""
+                [`table.PtzPreset[0][${apiIndex}].Enable`]: "false",
+                [`table.PtzPreset[0][${apiIndex}].Name`]: `Preset${id}` // Reset name or leave empty
              }, {
                  onSuccess: () => refetch()
              });
@@ -172,8 +169,9 @@ const PresetManagement: React.FC<PresetManagementProps> = () => {
   // RENAME
   const handleTitleBlur = () => {
     if (editingId !== null) {
+      const apiIndex = editingId - 1;
       setPresetMutation.mutate({
-          [`table.PtzPreset[0][${editingId}].Name`]: editingTitle
+          [`table.PtzPreset[0][${apiIndex}].Name`]: editingTitle
       }, {
           onSuccess: () => {
               setPresets(prev => prev.map(p => p.id === editingId ? { ...p, title: editingTitle } : p));
@@ -238,7 +236,7 @@ const PresetManagement: React.FC<PresetManagementProps> = () => {
       {/* Add Preset Button */}
       <button
         onClick={handleAddPreset}
-        disabled={ptzActionMutation.isPending}
+        disabled={ptzActionMutation.isPending || setPresetMutation.isPending}
         className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white py-3 px-4 rounded-lg border border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 font-medium disabled:opacity-50"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -324,15 +322,15 @@ const PresetManagement: React.FC<PresetManagementProps> = () => {
                 </div>
 
                 {/* Position Details (Read-only if available) */}
-                {(preset.position.pan !== 0 || preset.position.tilt !== 0) && (
+                {(preset.position.pan !== 0 || preset.position.tilt !== 0 || preset.position.zoom !== 0) && (
                   <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
                     <div className="bg-gray-700/50 rounded px-2 py-1">
                       <p className="text-gray-400">Pan</p>
-                      <p className="text-white font-mono">{preset.position.pan}</p>
+                      <p className="text-white font-mono">{preset.position.pan.toFixed(1)}</p>
                     </div>
                     <div className="bg-gray-700/50 rounded px-2 py-1">
                       <p className="text-gray-400">Tilt</p>
-                      <p className="text-white font-mono">{preset.position.tilt}</p>
+                      <p className="text-white font-mono">{preset.position.tilt.toFixed(1)}</p>
                     </div>
                     <div className="bg-gray-700/50 rounded px-2 py-1">
                       <p className="text-gray-400">Zoom</p>
