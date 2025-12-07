@@ -45,11 +45,10 @@ const apiToUI = (data: any): Preset[] => {
     // console.log('Checking preset index:', i, 'Enable:', config[`${prefix}Enable`], 'Name:', config[`${prefix}Name`]);
     if (config[`${prefix}Name`] !== undefined) {
       const enabledStr = String(config[`${prefix}Enable`] ?? "false");
-      const enabled = enabledStr === "true";
       const name = config[`${prefix}Name`];
+      const enabled = enabledStr === "true";
 
-      // Only show presets that are explicitly enabled OR have been named (indicating usage)
-      if (enabled || (name && name !== `Preset${i + 1}`)) {
+      if (enabledStr === "true" || (name && name !== "None")) {
         presets.push({
           id: i + 1, // UI uses 1-based IDs for display usually, but API is 0-based index. Let's store 1-based ID for UI.
           title: name || `Preset ${i + 1}`,
@@ -141,7 +140,7 @@ const PresetManagement: React.FC = () => {
   const handleGotoPreset = (id: number) => {
     setSelectedPresetId(id);
     ptzActionMutation.mutate({
-      id
+      id,
     });
   };
 
@@ -149,7 +148,7 @@ const PresetManagement: React.FC = () => {
   const handleDeletePreset = (id: number) => {
     // 1. Clear via PTZ command
     clearPreset.mutate({
-      id
+      id,
     });
   };
 
