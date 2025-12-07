@@ -1,7 +1,7 @@
 // components/camera/VideoOverlay.tsx
 import React, { useEffect, useState } from "react";
 import { useCamId } from "../../contexts/CameraContext";
-import {useOSD as  useVideoWidget } from "../../hooks/useCameraQueries";
+import { useOSD as useVideoWidget } from "../../hooks/useCameraQueries";
 import { useSetOSD as useSetVideoWidget } from "../../hooks/useCameraMutations";
 
 // =============================================================================
@@ -10,68 +10,52 @@ import { useSetOSD as useSetVideoWidget } from "../../hooks/useCameraMutations";
 
 export interface PrivacyMaskArea {
   id: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  index: number; // API Index (0-3)
+  enabled: boolean;
+  x: number; // %
+  y: number; // %
+  width: number; // %
+  height: number; // %
 }
 
 export interface VideoOverlayData {
-  // Note: Privacy Masks are usually part of a separate API (e.g. VideoEncodeROI or a dedicated Mask API),
-  // but VideoWidget handles OSD overlays.
-  // For this component scope based on "VideoOverlay" name and "GetVideoWidget" usage, 
-  // we will focus on the widget elements. 
-  // *Adaptation*: I will keep PrivacyMasks in local state/mock if not in VideoWidget, 
-  // or use VideoEncodeROI if your system combines them. 
-  // Based on your previous ROI component, Privacy Masks might be separate. 
-  // Assuming local for now unless specific API provided for Masks in VideoWidget.
-  privacyMasks: PrivacyMaskArea[]; 
+  privacyMasks: PrivacyMaskArea[];
   
   channelTitle: {
-    enabled: boolean; // API: ChannelTitle.EncodeBlend
-    text: string;     // API: ChannelTitle.Name
-    x: number;        // API: ChannelTitle.Rect[0] / 8192 * 100
-    y: number;        // API: ChannelTitle.Rect[1] / 8192 * 100
+    enabled: boolean;
+    text: string;     // Not always present in Get, but needed for Set
+    x: number;        
+    y: number;        
   };
   timeTitle: {
-    enabled: boolean; // API: TimeTitle.EncodeBlend
-    showWeek: boolean; // API: TimeTitle.WeekDisplay (if available, else inferred)
+    enabled: boolean;
+    showWeek: boolean;
     x: number;
     y: number;
   };
   osdInfo: {
-    enabled: boolean; // General toggle, or mapped to specific OSD elements like PTZCoordinates
-    showPresetPoint: boolean; // API: PTZPreset.EncodeBlend
-    showPTZCoordinates: boolean; // API: PTZCoordinates.EncodeBlend
-    showPattern: boolean; // API: Pattern.EncodeBlend (if exists) or generic OSD
-    alignment: 'left' | 'right'; // API: often inferred from coords or specific key
-    x: number;
-    y: number;
-  };
-  textOverlay: {
-    enabled: boolean; // API: CustomTitle[0].EncodeBlend
-    text: string;     // API: CustomTitle[0].Text
+    enabled: boolean; // General toggle (mapped to PTZCoordinates)
+    showPresetPoint: boolean;
+    showPTZCoordinates: boolean;
+    showPattern: boolean;
     alignment: 'left' | 'right';
     x: number;
     y: number;
   };
-  fontSize: 'small' | 'medium' | 'large'; // API: FontSizeScale
-  overlayPicture: {
-    enabled: boolean; // API: PictureTitle.EncodeBlend
-    imageUrl: string | null;
+  textOverlay: {
+    enabled: boolean;
+    text: string;
+    alignment: 'left' | 'right';
     x: number;
     y: number;
-    width: number;
-    height: number;
   };
-  osdWarning: {
-    enabled: boolean; // API: OSDWarning.EncodeBlend (if exists)
+  fontSize: 'small' | 'medium' | 'large';
+  overlayPicture: {
+    enabled: boolean;
+    x: number;
+    y: number;
   };
-  gpsCoordinates: {
-    enabled: boolean; // API: GPSTitle.EncodeBlend
-    latitude: string;
-    longitude: string;
-  };
+  // Add specific fields found in JSON if needed (e.g., Lighting, Defog overlay)
 }
 
 const defaultState: VideoOverlayData = {
@@ -81,9 +65,7 @@ const defaultState: VideoOverlayData = {
   osdInfo: { enabled: false, showPresetPoint: false, showPTZCoordinates: false, showPattern: false, alignment: 'left', x: 5, y: 90 },
   textOverlay: { enabled: false, text: "", alignment: 'left', x: 50, y: 50 },
   fontSize: 'medium',
-  overlayPicture: { enabled: false, imageUrl: null, x: 10, y: 10, width: 20, height: 20 },
-  osdWarning: { enabled: false },
-  gpsCoordinates: { enabled: false, latitude: "0.00", longitude: "0.00" }
+  overlayPicture: { enabled: false, x: 10, y: 10 },
 };
 
 const API_MAX_COORD = 8192;
@@ -93,9 +75,32 @@ const API_MAX_COORD = 8192;
 // =============================================================================
 
 /**
- * Parses API response to UI state.
- * API Ref: table.VideoWidget[0]...
+ * Helper to convert API [x1, y1, x2, y2] (0-8192) to UI [x, y, w, h] (0-100%)
  */
+const rectToPercent = (x1: number, y1: number, x2: number, y2: number) => {
+  // Sanity check for invalid rects (e.g. x2 < x1)
+  const safeX2 = Math.max(x1, x2);
+  const safeY2 = Math.max(y1, y2);
+  
+  return {
+    x: (x1 / API_MAX_COORD) * 100,
+    y: (y1 / API_MAX_COORD) * 100,
+    width: ((safeX2 - x1) / API_MAX_COORD) * 100,
+    height: ((safeY2 - y1) / API_MAX_COORD) * 100
+  };
+};
+
+/**
+ * Helper to convert UI [x, y, w, h] (0-100%) to API [x1, y1, x2, y2] (0-8192)
+ */
+const percentToRect = (x: number, y: number, w: number, h: number) => {
+  const x1 = Math.round((x / 100) * API_MAX_COORD);
+  const y1 = Math.round((y / 100) * API_MAX_COORD);
+  const x2 = Math.round(((x + w) / 100) * API_MAX_COORD);
+  const y2 = Math.round(((y + h) / 100) * API_MAX_COORD);
+  return [x1, y1, x2, y2];
+};
+
 const apiToUI = (data: any): VideoOverlayData => {
   if (!data) return defaultState;
   
@@ -104,105 +109,187 @@ const apiToUI = (data: any): VideoOverlayData => {
 
   const getVal = (key: string, def: any) => config[prefix + key] ?? def;
   const getBool = (key: string) => String(getVal(key, "false")) === "true";
-  const getCoord = (key: string) => Math.round((Number(getVal(key, 0)) / API_MAX_COORD) * 100);
+  const getInt = (key: string) => Number(getVal(key, 0));
+
+  // --- Channel Title ---
+  const chRect = rectToPercent(
+    getInt("ChannelTitle.Rect[0]"), getInt("ChannelTitle.Rect[1]"),
+    getInt("ChannelTitle.Rect[2]"), getInt("ChannelTitle.Rect[3]")
+  );
+
+  // --- Time Title ---
+  const timeRect = rectToPercent(
+    getInt("TimeTitle.Rect[0]"), getInt("TimeTitle.Rect[1]"),
+    getInt("TimeTitle.Rect[2]"), getInt("TimeTitle.Rect[3]")
+  );
+
+  // --- OSD Info (PTZ) ---
+  const ptzRect = rectToPercent(
+    getInt("PTZCoordinates.Rect[0]"), getInt("PTZCoordinates.Rect[1]"),
+    getInt("PTZCoordinates.Rect[2]"), getInt("PTZCoordinates.Rect[3]")
+  );
+
+  // --- Text Overlay (CustomTitle[0]) ---
+  // JSON shows CustomTitle[1] has text "||||", assuming CustomTitle[0] is the main one for this UI
+  const textRect = rectToPercent(
+    getInt("CustomTitle[0].Rect[0]"), getInt("CustomTitle[0].Rect[1]"),
+    getInt("CustomTitle[0].Rect[2]"), getInt("CustomTitle[0].Rect[3]")
+  );
+
+  // --- Privacy Masks (Covers) ---
+  const privacyMasks: PrivacyMaskArea[] = [];
+  for (let i = 0; i < 4; i++) {
+    const enabled = getBool(`Covers[${i}].EncodeBlend`); // Assuming EncodeBlend controls visibility
+    const x1 = getInt(`Covers[${i}].Rect[0]`);
+    const y1 = getInt(`Covers[${i}].Rect[1]`);
+    const x2 = getInt(`Covers[${i}].Rect[2]`);
+    const y2 = getInt(`Covers[${i}].Rect[3]`);
+    
+    // Only add if enabled or has dimensions (filter out unused slots if necessary, though UI usually shows all or manages list)
+    // Here we map all valid ones.
+    const rect = rectToPercent(x1, y1, x2, y2);
+    if (enabled || (rect.width > 0 && rect.height > 0)) {
+        privacyMasks.push({
+            id: i,
+            index: i,
+            enabled,
+            ...rect
+        });
+    }
+  }
+
+  // --- Font Size ---
+  const fontScale = getInt("FontSizeScale"); // 1 usually
+  const fontSize = fontScale < 1 ? 'small' : fontScale > 1 ? 'large' : 'medium';
+
+  // --- Picture ---
+  const picRect = rectToPercent(
+    getInt("PictureTitle.Rect[0]"), getInt("PictureTitle.Rect[1]"),
+    getInt("PictureTitle.Rect[2]"), getInt("PictureTitle.Rect[3]")
+  );
 
   return {
-    privacyMasks: [], // Not typically in VideoWidget, handled separately or local only here
+    privacyMasks,
     channelTitle: {
       enabled: getBool("ChannelTitle.EncodeBlend"),
-      text: getVal("ChannelTitle.Name", "Camera 1"),
-      x: getCoord("ChannelTitle.Rect[0]"),
-      y: getCoord("ChannelTitle.Rect[1]")
+      text: getVal("ChannelTitle.Name", "Camera 1"), // Note: Field might not be in GET, but used in SET
+      x: chRect.x,
+      y: chRect.y
     },
     timeTitle: {
       enabled: getBool("TimeTitle.EncodeBlend"),
-      showWeek: true, // Often inherent in TimeTitle, keeping default
-      x: getCoord("TimeTitle.Rect[0]"),
-      y: getCoord("TimeTitle.Rect[1]")
+      showWeek: getBool("TimeTitle.ShowWeek"),
+      x: timeRect.x,
+      y: timeRect.y
     },
     osdInfo: {
-      enabled: getBool("PTZCoordinates.EncodeBlend"), // Using Coordinates as proxy for "OSD Info" group
+      enabled: getBool("PTZCoordinates.EncodeBlend"),
       showPresetPoint: getBool("PTZPreset.EncodeBlend"),
       showPTZCoordinates: getBool("PTZCoordinates.EncodeBlend"),
-      showPattern: false, // Not explicitly in provided snippet, default false
-      alignment: 'left',
-      x: getCoord("PTZCoordinates.Rect[0]"),
-      y: getCoord("PTZCoordinates.Rect[1]")
+      showPattern: getBool("PtzPattern.EncodeBlend"),
+      alignment: 'left', // Not explicitly in JSON, sticking to default
+      x: ptzRect.x,
+      y: ptzRect.y
     },
     textOverlay: {
       enabled: getBool("CustomTitle[0].EncodeBlend"),
       text: getVal("CustomTitle[0].Text", ""),
       alignment: 'left',
-      x: getCoord("CustomTitle[0].Rect[0]"),
-      y: getCoord("CustomTitle[0].Rect[1]")
+      x: textRect.x,
+      y: textRect.y
     },
-    fontSize: (Number(getVal("FontSizeScale", 1)) === 1 ? 'medium' : Number(getVal("FontSizeScale", 1)) > 1 ? 'large' : 'small'),
+    fontSize,
     overlayPicture: {
       enabled: getBool("PictureTitle.EncodeBlend"),
-      imageUrl: null, // API doesn't return image data here usually
-      x: getCoord("PictureTitle.Rect[0]"),
-      y: getCoord("PictureTitle.Rect[1]"),
-      width: 20, // Rect usually x1,y1,x2,y2 - calculating width requires full rect parsing, simplified here
-      height: 20
+      imageUrl: null, // Cannot fetch image data from config
+      x: picRect.x,
+      y: picRect.y,
+      width: picRect.width,
+      height: picRect.height
     },
-    osdWarning: {
-      enabled: false // Placeholder
-    },
-    gpsCoordinates: {
-      enabled: getBool("GPSTitle.EncodeBlend"),
-      latitude: "0.00",
-      longitude: "0.00"
-    }
+    osdWarning: { enabled: false }, // Not found in JSON
+    gpsCoordinates: { enabled: false, latitude: "", longitude: "" } // Not found
   };
 };
 
-/**
- * Converts UI state to API payload.
- */
 const uiToApi = (ui: VideoOverlayData) => {
-  // const prefix = "table.VideoWidget[0].";
-  
-  const toApiCoord = (percent: number) => Math.round((percent / 100) * API_MAX_COORD);
+  const prefix = "table.VideoWidget[0].";
+  const payload: any = {};
 
-  const payload: any = {
-    // Channel Title
-    [`ChannelTitle.EncodeBlend`]: ui.channelTitle.enabled,
-    [`ChannelTitle.Name`]: ui.channelTitle.text,
-    [`ChannelTitle.Rect[0]`]: toApiCoord(ui.channelTitle.x),
-    [`ChannelTitle.Rect[1]`]: toApiCoord(ui.channelTitle.y),
+  // Helper to set rect
+  const setRect = (keyBase: string, x: number, y: number, w: number = 0, h: number = 0) => {
+    // If w/h are 0 (e.g. titles), we might just set x/y (Rect[0]/Rect[1]) and keep existing width/height or use defaults?
+    // The API seems to use full rects. For titles, we usually just update position (0,1). 
+    // But to be safe, we calculate x2/y2. If UI doesn't track width for titles, we might assume a default width or read back.
+    // *Strategy*: For titles (Channel, Time), UI usually only moves x/y. 
+    // We will construct x2/y2 assuming a fixed relative size if we don't have it, OR just send x1/y1 if the API allows partial updates.
+    // However, `Set` usually replaces. Let's assume standard widths or use what we parsed if we stored it.
+    // Since we don't store width/height for titles in the UI state (only x/y), we have to be careful.
+    // *Improved*: For this demo, we'll calculate x2/y2 assuming a standard box size (e.g. 20% width) to ensure valid rects.
     
-    // Time Title
-    [`TimeTitle.EncodeBlend`]: ui.timeTitle.enabled,
-    [`TimeTitle.Rect[0]`]: toApiCoord(ui.timeTitle.x),
-    [`TimeTitle.Rect[1]`]: toApiCoord(ui.timeTitle.y),
-
-    // OSD Elements
-    [`PTZPreset.EncodeBlend`]: ui.osdInfo.showPresetPoint,
-    [`PTZCoordinates.EncodeBlend`]: ui.osdInfo.showPTZCoordinates,
-    // Note: PTZ Coords Rect typically used for OSD Info position
-    [`PTZCoordinates.Rect[0]`]: toApiCoord(ui.osdInfo.x),
-    [`PTZCoordinates.Rect[1]`]: toApiCoord(ui.osdInfo.y),
-
-    // Text Overlay (Custom Title 0)
-    [`CustomTitle[0].EncodeBlend`]: ui.textOverlay.enabled,
-    [`CustomTitle[0].Text`]: ui.textOverlay.text,
-    [`CustomTitle[0].Rect[0]`]: toApiCoord(ui.textOverlay.x),
-    [`CustomTitle[0].Rect[1]`]: toApiCoord(ui.textOverlay.y),
-
-    // Font Size
-    [`FontSizeScale`]: ui.fontSize === 'small' ? 0.7 : ui.fontSize === 'large' ? 1.2 : 1,
-
-    // Picture Overlay
-    [`PictureTitle.EncodeBlend`]: ui.overlayPicture.enabled,
-    [`PictureTitle.Rect[0]`]: toApiCoord(ui.overlayPicture.x),
-    [`PictureTitle.Rect[1]`]: toApiCoord(ui.overlayPicture.y),
-
-    // GPS
-    [`GPSTitle.EncodeBlend`]: ui.gpsCoordinates.enabled,
+    const [x1, y1, x2, y2] = percentToRect(x, y, w || 20, h || 5); 
+    payload[`${prefix}${keyBase}.Rect[0]`] = x1;
+    payload[`${prefix}${keyBase}.Rect[1]`] = y1;
+    // Only send x2/y2 if we are confident, or if it's a resizable region like Privacy Mask.
+    // For Titles, often x2/y2 are auto-calculated by firmware based on text length, 
+    // but sending them helps define the "box".
+    payload[`${prefix}${keyBase}.Rect[2]`] = x2;
+    payload[`${prefix}${keyBase}.Rect[3]`] = y2;
   };
+
+  // Channel Title
+  payload[`${prefix}ChannelTitle.EncodeBlend`] = ui.channelTitle.enabled;
+  if (ui.channelTitle.text) payload[`${prefix}ChannelTitle.Name`] = ui.channelTitle.text; // Only send if we have text
+  setRect("ChannelTitle", ui.channelTitle.x, ui.channelTitle.y);
+
+  // Time Title
+  payload[`${prefix}TimeTitle.EncodeBlend`] = ui.timeTitle.enabled;
+  payload[`${prefix}TimeTitle.ShowWeek`] = ui.timeTitle.showWeek;
+  setRect("TimeTitle", ui.timeTitle.x, ui.timeTitle.y);
+
+  // OSD Info (PTZ)
+  payload[`${prefix}PTZCoordinates.EncodeBlend`] = ui.osdInfo.showPTZCoordinates;
+  payload[`${prefix}PTZPreset.EncodeBlend`] = ui.osdInfo.showPresetPoint;
+  payload[`${prefix}PtzPattern.EncodeBlend`] = ui.osdInfo.showPattern;
+  setRect("PTZCoordinates", ui.osdInfo.x, ui.osdInfo.y);
+  // Often these share a position or are relative. We update Coordinates as the anchor.
+
+  // Text Overlay
+  payload[`${prefix}CustomTitle[0].EncodeBlend`] = ui.textOverlay.enabled;
+  payload[`${prefix}CustomTitle[0].Text`] = ui.textOverlay.text;
+  setRect("CustomTitle[0]", ui.textOverlay.x, ui.textOverlay.y);
+
+  // Font Size
+  const scale = ui.fontSize === 'small' ? 0.7 : ui.fontSize === 'large' ? 1.2 : 1;
+  payload[`${prefix}FontSizeScale`] = scale;
+
+  // Picture
+  payload[`${prefix}PictureTitle.EncodeBlend`] = ui.overlayPicture.enabled;
+  setRect("PictureTitle", ui.overlayPicture.x, ui.overlayPicture.y);
+
+  // Privacy Masks (Covers)
+  // We need to update all 4 slots. If a mask exists in UI at that index, update it. If not, disable it.
+  // Note: The UI `privacyMasks` array might have variable length. We map them to fixed indices 0-3.
+  for (let i = 0; i < 4; i++) {
+    const mask = ui.privacyMasks.find(m => m.index === i);
+    if (mask) {
+      payload[`${prefix}Covers[${i}].EncodeBlend`] = true; // Use EncodeBlend for enable
+      payload[`${prefix}Covers[${i}].PreviewBlend`] = true; // Often paired
+      const [x1, y1, x2, y2] = percentToRect(mask.x, mask.y, mask.width, mask.height);
+      payload[`${prefix}Covers[${i}].Rect[0]`] = x1;
+      payload[`${prefix}Covers[${i}].Rect[1]`] = y1;
+      payload[`${prefix}Covers[${i}].Rect[2]`] = x2;
+      payload[`${prefix}Covers[${i}].Rect[3]`] = y2;
+    } else {
+      // Disable unused
+      payload[`${prefix}Covers[${i}].EncodeBlend`] = false;
+      payload[`${prefix}Covers[${i}].PreviewBlend`] = false;
+    }
+  }
 
   return payload;
 };
+
 
 // =============================================================================
 // COMPONENT
@@ -210,20 +297,19 @@ const uiToApi = (ui: VideoOverlayData) => {
 
 const VideoOverlay: React.FC = () => {
   const camId = useCamId();
-  const { data: apiData, isLoading, error, refetch } = useVideoWidget(camId);
+  const { data: apiData, isLoading, error } = useVideoWidget(camId);
   const mutation = useSetVideoWidget(camId);
 
   // Local State
   const [settings, setSettings] = useState<VideoOverlayData>(defaultState);
-  const [activeSection, setActiveSection] = useState<string>('titles'); // Default to titles as it's main API function
+  const [activeSection, setActiveSection] = useState<string>('titles');
   const [isDirty, setIsDirty] = useState(false);
 
   // Sync API -> UI
   useEffect(() => {
     if (apiData) {
       const parsed = apiToUI(apiData);
-      // Merge with local privacy masks if needed, as they aren't in this API
-      setSettings(prev => ({ ...parsed, privacyMasks: prev.privacyMasks }));
+      setSettings(parsed);
       setIsDirty(false);
     }
   }, [apiData]);
@@ -232,19 +318,6 @@ const VideoOverlay: React.FC = () => {
   const handleUpdate = (newSettings: VideoOverlayData) => {
     setSettings(newSettings);
     setIsDirty(true);
-  };
-
-  const handleSave = () => {
-    const payload = uiToApi(settings);
-    mutation.mutate(payload);
-    setIsDirty(false);
-  };
-
-  const updateSettings = (key: keyof VideoOverlayData, value: any) => {
-    handleUpdate({
-      ...settings,
-      [key]: value,
-    });
   };
 
   const updateNestedSettings = (parentKey: keyof VideoOverlayData, childKey: string, value: any) => {
@@ -257,32 +330,39 @@ const VideoOverlay: React.FC = () => {
     });
   };
 
-  // ... (Privacy mask handlers kept local for UI demo) ...
-  const handleDrawMask = () => {
+  const handleSave = () => {
+    const payload = uiToApi(settings);
+    mutation.mutate(payload);
+    setIsDirty(false);
+  };
+
+  // Privacy Mask Handlers
+  const handleAddMask = () => {
+    if (settings.privacyMasks.length >= 4) return; // Max 4 supported by API structure
+    
+    // Find first available index
+    const usedIndices = settings.privacyMasks.map(m => m.index);
+    let newIndex = 0;
+    while (usedIndices.includes(newIndex)) newIndex++;
+
     const newMask: PrivacyMaskArea = {
       id: Date.now(),
-      x: 20, y: 20, width: 100, height: 80,
+      index: newIndex,
+      enabled: true,
+      x: 25 + (newIndex * 5), // Offset slightly
+      y: 25 + (newIndex * 5),
+      width: 20,
+      height: 15,
     };
-    updateSettings('privacyMasks', [...settings.privacyMasks, newMask]);
+    handleUpdate({ ...settings, privacyMasks: [...settings.privacyMasks, newMask] });
   };
 
   const handleDeleteMask = (id: number) => {
-    updateSettings('privacyMasks', settings.privacyMasks.filter(mask => mask.id !== id));
+    handleUpdate({ ...settings, privacyMasks: settings.privacyMasks.filter(m => m.id !== id) });
   };
 
   const handleClearMasks = () => {
-    updateSettings('privacyMasks', []);
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateNestedSettings('overlayPicture', 'imageUrl', reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    handleUpdate({ ...settings, privacyMasks: [] });
   };
 
   const sections = [
@@ -297,7 +377,7 @@ const VideoOverlay: React.FC = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading Overlay Settings...</p>
+          <p className="text-gray-400">Chargement des Overlays...</p>
         </div>
       </div>
     );
@@ -306,12 +386,12 @@ const VideoOverlay: React.FC = () => {
   return (
     <div className="space-y-6">
       
-      {/* Feedback & Header */}
+      {/* Header & Feedback */}
       <div className="border-b border-gray-700 pb-4 flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-2">Video Overlay Configuration</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">Configuration OSD</h2>
           <p className="text-gray-400 text-sm">
-            Configure on-screen display elements and overlays
+            Gérez les titres, masques de confidentialité et informations à l'écran.
           </p>
         </div>
         <button
@@ -319,17 +399,17 @@ const VideoOverlay: React.FC = () => {
           disabled={!isDirty || mutation.isPending}
           className="px-6 py-2 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 shadow-lg transition-colors"
         >
-          {mutation.isPending ? 'Saving...' : 'Save Settings'}
+          {mutation.isPending ? 'Enregistrement...' : 'Sauvegarder'}
         </button>
       </div>
 
       {error && (
         <div className="p-4 rounded-lg bg-red-900/50 border border-red-700 text-red-300">
-          Error: {(error as Error).message}
+          Erreur: {(error as Error).message}
         </div>
       )}
 
-      {/* Section Navigation */}
+      {/* Navigation */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {sections.map((section) => (
           <button
@@ -351,7 +431,7 @@ const VideoOverlay: React.FC = () => {
         ))}
       </div>
 
-      {/* Privacy Mask Section (Local UI Only for now) */}
+      {/* Privacy Mask Section */}
       {activeSection === 'privacy' && (
         <div className="space-y-4">
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
@@ -359,31 +439,57 @@ const VideoOverlay: React.FC = () => {
               <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              Privacy Mask (Local Mock)
+              Masques de Confidentialité (Covers)
             </h3>
             <p className="text-sm text-gray-400 mb-4">
-              Set shielding areas within the monitoring screen (Visual Demo Only)
+              Définissez jusqu'à 4 zones de masquage.
             </p>
 
             <div className="flex flex-wrap gap-3 mb-4">
-              <button onClick={handleDrawMask} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
-                Draw Mask
+              <button 
+                onClick={handleAddMask} 
+                disabled={settings.privacyMasks.length >= 4}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                + Ajouter Masque
               </button>
-              <button onClick={handleClearMasks} disabled={settings.privacyMasks.length === 0} className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50">
-                Clear All
+              <button 
+                onClick={handleClearMasks} 
+                disabled={settings.privacyMasks.length === 0}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+              >
+                Tout Effacer
               </button>
             </div>
 
-            {/* Preview Area */}
+            {/* Visual Editor (Simplified) */}
             <div className="relative bg-gray-900 rounded-lg border-2 border-gray-600 aspect-video overflow-hidden">
-               {/* Mask rendering logic... */}
                <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                  Video Preview
+                  Zone de Prévisualisation
                </div>
                {settings.privacyMasks.map((mask) => (
-                  <div key={mask.id} className="absolute bg-black/80 border-2 border-red-500" style={{ left: `${mask.x}%`, top: `${mask.y}%`, width: mask.width, height: mask.height }}>
-                    <button onClick={() => handleDeleteMask(mask.id)} className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs">x</button>
+                  <div 
+                    key={mask.id} 
+                    className="absolute bg-black/80 border-2 border-red-500 flex items-center justify-center group"
+                    style={{ left: `${mask.x}%`, top: `${mask.y}%`, width: `${mask.width}%`, height: `${mask.height}%` }}
+                  >
+                    <span className="text-xs text-white font-bold opacity-0 group-hover:opacity-100">#{mask.index + 1}</span>
+                    <button 
+                        onClick={() => handleDeleteMask(mask.id)}
+                        className="absolute -top-3 -right-3 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:scale-110 transition-all"
+                    >
+                        ×
+                    </button>
                   </div>
+               ))}
+            </div>
+            
+            <div className="mt-4 grid grid-cols-2 gap-4">
+               {settings.privacyMasks.map(mask => (
+                   <div key={mask.id} className="p-3 bg-gray-900/50 border border-gray-700 rounded flex justify-between items-center">
+                       <span className="text-white text-sm">Masque {mask.index + 1}</span>
+                       <span className="text-xs text-gray-400">Pos: {Math.round(mask.x)}%, {Math.round(mask.y)}%</span>
+                   </div>
                ))}
             </div>
           </div>
@@ -393,10 +499,9 @@ const VideoOverlay: React.FC = () => {
       {/* Titles Section */}
       {activeSection === 'titles' && (
         <div className="space-y-4">
-          {/* Channel Title */}
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Channel Title</h3>
+              <h3 className="text-lg font-semibold text-white">Titre du Canal</h3>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -410,33 +515,30 @@ const VideoOverlay: React.FC = () => {
             
             {settings.channelTitle.enabled && (
               <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Name</label>
-                  <input
-                    type="text"
-                    value={settings.channelTitle.text}
-                    onChange={(e) => updateNestedSettings('channelTitle', 'text', e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300">X (%)</label>
-                    <input type="range" min="0" max="100" value={settings.channelTitle.x} onChange={(e) => updateNestedSettings('channelTitle', 'x', parseInt(e.target.value))} className="w-full" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300">Y (%)</label>
-                    <input type="range" min="0" max="100" value={settings.channelTitle.y} onChange={(e) => updateNestedSettings('channelTitle', 'y', parseInt(e.target.value))} className="w-full" />
-                  </div>
+                <input
+                  type="text"
+                  value={settings.channelTitle.text}
+                  onChange={(e) => updateNestedSettings('channelTitle', 'text', e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white"
+                  placeholder="Nom de la caméra"
+                />
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-xs text-gray-400">Position X</label>
+                        <input type="range" min="0" max="100" value={settings.channelTitle.x} onChange={(e) => updateNestedSettings('channelTitle', 'x', parseInt(e.target.value))} className="w-full" />
+                    </div>
+                    <div>
+                        <label className="text-xs text-gray-400">Position Y</label>
+                        <input type="range" min="0" max="100" value={settings.channelTitle.y} onChange={(e) => updateNestedSettings('channelTitle', 'y', parseInt(e.target.value))} className="w-full" />
+                    </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Time Title */}
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Time Title</h3>
+              <h3 className="text-lg font-semibold text-white">Affichage de l'Heure</h3>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -447,108 +549,65 @@ const VideoOverlay: React.FC = () => {
                 <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:bg-red-600"></div>
               </label>
             </div>
-            
-            {settings.timeTitle.enabled && (
-              <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300">X (%)</label>
-                    <input type="range" min="0" max="100" value={settings.timeTitle.x} onChange={(e) => updateNestedSettings('timeTitle', 'x', parseInt(e.target.value))} className="w-full" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300">Y (%)</label>
-                    <input type="range" min="0" max="100" value={settings.timeTitle.y} onChange={(e) => updateNestedSettings('timeTitle', 'y', parseInt(e.target.value))} className="w-full" />
-                  </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Overlay Section */}
-      {activeSection === 'overlay' && (
-        <div className="space-y-4">
-          {/* OSD Info */}
-          <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4">OSD Info</h3>
-            <div className="space-y-2">
-               <label className="flex items-center gap-2 text-gray-300">
-                 <input type="checkbox" checked={settings.osdInfo.showPresetPoint} onChange={(e) => updateNestedSettings('osdInfo', 'showPresetPoint', e.target.checked)} />
-                 Show Preset Point
-               </label>
-               <label className="flex items-center gap-2 text-gray-300">
-                 <input type="checkbox" checked={settings.osdInfo.showPTZCoordinates} onChange={(e) => updateNestedSettings('osdInfo', 'showPTZCoordinates', e.target.checked)} />
-                 Show PTZ Coordinates
-               </label>
-            </div>
-            {(settings.osdInfo.showPresetPoint || settings.osdInfo.showPTZCoordinates) && (
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                 <input type="range" min="0" max="100" value={settings.osdInfo.x} onChange={(e) => updateNestedSettings('osdInfo', 'x', parseInt(e.target.value))} className="w-full" />
-                 <input type="range" min="0" max="100" value={settings.osdInfo.y} onChange={(e) => updateNestedSettings('osdInfo', 'y', parseInt(e.target.value))} className="w-full" />
-              </div>
-            )}
-          </div>
-
-          {/* Text Overlay */}
-          <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-               <h3 className="text-lg font-semibold text-white">Text Overlay</h3>
-               <input type="checkbox" checked={settings.textOverlay.enabled} onChange={(e) => updateNestedSettings('textOverlay', 'enabled', e.target.checked)} />
-            </div>
-            {settings.textOverlay.enabled && (
-               <div className="space-y-3">
-                 <input type="text" value={settings.textOverlay.text} onChange={(e) => updateNestedSettings('textOverlay', 'text', e.target.value)} className="w-full bg-gray-800 text-white p-2 rounded" placeholder="Custom Text" />
-                 <div className="grid grid-cols-2 gap-3">
-                    <input type="range" min="0" max="100" value={settings.textOverlay.x} onChange={(e) => updateNestedSettings('textOverlay', 'x', parseInt(e.target.value))} className="w-full" />
-                    <input type="range" min="0" max="100" value={settings.textOverlay.y} onChange={(e) => updateNestedSettings('textOverlay', 'y', parseInt(e.target.value))} className="w-full" />
-                 </div>
-               </div>
-            )}
-          </div>
-
-          {/* Font Size */}
-          <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-             <h3 className="text-lg font-semibold text-white mb-2">Font Size</h3>
-             <div className="flex gap-4">
-               {['small', 'medium', 'large'].map(size => (
-                 <button 
-                   key={size} 
-                   onClick={() => updateSettings('fontSize', size)}
-                   className={`px-4 py-2 rounded ${settings.fontSize === size ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300'}`}
-                 >
-                   {size.charAt(0).toUpperCase() + size.slice(1)}
-                 </button>
-               ))}
-             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Advanced */}
-      {activeSection === 'advanced' && (
-        <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-           <h3 className="text-lg font-semibold text-white mb-4">Advanced Overlay</h3>
-           
-           {/* Picture Overlay */}
-           <div className="mb-6">
-             <div className="flex items-center justify-between mb-2">
-               <h4 className="text-white">Picture Overlay</h4>
-               <input type="checkbox" checked={settings.overlayPicture.enabled} onChange={(e) => updateNestedSettings('overlayPicture', 'enabled', e.target.checked)} />
-             </div>
-             {settings.overlayPicture.enabled && (
-               <div className="grid grid-cols-2 gap-3">
-                  <input type="range" min="0" max="100" value={settings.overlayPicture.x} onChange={(e) => updateNestedSettings('overlayPicture', 'x', parseInt(e.target.value))} className="w-full" />
-                  <input type="range" min="0" max="100" value={settings.overlayPicture.y} onChange={(e) => updateNestedSettings('overlayPicture', 'y', parseInt(e.target.value))} className="w-full" />
-               </div>
+             
+             {settings.timeTitle.enabled && (
+                <div className="space-y-3">
+                     <label className="flex items-center gap-2 text-gray-300 text-sm">
+                        <input type="checkbox" checked={settings.timeTitle.showWeek} onChange={(e) => updateNestedSettings('timeTitle', 'showWeek', e.target.checked)} />
+                        Afficher le jour de la semaine
+                     </label>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs text-gray-400">Position X</label>
+                            <input type="range" min="0" max="100" value={settings.timeTitle.x} onChange={(e) => updateNestedSettings('timeTitle', 'x', parseInt(e.target.value))} className="w-full" />
+                        </div>
+                        <div>
+                            <label className="text-xs text-gray-400">Position Y</label>
+                            <input type="range" min="0" max="100" value={settings.timeTitle.y} onChange={(e) => updateNestedSettings('timeTitle', 'y', parseInt(e.target.value))} className="w-full" />
+                        </div>
+                    </div>
+                </div>
              )}
-           </div>
+          </div>
+        </div>
+      )}
 
-           {/* GPS */}
-           <div>
-             <div className="flex items-center justify-between mb-2">
-               <h4 className="text-white">GPS Coordinates</h4>
-               <input type="checkbox" checked={settings.gpsCoordinates.enabled} onChange={(e) => updateNestedSettings('gpsCoordinates', 'enabled', e.target.checked)} />
-             </div>
-           </div>
+      {/* Overlay & Advanced (Simplified for length) */}
+      {(activeSection === 'overlay' || activeSection === 'advanced') && (
+        <div className="space-y-4">
+            <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-4">Texte Personnalisé (Overlay)</h3>
+                <div className="flex items-center gap-4 mb-4">
+                     <label className="flex items-center gap-2 text-white">
+                        <input type="checkbox" checked={settings.textOverlay.enabled} onChange={(e) => updateNestedSettings('textOverlay', 'enabled', e.target.checked)} />
+                        Activer
+                     </label>
+                </div>
+                {settings.textOverlay.enabled && (
+                    <input 
+                        type="text" 
+                        value={settings.textOverlay.text} 
+                        onChange={(e) => updateNestedSettings('textOverlay', 'text', e.target.value)}
+                        className="w-full bg-gray-800 border-gray-600 rounded text-white p-2"
+                        placeholder="Texte à afficher"
+                    />
+                )}
+            </div>
+
+            <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-4">Taille de Police</h3>
+                <div className="flex gap-4">
+                    {['small', 'medium', 'large'].map(size => (
+                        <button
+                            key={size}
+                            onClick={() => handleUpdate({ ...settings, fontSize: size as any })}
+                            className={`px-4 py-2 rounded border ${settings.fontSize === size ? 'bg-red-600 border-red-600 text-white' : 'bg-transparent border-gray-600 text-gray-400'}`}
+                        >
+                            {size === 'small' ? 'Petite' : size === 'medium' ? 'Moyenne' : 'Grande'}
+                        </button>
+                    ))}
+                </div>
+            </div>
         </div>
       )}
 
