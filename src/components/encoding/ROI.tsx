@@ -22,7 +22,7 @@ export interface ROIData {
   regions: ROIRegion[];
 }
 
-const MAX_REGIONS = 1;
+const MAX_REGIONS = 0;
 const API_COORD_MAX = 8192; // API coordinate space is 0-8192
 
 const defaultState: ROIData = {
