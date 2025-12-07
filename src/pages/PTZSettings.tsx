@@ -14,7 +14,7 @@ import PTZRestart from '../components/ptz/PTZRestart';
 import RestoreDefault from '../components/ptz/RestoreDefault';
 
 const PTZSettings: React.FC = () => {
-  const [selectedCamera, setSelectedCamera] = useState<'camera1' | 'camera2'>('camera1');
+  const [selectedCamera, setSelectedCamera] = useState<'cam1' | 'cam2'>('cam1');
   const [presets, setPresets] = useState<Preset[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
   const [autoScans, setAutoScans] = useState<AutoScan[]>([]);
@@ -415,7 +415,7 @@ const PTZSettings: React.FC = () => {
                   </div>
                   <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-700">
                     <span className="text-white text-sm font-medium">
-                      {selectedCamera === 'camera1' ? 'cam1' : 'cam2'}
+                      {selectedCamera === 'camera1' ? 'Camera 1' : 'Camera 2'}
                     </span>
                   </div>
                 </div>
