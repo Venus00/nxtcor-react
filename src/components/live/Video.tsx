@@ -112,6 +112,21 @@ const VideoStream: React.FC = () => {
   const zoomOutHandlers = createHoldHandlers('zoom_out', zoomOutIntervalRef);
   const focusInHandlers = createHoldHandlers('focus_in', focusInIntervalRef);
   const focusOutHandlers = createHoldHandlers('focus_out', focusOutIntervalRef);
+
+  const handleWiperOn = async () => {
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3000/camera/${camId}/ptz/wiper/on`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: 0 }),
+      });
+      const data = await res.json();
+      console.log('Wiper activated:', data);
+    } catch (err) {
+      console.error('Error activating wiper:', err);
+    }
+  };
+
   useEffect(() => {
     return () => {
       [upIntervalRef, downIntervalRef, leftIntervalRef, rightIntervalRef, zoomInIntervalRef, zoomOutIntervalRef, focusInIntervalRef, focusOutIntervalRef].forEach(ref => {
@@ -261,6 +276,26 @@ const VideoStream: React.FC = () => {
                   <Plus size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
               </div>
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">WIPER</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center mb-6">
+                <button
+                  onClick={handleWiperOn}
+                  className="group w-full h-12 bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 border border-purple-400/30 hover:border-purple-400/50 text-purple-100 hover:text-white rounded-xl flex items-center justify-center space-x-2 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20"
+                  aria-label="Activate Wiper"
+                >
+                  <Circle size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <span className="text-sm font-medium tracking-wide">WIPER ON</span>
+                </button>
+              </div>
+
               <div className="relative mb-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>

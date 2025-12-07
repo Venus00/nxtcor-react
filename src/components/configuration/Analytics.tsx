@@ -156,11 +156,9 @@ const Analytics: React.FC = () => {
 
   const disableTracking = async () => {
     try {
-      if (trackingId !== null) {
-        await fetch(`http://localhost:3000/track/object/${trackingId}`, {
-          method: 'POST',
-        })
-      }
+      await fetch(`http://${window.location.hostname}:3000/track/stop`, {
+        method: 'POST',
+      })
       setTrackingId(null)
     } catch (error) {
       console.error('Error disabling tracking:', error)
