@@ -13,7 +13,7 @@ interface VideosByDate {
     [date: string]: VideoFile[];
 }
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = `http://${window.location.hostname}:3001`;
 
 const VideoListSidebar = () => {
     const [allVideos, setAllVideos] = useState<VideosByDate>({});
