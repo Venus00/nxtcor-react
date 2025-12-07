@@ -415,7 +415,7 @@ const PTZSettings: React.FC = () => {
                   </div>
                   <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-700">
                     <span className="text-white text-sm font-medium">
-                      {selectedCamera === 'camera1' ? 'Camera 1' : 'Camera 2'}
+                      {selectedCamera === 'camera1' ? 'cam1' : 'cam2'}
                     </span>
                   </div>
                 </div>
