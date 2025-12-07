@@ -188,13 +188,15 @@ const VideoListSidebar = () => {
 
     // Group videos by hour for the current filtered list
     const videosByHour: { [hour: string]: VideoFile[] } = {};
-    filteredVideos.forEach(video => {
-        const hour = video.hour || '00';
-        if (!videosByHour[hour]) {
-            videosByHour[hour] = [];
-        }
-        videosByHour[hour].push(video);
-    });
+    if (Array.isArray(filteredVideos)) {
+        filteredVideos.forEach(video => {
+            const hour = video.hour || '00';
+            if (!videosByHour[hour]) {
+                videosByHour[hour] = [];
+            }
+            videosByHour[hour].push(video);
+        });
+    }
 
     return (
         <div className="bg-white flex flex-col h-full p-4 rounded-lg">
