@@ -25,7 +25,7 @@ const PTZControl: React.FC<PTZControlProps> = ({
           </svg>
           Direction
         </h3>
-        
+
         <div className="flex items-center justify-center">
           <div className="relative w-32 h-32">
             {/* Up Arrow */}
