@@ -112,8 +112,9 @@ const PresetManagement: React.FC = () => {
 
     setPresetMutation.mutate(
       {
-        [`PtzPreset[0][${apiIndex}].Enable`]: "true",
-        [`PtzPreset[0][${apiIndex}].Name`]: newTitle,
+        Enable: true,
+        Name: newTitle,
+        id : apiIndex
       },
       {
         onSuccess: () => refetch(), // Refresh list to get new coordinates if API updates them

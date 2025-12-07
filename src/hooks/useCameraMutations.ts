@@ -240,7 +240,7 @@ export function useClearPreset(camId: string) {
 export function useSetPreset(camId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (presetId: number) =>
+    mutationFn: (presetId: any) =>
       apiFetch(`/camera/${camId}/ptz/preset/set`, 'POST', { presetId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cameraKeys.presets(camId) });
