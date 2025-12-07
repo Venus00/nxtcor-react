@@ -79,7 +79,7 @@ const PresetManagement: React.FC = () => {
   // 2. Mutations
   const setPresetMutation = useSetPtzPreset(camId);
   const ptzActionMutation = useSetPTZStatus(camId);
- const clearPreset = useClearPreset(camId);
+  const clearPreset = useClearPreset(camId);
   // 3. Local State
   const [presets, setPresets] = useState<Preset[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -150,25 +150,9 @@ const PresetManagement: React.FC = () => {
     const apiIndex = id - 1;
 
     // 1. Clear via PTZ command
-    clearPreset.mutate(
-      {
-        presetId: id,
-      },
-      {
-        onSuccess: () => {
-          // 2. Disable in config
-          setPresetMutation.mutate(
-            {
-              [`table.PtzPreset[0][${apiIndex}].Enable`]: "false",
-              [`table.PtzPreset[0][${apiIndex}].Name`]: `Preset${id}`, // Reset name or leave empty
-            },
-            {
-              onSuccess: () => refetch(),
-            }
-          );
-        },
-      }
-    );
+    clearPreset.mutate({
+      presetId: id,
+    });
   };
 
   // RENAME
