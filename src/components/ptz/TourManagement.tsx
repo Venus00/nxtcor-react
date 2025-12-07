@@ -37,7 +37,7 @@ const apiToUI = (data: any): Tour[] => {
     const enabledStr = String(config[`${prefix}Enable`] ?? "false");
     const name = config[`${prefix}Name`];
     
-    if (enabledStr === "true" || (name && name !== "None")) {
+    if ((name && name !== "None")) {
         let presetCount = 0;
         // Count defined presets
         for(let j=0; j<32; j++) {
