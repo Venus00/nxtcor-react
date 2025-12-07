@@ -14,6 +14,7 @@ import PTZRestart from '../components/ptz/PTZRestart';
 import RestoreDefault from '../components/ptz/RestoreDefault';
 
 const PTZSettings: React.FC = () => {
+  const [selectedCamera, setSelectedCamera] = useState<'camera1' | 'camera2'>('camera1');
   const [presets, setPresets] = useState<Preset[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
   const [autoScans, setAutoScans] = useState<AutoScan[]>([]);
@@ -61,15 +62,15 @@ const PTZSettings: React.FC = () => {
 
   const handleDirectionControl = (direction: 'up' | 'down' | 'left' | 'right' | 'center') => {
     console.log('Direction control:', direction);
-    
+
     // Record movement if recording is active
     if (isRecording) {
       setRecordedMovements(prev => [...prev, `Direction: ${direction}`]);
     }
-    
+
     setCurrentPosition(prev => {
       const newPosition = { ...prev };
-      
+
       switch (direction) {
         case 'up':
           newPosition.tilt = Math.min(90, prev.tilt + 5);
@@ -88,22 +89,22 @@ const PTZSettings: React.FC = () => {
           newPosition.tilt = 0;
           break;
       }
-      
+
       return newPosition;
     });
   };
 
   const handleZoomControl = (action: 'in' | 'out') => {
     console.log('Zoom control:', action);
-    
+
     // Record movement if recording is active
     if (isRecording) {
       setRecordedMovements(prev => [...prev, `Zoom: ${action}`]);
     }
-    
+
     setCurrentPosition(prev => ({
       ...prev,
-      zoom: action === 'in' 
+      zoom: action === 'in'
         ? Math.min(100, prev.zoom + 5)
         : Math.max(0, prev.zoom - 5),
     }));
@@ -111,15 +112,15 @@ const PTZSettings: React.FC = () => {
 
   const handleFocusControl = (action: 'near' | 'far') => {
     console.log('Focus control:', action);
-    
+
     // Record movement if recording is active
     if (isRecording) {
       setRecordedMovements(prev => [...prev, `Focus: ${action}`]);
     }
-    
+
     setCurrentPosition(prev => ({
       ...prev,
-      focus: action === 'far' 
+      focus: action === 'far'
         ? Math.min(100, prev.focus + 5)
         : Math.max(0, prev.focus - 5),
     }));
@@ -127,15 +128,15 @@ const PTZSettings: React.FC = () => {
 
   const handleApertureControl = (action: 'open' | 'close') => {
     console.log('Aperture control:', action);
-    
+
     // Record movement if recording is active
     if (isRecording) {
       setRecordedMovements(prev => [...prev, `Aperture: ${action}`]);
     }
-    
+
     setCurrentPosition(prev => ({
       ...prev,
-      aperture: action === 'open' 
+      aperture: action === 'open'
         ? Math.min(100, prev.aperture + 5)
         : Math.max(0, prev.aperture - 5),
     }));
@@ -143,12 +144,12 @@ const PTZSettings: React.FC = () => {
 
   const handleGotoPreset = (preset: Preset) => {
     console.log('Going to preset:', preset);
-    
+
     // Record movement if recording is active
     if (isRecording) {
       setRecordedMovements(prev => [...prev, `Goto Preset: ${preset.title}`]);
     }
-    
+
     setCurrentPosition(preset.position);
     alert(`Moving to preset: ${preset.title}`);
   };
@@ -157,7 +158,7 @@ const PTZSettings: React.FC = () => {
     console.log('Starting tour:', tour);
     setActiveTourId(tour.id);
     alert(`Starting tour: ${tour.name}\nThis will cycle through ${tour.presetPoints.length} preset points.`);
-    
+
     // Simulate tour execution (in real implementation, this would control the camera)
     // Tour will be stopped if PTZ is manually operated
   };
@@ -172,7 +173,7 @@ const PTZSettings: React.FC = () => {
     console.log('Starting auto scan:', scan);
     setActiveScanId(scan.id);
     alert(`Starting Auto Scan ${scan.scanNo}\nScanning from ${scan.leftBoundary}° to ${scan.rightBoundary}° at speed ${scan.speed}`);
-    
+
     // Simulate scan execution (in real implementation, this would control the camera)
   };
 
@@ -202,7 +203,7 @@ const PTZSettings: React.FC = () => {
     }
 
     const duration = Math.floor((new Date().getTime() - recordingStartTime.getTime()) / 1000);
-    
+
     const newPattern: Pattern = {
       id: Date.now(),
       patternNo: recordingPatternNo,
@@ -232,7 +233,7 @@ const PTZSettings: React.FC = () => {
     console.log('Starting pattern playback:', pattern);
     setActivePatternId(pattern.id);
     alert(`Playing Pattern ${pattern.patternNo}\nExecuting ${pattern.movements.length} recorded movements over ${pattern.recordingDuration}s`);
-    
+
     // Simulate pattern execution (in real implementation, this would control the camera)
   };
 
@@ -246,7 +247,7 @@ const PTZSettings: React.FC = () => {
     console.log('Starting auto pan:', autoPan);
     setAutoPan(prev => ({ ...prev, isActive: true }));
     alert(`Starting Auto Pan\nRotating ${autoPan.direction} at speed ${autoPan.speed}`);
-    
+
     // Simulate auto pan execution (in real implementation, this would control the camera)
   };
 
@@ -258,16 +259,16 @@ const PTZSettings: React.FC = () => {
 
   const handleSaveIdleAction = () => {
     console.log('Saving idle action configuration:', idleAction);
-    
+
     if (idleAction.enabled && idleAction.actionNumber === 0) {
       alert('Please select an action before saving!');
       return;
     }
-    
-    const actionTypeLabel = idleAction.actionType === 'autoscan' ? 'Auto Scan' : 
-                           idleAction.actionType === 'preset' ? 'Preset Point' :
-                           idleAction.actionType.charAt(0).toUpperCase() + idleAction.actionType.slice(1);
-    
+
+    const actionTypeLabel = idleAction.actionType === 'autoscan' ? 'Auto Scan' :
+      idleAction.actionType === 'preset' ? 'Preset Point' :
+        idleAction.actionType.charAt(0).toUpperCase() + idleAction.actionType.slice(1);
+
     if (idleAction.enabled) {
       alert(`Idle Action Saved!\nAction Type: ${actionTypeLabel}\nIdle Time: ${idleAction.idleTime}s\n\nCamera will automatically execute the selected action after ${idleAction.idleTime}s of inactivity.`);
     } else {
@@ -277,9 +278,9 @@ const PTZSettings: React.FC = () => {
 
   const handleSaveScheduledTask = () => {
     console.log('Saving scheduled tasks:', scheduledTasks);
-    
+
     const enabledTasks = scheduledTasks.filter(t => t.enabled);
-    
+
     if (enabledTasks.length > 0) {
       alert(`Scheduled Tasks Saved!\n${enabledTasks.length} task(s) enabled and configured.\n\nTasks will execute automatically at scheduled times.`);
     } else {
@@ -289,13 +290,13 @@ const PTZSettings: React.FC = () => {
 
   const handlePTZRestart = () => {
     console.log('Restarting PTZ system...');
-    
+
     // Stop all active operations
     if (activeTourId) setActiveTourId(null);
     if (activeScanId) setActiveScanId(null);
     if (activePatternId) setActivePatternId(null);
     if (autoPan.isActive) setAutoPan({ ...autoPan, isActive: false });
-    
+
     // In a real implementation, this would call the API to restart the PTZ
     // For now, we just log it
     console.log('PTZ restart command sent');
@@ -303,7 +304,7 @@ const PTZSettings: React.FC = () => {
 
   const handleRestoreDefault = () => {
     console.log('Restoring PTZ default settings...');
-    
+
     // Reset all PTZ configurations to default
     setPresets([]);
     setTours([]);
@@ -334,7 +335,7 @@ const PTZSettings: React.FC = () => {
       zeroPointCalibration: 'off',
     });
     setScheduledTasks([]);
-    
+
     // Stop all active operations
     setActiveTourId(null);
     setActiveScanId(null);
@@ -343,7 +344,7 @@ const PTZSettings: React.FC = () => {
     setRecordingPatternNo(null);
     setRecordingStartTime(null);
     setRecordedMovements([]);
-    
+
     // In a real implementation, this would call the API to restore defaults
     console.log('PTZ default settings restored');
   };
@@ -366,45 +367,57 @@ const PTZSettings: React.FC = () => {
             {/* Live Preview */}
             <div className="bg-gray-800/30 rounded-lg border border-gray-700 overflow-hidden">
               <div className="bg-gray-800/50 px-4 py-3 border-b border-gray-700">
-                <h2 className="text-white font-medium flex items-center gap-2">
-                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Live Preview
-                </h2>
-              </div>
-              
-              {/* Video Preview Area */}
-              <div className="relative aspect-video bg-gray-900 flex items-center justify-center">
-                {/* Placeholder for live stream */}
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <svg className="w-24 h-24 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-gray-500 text-lg font-medium mb-2">Live Camera Feed</p>
-                      <p className="text-gray-600 text-sm">Stream will appear here</p>
-                    </div>
-                  </div>
-                  
-                  {/* Grid overlay for reference */}
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="h-full w-full" style={{
-                      backgroundImage: `
-                        linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent),
-                        linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent)
-                      `,
-                      backgroundSize: '50px 50px'
-                    }}></div>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-white font-medium flex items-center gap-2">
+                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Live Preview
+                  </h2>
+
+                  {/* Camera Selection */}
+                  <div className="flex items-center gap-2">
+                    <label className="text-gray-400 text-sm">Camera:</label>
+                    <select
+                      value={selectedCamera}
+                      onChange={(e) => setSelectedCamera(e.target.value as 'camera1' | 'camera2')}
+                      className="bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all"
+                    >
+                      <option value="camera1">Camera 1</option>
+                      <option value="camera2">Camera 2</option>
+                    </select>
                   </div>
                 </div>
+              </div>
 
-               
-                {/* Recording Indicator */}
-                <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-700 z-10">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-white text-sm font-medium">LIVE</span>
+              {/* Video Preview Area */}
+              <div className="relative aspect-video bg-gray-900">
+                {/* Live Camera Stream */}
+                <iframe
+                  src={`http://${window.location.hostname}:8889/${selectedCamera}`}
+                  width="640"
+                  height="360"
+                  className="object-fill"
+                  allow="autoplay; fullscreen"
+                  style={{
+                    transformOrigin: "center",
+                    transition: "transform 0.3s ease",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                />
+
+                {/* Recording Indicator & Camera Label */}
+                <div className="absolute top-4 right-4 flex items-center gap-3 z-10">
+                  <div className="flex items-center gap-2 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-700">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-white text-sm font-medium">LIVE</span>
+                  </div>
+                  <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-700">
+                    <span className="text-white text-sm font-medium">
+                      {selectedCamera === 'camera1' ? 'Camera 1' : 'Camera 2'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* PTZ Controls - Bottom Left */}
@@ -428,11 +441,10 @@ const PTZSettings: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setActiveTab('preset')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${
-                      activeTab === 'preset'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                    }`}
+                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'preset'
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                      }`}
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -444,11 +456,10 @@ const PTZSettings: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab('tour')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${
-                      activeTab === 'tour'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                    }`}
+                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'tour'
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                      }`}
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -459,11 +470,10 @@ const PTZSettings: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab('scan')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${
-                      activeTab === 'scan'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                    }`}
+                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'scan'
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                      }`}
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -474,11 +484,10 @@ const PTZSettings: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab('pattern')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${
-                      activeTab === 'pattern'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                    }`}
+                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'pattern'
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                      }`}
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -489,11 +498,10 @@ const PTZSettings: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab('autopan')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${
-                      activeTab === 'autopan'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                    }`}
+                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'autopan'
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                      }`}
                   >
                     <div className="flex items-center justify-center gap-1">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -504,11 +512,10 @@ const PTZSettings: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab('idle')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${
-                      activeTab === 'idle'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                    }`}
+                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'idle'
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                      }`}
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -519,11 +526,10 @@ const PTZSettings: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab('limit')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${
-                      activeTab === 'limit'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                    }`}
+                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'limit'
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                      }`}
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -534,11 +540,10 @@ const PTZSettings: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab('scheduled')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${
-                      activeTab === 'scheduled'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                    }`}
+                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'scheduled'
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                      }`}
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -549,11 +554,10 @@ const PTZSettings: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab('restart')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${
-                      activeTab === 'restart'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                    }`}
+                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'restart'
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                      }`}
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -564,11 +568,10 @@ const PTZSettings: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab('default')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${
-                      activeTab === 'default'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                    }`}
+                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'default'
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                      }`}
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
