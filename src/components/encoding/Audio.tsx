@@ -86,11 +86,11 @@ const uiToApi = (ui: AudioData) => {
     [`${mainPfx}Audio.Compression`]: ui.audioCodec === 'MPEG2-Layer2' ? 'MPEG2' : 'AAC',
     [`${mainPfx}Audio.Frequency`]: ui.samplingFrequency === '8K' ? 8000 : 16000,
     
-    // Attributes
-    [`${attrPfx}AudioInType`]: ui.audioInType,
-    [`${attrPfx}NoiseFilter`]: ui.noiseFilter ? "Enable" : "Disable",
-    [`${attrPfx}MicrophoneVolume`]: ui.microphoneVolume,
-    [`${attrPfx}SpeakerVolume`]: ui.speakerVolume
+    // // Attributes
+    // [`${attrPfx}AudioInType`]: ui.audioInType,
+    // [`${attrPfx}NoiseFilter`]: ui.noiseFilter ? "Enable" : "Disable",
+    // [`${attrPfx}MicrophoneVolume`]: ui.microphoneVolume,
+    // [`${attrPfx}SpeakerVolume`]: ui.speakerVolume
   };
 };
 
