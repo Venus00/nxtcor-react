@@ -30,9 +30,9 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
         setIsPresetRunning(false);
         setActivePreset(null);
         try {
-            await axios.post(`http://${window.location.hostname}:3000/ptz/cam1/stop`, { direction: 'stop' });
-            await axios.post(`http://${window.location.hostname}:3000/focus/cam1/stop`, { direction: 'focus_in' });
-            await axios.post(`http://${window.location.hostname}:3000/focus/cam1/stop`, { direction: 'focus_out' });
+            await axios.post(`http://${window.location.hostname}:3000/ptz/cam1/move/stop`, { direction: 'stop' });
+            await axios.post(`http://${window.location.hostname}:3000/focus/cam1/focus/stop`, { direction: 'focus_in' });
+            await axios.post(`http://${window.location.hostname}:3000/focus/cam1/zoom/stop`, { direction: 'focus_out' });
         } catch (err) {
             // ignore errors for stop
         }
