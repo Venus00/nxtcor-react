@@ -31,7 +31,7 @@ export interface Preset {
  * Based on provided JSON, max index goes up to 127.
  */
 const apiToUI = (data: any): Preset[] => {
-  if (!data || !data.config) return [];
+  if (!data || !data.presets) return [];
   
   const config = data.config;
   const presets: Preset[] = [];
