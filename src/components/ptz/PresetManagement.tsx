@@ -114,7 +114,7 @@ const PresetManagement: React.FC = () => {
     // 1. Send PTZ command to save current position to this ID
     ptzActionMutation.mutate(
       {
-        action: "start",
+        action: "setConfig",
         channel: 0,
         code: "SetPreset",
         arg1: 0,
@@ -126,8 +126,8 @@ const PresetManagement: React.FC = () => {
           // 2. Enable it in config and set name
           setPresetMutation.mutate(
             {
-              [`table.PtzPreset[0][${apiIndex}].Enable`]: "true",
-              [`table.PtzPreset[0][${apiIndex}].Name`]: newTitle,
+              [`PtzPreset[0][${apiIndex}].Enable`]: "true",
+              [`PtzPreset[0][${apiIndex}].Name`]: newTitle,
             },
             {
               onSuccess: () => refetch(), // Refresh list to get new coordinates if API updates them
