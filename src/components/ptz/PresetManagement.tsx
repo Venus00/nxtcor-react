@@ -62,10 +62,9 @@ const apiToUI = (data: any): Preset[] => {
       }
     }
   }
-  
+
   return presets;
 };
-
 
 // =============================================================================
 // COMPONENT
@@ -111,29 +110,13 @@ const PresetManagement: React.FC = () => {
     const newTitle = `Preset ${newId}`;
     const apiIndex = newId - 1; // 0-based index for API
 
-    // 1. Send PTZ command to save current position to this ID
-    ptzActionMutation.mutate(
+    setPresetMutation.mutate(
       {
-        action: "setConfig",
-        channel: 0,
-        code: "SetPreset",
-        arg1: 0,
-        arg2: newId, // PTZ command usually takes 1-based ID or matches protocol. Assuming 1-based for command.
-        arg3: 0,
+        [`PtzPreset[0][${apiIndex}].Enable`]: "true",
+        [`PtzPreset[0][${apiIndex}].Name`]: newTitle,
       },
       {
-        onSuccess: () => {
-          // 2. Enable it in config and set name
-          setPresetMutation.mutate(
-            {
-              [`PtzPreset[0][${apiIndex}].Enable`]: "true",
-              [`PtzPreset[0][${apiIndex}].Name`]: newTitle,
-            },
-            {
-              onSuccess: () => refetch(), // Refresh list to get new coordinates if API updates them
-            }
-          );
-        },
+        onSuccess: () => refetch(), // Refresh list to get new coordinates if API updates them
       }
     );
   };
