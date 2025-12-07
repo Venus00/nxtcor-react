@@ -90,28 +90,28 @@ const VideoStream: React.FC = () => {
       // Map direction to specific stop endpoint
       switch (direction) {
         case 'up':
-          endpoint = `/camera/${camId}/ptz/stop/up`;
+          endpoint = `/camera/${camId}/ptz/move/stop`;
           break;
         case 'down':
-          endpoint = `/camera/${camId}/ptz/stop/down`;
+          endpoint = `/camera/${camId}/ptz/move/stop`;
           break;
         case 'left':
-          endpoint = `/camera/${camId}/ptz/stop/left`;
+          endpoint = `/camera/${camId}/ptz/move/stop`;
           break;
         case 'right':
-          endpoint = `/camera/${camId}/ptz/stop/right`;
+          endpoint = `/camera/${camId}/ptz/move/stop`;
           break;
         case 'zoom_in':
-          endpoint = `/camera/${camId}/ptz/stop/zoom_in`;
+          endpoint = `/camera/${camId}/ptz/zoom/stop`;
           break;
         case 'zoom_out':
-          endpoint = `/camera/${camId}/ptz/stop/zoom_out`;
+          endpoint = `/camera/${camId}/ptz/zoom/stop`;
           break;
         case 'focus_in':
-          endpoint = `/camera/${camId}/ptz/stop/focus_in`;
+          endpoint = `/camera/${camId}/ptz/focus/stop`;
           break;
         case 'focus_out':
-          endpoint = `/camera/${camId}/ptz/stop/focus_out`;
+          endpoint = `/camera/${camId}/ptz/focus/stop`;
           break;
       }
 
