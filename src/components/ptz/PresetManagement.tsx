@@ -30,6 +30,7 @@ export interface Preset {
  * Iterates through table.PtzPreset[0][i] to find valid presets.
  * Based on provided JSON, max index goes up to 127.
  */
+
 const apiToUI = (data: any): Preset[] => {
   if (!data || !data.presets) return [];
 
@@ -40,17 +41,16 @@ const apiToUI = (data: any): Preset[] => {
   for (let i = 0; i < MAX_PRESETS; i++) {
     const prefix = `table.PtzPreset[0][${i}].`;
 
-    // Check if the key exists in the flat config object
-    // Using Name as a primary check if the preset slot exists in config
-    // console.log('Checking preset index:', i, 'Enable:', config[`${prefix}Enable`], 'Name:', config[`${prefix}Name`]);
+    // Check if the preset exists in config
     if (config[`${prefix}Name`] !== undefined) {
       const enabledStr = String(config[`${prefix}Enable`] ?? "false");
       const name = config[`${prefix}Name`];
       const enabled = enabledStr === "true";
 
-      if (enabledStr === "true" || (name && name !== "None")) {
+      // Only include if explicitly enabled
+      if (enabled) {
         presets.push({
-          id: i + 1, // UI uses 1-based IDs for display usually, but API is 0-based index. Let's store 1-based ID for UI.
+          id: i, // Use 0-based index to match API (important for gotoPreset calls)
           title: name || `Preset ${i + 1}`,
           enabled: enabled,
           position: {
@@ -62,8 +62,10 @@ const apiToUI = (data: any): Preset[] => {
       }
     }
   }
+  
   return presets;
 };
+
 
 // =============================================================================
 // COMPONENT
