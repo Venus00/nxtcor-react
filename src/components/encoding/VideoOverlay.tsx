@@ -213,7 +213,7 @@ const apiToUI = (data: any): VideoOverlayData => {
 };
 
 const uiToApi = (ui: VideoOverlayData) => {
-  const prefix = "table.VideoWidget[0].";
+  // const prefix = "table.VideoWidget[0].";
   const payload: any = {};
 
   // Helper to set rect
@@ -228,43 +228,43 @@ const uiToApi = (ui: VideoOverlayData) => {
     // *Improved*: For this demo, we'll calculate x2/y2 assuming a standard box size (e.g. 20% width) to ensure valid rects.
     
     const [x1, y1, x2, y2] = percentToRect(x, y, w || 20, h || 5); 
-    payload[`${prefix}${keyBase}.Rect[0]`] = x1;
-    payload[`${prefix}${keyBase}.Rect[1]`] = y1;
+    payload[`${keyBase}.Rect[0]`] = x1;
+    payload[`${keyBase}.Rect[1]`] = y1;
     // Only send x2/y2 if we are confident, or if it's a resizable region like Privacy Mask.
     // For Titles, often x2/y2 are auto-calculated by firmware based on text length, 
     // but sending them helps define the "box".
-    payload[`${prefix}${keyBase}.Rect[2]`] = x2;
-    payload[`${prefix}${keyBase}.Rect[3]`] = y2;
+    payload[`${keyBase}.Rect[2]`] = x2;
+    payload[`${keyBase}.Rect[3]`] = y2;
   };
 
   // Channel Title
-  payload[`${prefix}ChannelTitle.EncodeBlend`] = ui.channelTitle.enabled;
-  if (ui.channelTitle.text) payload[`${prefix}ChannelTitle.Name`] = ui.channelTitle.text; // Only send if we have text
+  payload[`ChannelTitle.EncodeBlend`] = ui.channelTitle.enabled;
+  if (ui.channelTitle.text) payload[`ChannelTitle.Name`] = ui.channelTitle.text; // Only send if we have text
   setRect("ChannelTitle", ui.channelTitle.x, ui.channelTitle.y);
 
   // Time Title
-  payload[`${prefix}TimeTitle.EncodeBlend`] = ui.timeTitle.enabled;
-  payload[`${prefix}TimeTitle.ShowWeek`] = ui.timeTitle.showWeek;
+  payload[`TimeTitle.EncodeBlend`] = ui.timeTitle.enabled;
+  payload[`TimeTitle.ShowWeek`] = ui.timeTitle.showWeek;
   setRect("TimeTitle", ui.timeTitle.x, ui.timeTitle.y);
 
   // OSD Info (PTZ)
-  payload[`${prefix}PTZCoordinates.EncodeBlend`] = ui.osdInfo.showPTZCoordinates;
-  payload[`${prefix}PTZPreset.EncodeBlend`] = ui.osdInfo.showPresetPoint;
-  payload[`${prefix}PtzPattern.EncodeBlend`] = ui.osdInfo.showPattern;
+  payload[`PTZCoordinates.EncodeBlend`] = ui.osdInfo.showPTZCoordinates;
+  payload[`PTZPreset.EncodeBlend`] = ui.osdInfo.showPresetPoint;
+  payload[`PtzPattern.EncodeBlend`] = ui.osdInfo.showPattern;
   setRect("PTZCoordinates", ui.osdInfo.x, ui.osdInfo.y);
   // Often these share a position or are relative. We update Coordinates as the anchor.
 
   // Text Overlay
-  payload[`${prefix}CustomTitle[0].EncodeBlend`] = ui.textOverlay.enabled;
-  payload[`${prefix}CustomTitle[0].Text`] = ui.textOverlay.text;
+  payload[`CustomTitle[0].EncodeBlend`] = ui.textOverlay.enabled;
+  payload[`CustomTitle[0].Text`] = ui.textOverlay.text;
   setRect("CustomTitle[0]", ui.textOverlay.x, ui.textOverlay.y);
 
   // Font Size
   const scale = ui.fontSize === 'small' ? 0.7 : ui.fontSize === 'large' ? 1.2 : 1;
-  payload[`${prefix}FontSizeScale`] = scale;
+  payload[`FontSizeScale`] = scale;
 
   // Picture
-  payload[`${prefix}PictureTitle.EncodeBlend`] = ui.overlayPicture.enabled;
+  payload[`PictureTitle.EncodeBlend`] = ui.overlayPicture.enabled;
   setRect("PictureTitle", ui.overlayPicture.x, ui.overlayPicture.y);
 
   // Privacy Masks (Covers)
@@ -273,17 +273,17 @@ const uiToApi = (ui: VideoOverlayData) => {
   for (let i = 0; i < 4; i++) {
     const mask = ui.privacyMasks.find(m => m.index === i);
     if (mask) {
-      payload[`${prefix}Covers[${i}].EncodeBlend`] = true; // Use EncodeBlend for enable
-      payload[`${prefix}Covers[${i}].PreviewBlend`] = true; // Often paired
+      payload[`Covers[${i}].EncodeBlend`] = true; // Use EncodeBlend for enable
+      payload[`Covers[${i}].PreviewBlend`] = true; // Often paired
       const [x1, y1, x2, y2] = percentToRect(mask.x, mask.y, mask.width, mask.height);
-      payload[`${prefix}Covers[${i}].Rect[0]`] = x1;
-      payload[`${prefix}Covers[${i}].Rect[1]`] = y1;
-      payload[`${prefix}Covers[${i}].Rect[2]`] = x2;
-      payload[`${prefix}Covers[${i}].Rect[3]`] = y2;
+      payload[`Covers[${i}].Rect[0]`] = x1;
+      payload[`Covers[${i}].Rect[1]`] = y1;
+      payload[`Covers[${i}].Rect[2]`] = x2;
+      payload[`Covers[${i}].Rect[3]`] = y2;
     } else {
       // Disable unused
-      payload[`${prefix}Covers[${i}].EncodeBlend`] = false;
-      payload[`${prefix}Covers[${i}].PreviewBlend`] = false;
+      payload[`Covers[${i}].EncodeBlend`] = false;
+      payload[`Covers[${i}].PreviewBlend`] = false;
     }
   }
 
