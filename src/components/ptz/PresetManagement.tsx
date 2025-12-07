@@ -138,20 +138,18 @@ const PresetManagement: React.FC = () => {
   };
 
   // GOTO: Moves camera to preset
-  const handleGotoPreset = (preset: Preset) => {
-    setSelectedPresetId(preset.id);
+  const handleGotoPreset = (id: number) => {
+    setSelectedPresetId(id);
     ptzActionMutation.mutate({
-      presetId: preset.id, // 1-based ID
+      id
     });
   };
 
   // DELETE: Clears preset
   const handleDeletePreset = (id: number) => {
-    const apiIndex = id - 1;
-
     // 1. Clear via PTZ command
     clearPreset.mutate({
-      presetId: id,
+      id
     });
   };
 
@@ -349,7 +347,7 @@ const PresetManagement: React.FC = () => {
                   {/* Actions */}
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleGotoPreset(preset)}
+                      onClick={() => handleGotoPreset(preset.id)}
                       className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white px-4 py-2 rounded-lg border border-green-500 transition-all duration-200 shadow-lg hover:shadow-green-500/50 flex items-center gap-2 text-sm font-medium"
                       title="Aller vers"
                     >
