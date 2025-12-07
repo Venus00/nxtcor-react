@@ -201,6 +201,17 @@ export function usePtzZoomOut(camId: string) {
   });
 }
 
+export function usePtzFocusIn(camId: string) {
+  return useMutation({
+    mutationFn: () => apiFetch(`/camera/${camId}/ptz/focus/near`, 'POST', {}),
+  });
+}
+
+export function usePtzFocusOut(camId: string) {
+  return useMutation({
+    mutationFn: () => apiFetch(`/camera/${camId}/ptz/focus/far`, 'POST', {}),
+  });
+}
 export function usePtzZoomStop(camId: string) {
   return useMutation({
     mutationFn: () => apiFetch(`/camera/${camId}/ptz/zoom/stop`, 'POST', {}),
