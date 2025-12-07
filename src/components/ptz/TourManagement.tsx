@@ -26,7 +26,7 @@ export interface Tour {
 const apiToUI = (data: any): Tour[] => {
   if (!data || !data.config) return [];
   
-  const config = data.config;
+  const config = data.tours;
   const tours: Tour[] = [];
   const MAX_TOURS = 8; // Typically 8 tours supported
 
