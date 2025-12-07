@@ -174,6 +174,8 @@ export function useSetOSD(camId: string) {
 // =============================================================================
 // PTZ MUTATIONS
 // =============================================================================
+
+
 export function usePtzMove(camId: string) {
   return useMutation({
     mutationFn: ({ direction, speed = 4 }: { direction: string; speed?: number }) =>
