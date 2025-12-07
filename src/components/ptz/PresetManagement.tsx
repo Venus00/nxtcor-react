@@ -33,7 +33,7 @@ export interface Preset {
 const apiToUI = (data: any): Preset[] => {
   if (!data || !data.presets) return [];
   
-  const config = data.config;
+  const config = data.presets;
   const presets: Preset[] = [];
   const MAX_PRESETS = 128; // 0-127 based on JSON
 
