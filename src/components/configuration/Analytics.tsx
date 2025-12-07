@@ -48,8 +48,12 @@ const Analytics: React.FC = () => {
       try {
         console.log(event)
         const data: TrackingData = JSON.parse(event.data)
-        if (data.type === 'tracking_data' && data.data.crcValid) {
+        if (data.type === 'tracking_data') {
+          // Update objects even if checksum validation fails (for debugging)
           setObjects(data.data.objects)
+          if (!data.data.crcValid) {
+            console.warn('Checksum validation failed, but displaying objects anyway')
+          }
         }
       } catch (err) {
         console.error('Error parsing WebSocket message:', err)
@@ -90,9 +94,14 @@ const Analytics: React.FC = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       objects.forEach((obj) => {
-        // Normalize coordinates (assuming x, y are in range 0-100)
-        const boxX = (obj.x / 100) * canvas.width
-        const boxY = (obj.y / 100) * canvas.height
+        // Coordinates appear to be absolute pixels (not percentages)
+        // Assuming camera resolution is around 640x480 or similar
+        // Scale from camera resolution to canvas size
+        const cameraWidth = 640  // Adjust if camera has different resolution
+        const cameraHeight = 480
+        
+        const boxX = (obj.x / cameraWidth) * canvas.width
+        const boxY = (obj.y / cameraHeight) * canvas.height
         const boxWidth = 80
         const boxHeight = 120
 
@@ -130,12 +139,28 @@ const Analytics: React.FC = () => {
     drawBoxes()
   }, [objects, trackingId])
 
-  const enableTracking = (id: number) => {
-    setTrackingId(id)
+  const enableTracking = async (id: number) => {
+    try {
+      await fetch(`http://localhost:3000/track/object/${id}`, {
+        method: 'POST',
+      })
+      setTrackingId(id)
+    } catch (error) {
+      console.error('Error enabling tracking:', error)
+    }
   }
 
-  const disableTracking = () => {
-    setTrackingId(null)
+  const disableTracking = async () => {
+    try {
+      if (trackingId !== null) {
+        await fetch(`http://localhost:3000/track/object/${trackingId}`, {
+          method: 'POST',
+        })
+      }
+      setTrackingId(null)
+    } catch (error) {
+      console.error('Error disabling tracking:', error)
+    }
   }
 
   const getCameraUrl = () => {
