@@ -78,7 +78,7 @@ const PresetManagement: React.FC = () => {
 
   // 2. Mutations
   const setPresetMutation = useSetPtzPreset(camId);
-  const ptzActionMutation = useSetPTZStatus(camId);
+  const ptzActionMutation = useSetPTZStatus('cam2');
   const clearPreset = useClearPreset(camId);
   // 3. Local State
   const [presets, setPresets] = useState<Preset[]>([]);
@@ -109,7 +109,7 @@ const PresetManagement: React.FC = () => {
     }
 
     const newTitle = `Preset${newId}`;
-    const apiIndex = newId ; // 0-based index for API
+    const apiIndex = newId -1 ; // 0-based index for API
 
     setPresetMutation.mutate(
       {
