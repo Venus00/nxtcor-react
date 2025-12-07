@@ -1,8 +1,8 @@
 // components/camera/VideoOverlay.tsx
 import React, { useEffect, useState } from "react";
 import { useCamId } from "../../contexts/CameraContext";
-import { useOSD as useVideoWidget } from "../../hooks/useCameraQueries";
-import { useSetOSD as useSetVideoWidget } from "../../hooks/useCameraMutations";
+import {useOSD as useVideoWidget } from "../../hooks/useCameraQueries";
+import {useSetOSD as useSetVideoWidget } from "../../hooks/useCameraMutations";
 
 // =============================================================================
 // TYPES & INTERFACES
@@ -82,11 +82,16 @@ const API_MAX_COORD = 8192;
 const rectToPercent = (x1: number, y1: number, x2: number, y2: number) => {
   const safeX2 = Math.max(x1, x2);
   const safeY2 = Math.max(y1, y2);
+  
+  // Avoid division by zero or NaN
+  const width = safeX2 - x1;
+  const height = safeY2 - y1;
+
   return {
-    x: (x1 / API_MAX_COORD) * 100,
-    y: (y1 / API_MAX_COORD) * 100,
-    width: ((safeX2 - x1) / API_MAX_COORD) * 100,
-    height: ((safeY2 - y1) / API_MAX_COORD) * 100
+    x: Math.min(100, Math.max(0, (x1 / API_MAX_COORD) * 100)),
+    y: Math.min(100, Math.max(0, (y1 / API_MAX_COORD) * 100)),
+    width: Math.min(100, (width / API_MAX_COORD) * 100),
+    height: Math.min(100, (height / API_MAX_COORD) * 100)
   };
 };
 
@@ -104,7 +109,6 @@ const percentToRect = (x: number, y: number, w: number, h: number) => {
 /**
  * PARSE API RESPONSE (GET)
  * Reads keys starting with "table.VideoWidget[0]."
- *
  */
 const apiToUI = (data: any): VideoOverlayData => {
   if (!data) return defaultState;
@@ -130,7 +134,7 @@ const apiToUI = (data: any): VideoOverlayData => {
     const enabled = getBool(`Covers[${i}].EncodeBlend`);
     const rect = rectToPercent(getInt(`Covers[${i}].Rect[0]`), getInt(`Covers[${i}].Rect[1]`), getInt(`Covers[${i}].Rect[2]`), getInt(`Covers[${i}].Rect[3]`));
     
-    // Show if enabled OR has non-zero size (implies it was drawn)
+    // Show if enabled OR has non-zero size
     if (enabled || (rect.width > 0 && rect.height > 0)) {
         privacyMasks.push({ id: i, index: i, enabled, ...rect });
     }
@@ -155,7 +159,7 @@ const apiToUI = (data: any): VideoOverlayData => {
       y: timeRect.y
     },
     osdInfo: {
-      // Using PTZCoordinates status as proxy for general OSD enable, though individual toggles exist
+      // Logic: enabled if any sub-component is enabled
       enabled: getBool("PTZCoordinates.EncodeBlend") || getBool("PTZPreset.EncodeBlend"), 
       showPresetPoint: getBool("PTZPreset.EncodeBlend"),
       showPTZCoordinates: getBool("PTZCoordinates.EncodeBlend"),
@@ -177,78 +181,77 @@ const apiToUI = (data: any): VideoOverlayData => {
       y: picRect.y,
     },
     osdWarning: {
-      enabled: false // Placeholder if not found in specific config
+      enabled: false
     }
   };
 };
 
 /**
  * BUILD API PAYLOAD (SET)
- * Uses keys starting with "VideoWidget[0]." (No "table." prefix)
- *
+ * Uses keys starting with "VideoWidget[0]." (NO "table." prefix)
  */
 const uiToApi = (ui: VideoOverlayData) => {
-  const prefix = "VideoWidget[0]."; // SET uses prefix without 'table.'
+  const prefix = ""; // SET uses prefix without 'table.'
   const payload: any = {};
 
   // Helper to set rect
-  // Default W/H provided for titles where UI might only control X/Y
   const setRect = (keyBase: string, x: number, y: number, w: number = 0, h: number = 0) => {
     const [x1, y1, x2, y2] = percentToRect(x, y, w || 20, h || 5); 
-    payload[`${keyBase}.Rect[0]`] = x1;
-    payload[`${keyBase}.Rect[1]`] = y1;
-    payload[`${keyBase}.Rect[2]`] = x2;
-    payload[`${keyBase}.Rect[3]`] = y2;
+    payload[`${prefix}${keyBase}.Rect[0]`] = x1;
+    payload[`${prefix}${keyBase}.Rect[1]`] = y1;
+    payload[`${prefix}${keyBase}.Rect[2]`] = x2;
+    payload[`${prefix}${keyBase}.Rect[3]`] = y2;
   };
 
   // --- Channel Title ---
-  payload[`ChannelTitle.EncodeBlend`] = ui.channelTitle.enabled;
-  payload[`ChannelTitle.Name`] = ui.channelTitle.text;
+  payload[`${prefix}ChannelTitle.EncodeBlend`] = ui.channelTitle.enabled;
+  payload[`${prefix}ChannelTitle.Name`] = ui.channelTitle.text;
   setRect("ChannelTitle", ui.channelTitle.x, ui.channelTitle.y);
 
   // --- Time Title ---
-  payload[`TimeTitle.EncodeBlend`] = ui.timeTitle.enabled;
-  payload[`TimeTitle.ShowWeek`] = ui.timeTitle.showWeek;
+  payload[`${prefix}TimeTitle.EncodeBlend`] = ui.timeTitle.enabled;
+  payload[`${prefix}TimeTitle.ShowWeek`] = ui.timeTitle.showWeek;
   setRect("TimeTitle", ui.timeTitle.x, ui.timeTitle.y);
 
   // --- OSD Elements ---
-  payload[`PTZPreset.EncodeBlend`] = ui.osdInfo.showPresetPoint;
-  payload[`PTZCoordinates.EncodeBlend`] = ui.osdInfo.showPTZCoordinates;
-  payload[`PtzPattern.EncodeBlend`] = ui.osdInfo.showPattern;
-  payload[`PTZZoom.EncodeBlend`] = ui.osdInfo.showZoom;
+  payload[`${prefix}PTZPreset.EncodeBlend`] = ui.osdInfo.showPresetPoint;
+  payload[`${prefix}PTZCoordinates.EncodeBlend`] = ui.osdInfo.showPTZCoordinates;
+  payload[`${prefix}PtzPattern.EncodeBlend`] = ui.osdInfo.showPattern;
+  payload[`${prefix}PTZZoom.EncodeBlend`] = ui.osdInfo.showZoom;
   
-  // Sync positions for all OSD elements to the main OSD coordinates
+  // Sync positions for all OSD elements to the main OSD coordinates group
   setRect("PTZCoordinates", ui.osdInfo.x, ui.osdInfo.y);
   setRect("PTZPreset", ui.osdInfo.x, ui.osdInfo.y);
   setRect("PtzPattern", ui.osdInfo.x, ui.osdInfo.y);
   setRect("PTZZoom", ui.osdInfo.x, ui.osdInfo.y);
 
   // --- Text Overlay (CustomTitle[0]) ---
-  payload[`CustomTitle[0].EncodeBlend`] = ui.textOverlay.enabled;
-  payload[`CustomTitle[0].Text`] = ui.textOverlay.text;
+  payload[`${prefix}CustomTitle[0].EncodeBlend`] = ui.textOverlay.enabled;
+  payload[`${prefix}CustomTitle[0].Text`] = ui.textOverlay.text;
   setRect("CustomTitle[0]", ui.textOverlay.x, ui.textOverlay.y);
 
   // --- Font Size ---
   const scale = ui.fontSize === 'small' ? 0.7 : ui.fontSize === 'large' ? 1.2 : 1;
-  payload[`FontSizeScale`] = scale;
+  payload[`${prefix}FontSizeScale`] = scale;
 
   // --- Picture Overlay ---
-  payload[`PictureTitle.EncodeBlend`] = ui.overlayPicture.enabled;
+  payload[`${prefix}PictureTitle.EncodeBlend`] = ui.overlayPicture.enabled;
   setRect("PictureTitle", ui.overlayPicture.x, ui.overlayPicture.y);
 
   // --- Privacy Masks (Covers) ---
   for (let i = 0; i < 4; i++) {
     const mask = ui.privacyMasks.find(m => m.index === i);
     if (mask) {
-      payload[`Covers[${i}].EncodeBlend`] = true;
-      payload[`Covers[${i}].PreviewBlend`] = true;
+      payload[`${prefix}Covers[${i}].EncodeBlend`] = true;
+      payload[`${prefix}Covers[${i}].PreviewBlend`] = true;
       const [x1, y1, x2, y2] = percentToRect(mask.x, mask.y, mask.width, mask.height);
-      payload[`Covers[${i}].Rect[0]`] = x1;
-      payload[`Covers[${i}].Rect[1]`] = y1;
-      payload[`Covers[${i}].Rect[2]`] = x2;
-      payload[`Covers[${i}].Rect[3]`] = y2;
+      payload[`${prefix}Covers[${i}].Rect[0]`] = x1;
+      payload[`${prefix}Covers[${i}].Rect[1]`] = y1;
+      payload[`${prefix}Covers[${i}].Rect[2]`] = x2;
+      payload[`${prefix}Covers[${i}].Rect[3]`] = y2;
     } else {
-      payload[`Covers[${i}].EncodeBlend`] = false;
+      payload[`${prefix}Covers[${i}].EncodeBlend`] = false;
+      // It's good practice to send EncodeBlend=false to disable
     }
   }
 
@@ -273,7 +276,6 @@ const VideoOverlay: React.FC = () => {
   useEffect(() => {
     if (apiData) {
       const parsed = apiToUI(apiData);
-      // Preserve local privacy masks state if editing to avoid jitter, or fully sync
       setSettings(parsed);
       setIsDirty(false);
     }
@@ -301,7 +303,7 @@ const VideoOverlay: React.FC = () => {
     setIsDirty(false);
   };
 
-  // --- Mask Logic ---
+  // --- Mask Handlers ---
   const handleAddMask = () => {
     if (settings.privacyMasks.length >= 4) return;
     
@@ -350,7 +352,7 @@ const VideoOverlay: React.FC = () => {
   return (
     <div className="space-y-6">
       
-      {/* Header & Actions */}
+      {/* Header & Feedback */}
       <div className="border-b border-gray-700 pb-4 flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">Configuration OSD</h2>
@@ -395,103 +397,114 @@ const VideoOverlay: React.FC = () => {
         ))}
       </div>
 
-      {/* --- PRIVACY MASK --- */}
+      {/* --- PRIVACY MASK TAB --- */}
       {activeSection === 'privacy' && (
         <div className="space-y-4">
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4">Masques de Confidentialité</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Masques de Confidentialité (Covers)</h3>
             <p className="text-sm text-gray-400 mb-4">
-              Masquez des zones sensibles (Max 4).
+              Définissez jusqu'à 4 zones de masquage pour protéger la vie privée.
             </p>
 
             <div className="flex flex-wrap gap-3 mb-4">
               <button 
                 onClick={handleAddMask} 
                 disabled={settings.privacyMasks.length >= 4}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                + Ajouter Masque
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Ajouter Masque
               </button>
               <button 
                 onClick={handleClearMasks} 
                 disabled={settings.privacyMasks.length === 0}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Tout Effacer
               </button>
             </div>
 
-            {/* Visual Editor Placeholder */}
-            <div className="relative bg-gray-900 rounded-lg border-2 border-gray-600 aspect-video overflow-hidden">
-               {settings.privacyMasks.map((mask) => (
+            {/* Visual Editor */}
+            <div className="relative bg-gray-900 rounded-lg border-2 border-gray-600 aspect-video overflow-hidden group/editor">
+                <div className="absolute inset-0 flex items-center justify-center text-gray-500 pointer-events-none">
+                  Zone de Prévisualisation (1920x1080)
+                </div>
+                {settings.privacyMasks.map((mask) => (
                   <div 
                     key={mask.id} 
                     className="absolute bg-black/90 border border-red-500 flex items-center justify-center group"
                     style={{ left: `${mask.x}%`, top: `${mask.y}%`, width: `${mask.width}%`, height: `${mask.height}%` }}
                   >
-                    <span className="text-xs text-white opacity-50 font-bold">#{mask.index + 1}</span>
+                    <span className="text-xs text-white opacity-50 font-bold select-none">#{mask.index + 1}</span>
                     <button 
                         onClick={() => handleDeleteMask(mask.id)}
-                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100"
+                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
+                        title="Supprimer"
                     >
                         ×
                     </button>
                   </div>
-               ))}
-               <div className="absolute inset-0 flex items-center justify-center text-gray-600 pointer-events-none">
-                  Zone de Prévisualisation
-               </div>
+                ))}
             </div>
             
-            {/* List */}
-            <div className="mt-4 grid grid-cols-2 gap-4">
-               {settings.privacyMasks.map(mask => (
-                   <div key={mask.id} className="p-2 bg-gray-900/50 border border-gray-700 rounded flex justify-between items-center">
-                       <span className="text-white text-sm">Masque {mask.index + 1}</span>
-                       <button 
-                         onClick={() => handleDeleteMask(mask.id)}
-                         className="text-red-400 hover:text-red-300 text-xs"
-                       >
-                         Supprimer
-                       </button>
-                   </div>
-               ))}
-            </div>
+            {/* List View */}
+            {settings.privacyMasks.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                  {settings.privacyMasks.map(mask => (
+                      <div key={mask.id} className="p-2 bg-gray-900/50 border border-gray-700 rounded flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <span className="text-white text-sm">Masque {mask.index + 1}</span>
+                          </div>
+                          <span className="text-xs text-gray-400">Pos: {Math.round(mask.x)}%, {Math.round(mask.y)}%</span>
+                      </div>
+                  ))}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* --- TITLES (Channel & Time) --- */}
+      {/* --- TITLES TAB --- */}
       {activeSection === 'titles' && (
         <div className="space-y-4">
           {/* Channel Title */}
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">Titre du Canal</h3>
-              <input
-                type="checkbox"
-                checked={settings.channelTitle.enabled}
-                onChange={(e) => updateNestedSettings('channelTitle', 'enabled', e.target.checked)}
-                className="w-5 h-5 accent-red-600"
-              />
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.channelTitle.enabled}
+                  onChange={(e) => updateNestedSettings('channelTitle', 'enabled', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+              </label>
             </div>
             
             {settings.channelTitle.enabled && (
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  value={settings.channelTitle.text}
-                  onChange={(e) => updateNestedSettings('channelTitle', 'text', e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white"
-                />
+              <div className="space-y-4 animate-fadeIn">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Nom</label>
+                  <input
+                    type="text"
+                    value={settings.channelTitle.text}
+                    onChange={(e) => updateNestedSettings('channelTitle', 'text', e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-red-500 outline-none"
+                    placeholder="Nom de la caméra"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="text-xs text-gray-400">X (%)</label>
-                        <input type="range" min="0" max="100" value={settings.channelTitle.x} onChange={(e) => updateNestedSettings('channelTitle', 'x', parseInt(e.target.value))} className="w-full" />
+                        <label className="text-xs text-gray-400 mb-1 block">Position X ({settings.channelTitle.x}%)</label>
+                        <input type="range" min="0" max="100" value={settings.channelTitle.x} onChange={(e) => updateNestedSettings('channelTitle', 'x', parseInt(e.target.value))} className="w-full accent-red-600" />
                     </div>
                     <div>
-                        <label className="text-xs text-gray-400">Y (%)</label>
-                        <input type="range" min="0" max="100" value={settings.channelTitle.y} onChange={(e) => updateNestedSettings('channelTitle', 'y', parseInt(e.target.value))} className="w-full" />
+                        <label className="text-xs text-gray-400 mb-1 block">Position Y ({settings.channelTitle.y}%)</label>
+                        <input type="range" min="0" max="100" value={settings.channelTitle.y} onChange={(e) => updateNestedSettings('channelTitle', 'y', parseInt(e.target.value))} className="w-full accent-red-600" />
                     </div>
                 </div>
               </div>
@@ -502,28 +515,31 @@ const VideoOverlay: React.FC = () => {
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">Affichage Heure</h3>
-              <input
-                type="checkbox"
-                checked={settings.timeTitle.enabled}
-                onChange={(e) => updateNestedSettings('timeTitle', 'enabled', e.target.checked)}
-                className="w-5 h-5 accent-red-600"
-              />
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.timeTitle.enabled}
+                  onChange={(e) => updateNestedSettings('timeTitle', 'enabled', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+              </label>
             </div>
              
              {settings.timeTitle.enabled && (
-                <div className="space-y-3">
-                     <label className="flex items-center gap-2 text-gray-300 text-sm">
-                        <input type="checkbox" checked={settings.timeTitle.showWeek} onChange={(e) => updateNestedSettings('timeTitle', 'showWeek', e.target.checked)} />
-                        Afficher Semaine
+                <div className="space-y-4 animate-fadeIn">
+                     <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer hover:text-white">
+                        <input type="checkbox" checked={settings.timeTitle.showWeek} onChange={(e) => updateNestedSettings('timeTitle', 'showWeek', e.target.checked)} className="rounded border-gray-600 text-red-600 focus:ring-red-500" />
+                        Afficher le jour de la semaine
                      </label>
                      <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-xs text-gray-400">X (%)</label>
-                            <input type="range" min="0" max="100" value={settings.timeTitle.x} onChange={(e) => updateNestedSettings('timeTitle', 'x', parseInt(e.target.value))} className="w-full" />
+                            <label className="text-xs text-gray-400 mb-1 block">Position X ({settings.timeTitle.x}%)</label>
+                            <input type="range" min="0" max="100" value={settings.timeTitle.x} onChange={(e) => updateNestedSettings('timeTitle', 'x', parseInt(e.target.value))} className="w-full accent-red-600" />
                         </div>
                         <div>
-                            <label className="text-xs text-gray-400">Y (%)</label>
-                            <input type="range" min="0" max="100" value={settings.timeTitle.y} onChange={(e) => updateNestedSettings('timeTitle', 'y', parseInt(e.target.value))} className="w-full" />
+                            <label className="text-xs text-gray-400 mb-1 block">Position Y ({settings.timeTitle.y}%)</label>
+                            <input type="range" min="0" max="100" value={settings.timeTitle.y} onChange={(e) => updateNestedSettings('timeTitle', 'y', parseInt(e.target.value))} className="w-full accent-red-600" />
                         </div>
                     </div>
                 </div>
@@ -532,44 +548,79 @@ const VideoOverlay: React.FC = () => {
         </div>
       )}
 
-      {/* --- OVERLAY (OSD Info & Text) --- */}
+      {/* --- OVERLAY TAB --- */}
       {activeSection === 'overlay' && (
         <div className="space-y-4">
+          {/* OSD Info Group */}
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4">Infos OSD</h3>
-            <div className="space-y-2 mb-4">
-               <label className="flex items-center gap-2 text-gray-300">
-                 <input type="checkbox" checked={settings.osdInfo.showPresetPoint} onChange={(e) => updateNestedSettings('osdInfo', 'showPresetPoint', e.target.checked)} />
-                 Nom Préréglage (Preset)
+            <h3 className="text-lg font-semibold text-white mb-4">Informations OSD</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+               <label className="flex items-center gap-3 p-3 bg-gray-900/50 rounded border border-gray-700 cursor-pointer hover:border-gray-600">
+                 <input type="checkbox" checked={settings.osdInfo.showPresetPoint} onChange={(e) => updateNestedSettings('osdInfo', 'showPresetPoint', e.target.checked)} className="w-4 h-4 text-red-600 rounded bg-gray-800 border-gray-600" />
+                 <span className="text-gray-300 text-sm">Nom du Préréglage (Preset)</span>
                </label>
-               <label className="flex items-center gap-2 text-gray-300">
-                 <input type="checkbox" checked={settings.osdInfo.showPTZCoordinates} onChange={(e) => updateNestedSettings('osdInfo', 'showPTZCoordinates', e.target.checked)} />
-                 Coordonnées PTZ
+               <label className="flex items-center gap-3 p-3 bg-gray-900/50 rounded border border-gray-700 cursor-pointer hover:border-gray-600">
+                 <input type="checkbox" checked={settings.osdInfo.showPTZCoordinates} onChange={(e) => updateNestedSettings('osdInfo', 'showPTZCoordinates', e.target.checked)} className="w-4 h-4 text-red-600 rounded bg-gray-800 border-gray-600" />
+                 <span className="text-gray-300 text-sm">Coordonnées PTZ</span>
                </label>
-               <label className="flex items-center gap-2 text-gray-300">
-                 <input type="checkbox" checked={settings.osdInfo.showZoom} onChange={(e) => updateNestedSettings('osdInfo', 'showZoom', e.target.checked)} />
-                 Zoom
+               <label className="flex items-center gap-3 p-3 bg-gray-900/50 rounded border border-gray-700 cursor-pointer hover:border-gray-600">
+                 <input type="checkbox" checked={settings.osdInfo.showZoom} onChange={(e) => updateNestedSettings('osdInfo', 'showZoom', e.target.checked)} className="w-4 h-4 text-red-600 rounded bg-gray-800 border-gray-600" />
+                 <span className="text-gray-300 text-sm">Taux de Zoom</span>
+               </label>
+               <label className="flex items-center gap-3 p-3 bg-gray-900/50 rounded border border-gray-700 cursor-pointer hover:border-gray-600">
+                 <input type="checkbox" checked={settings.osdInfo.showPattern} onChange={(e) => updateNestedSettings('osdInfo', 'showPattern', e.target.checked)} className="w-4 h-4 text-red-600 rounded bg-gray-800 border-gray-600" />
+                 <span className="text-gray-300 text-sm">Pattern / Tour Info</span>
                </label>
             </div>
             
-            <label className="text-xs text-gray-400 block mb-1">Position OSD (Groupe)</label>
-            <div className="grid grid-cols-2 gap-3">
-                <input type="range" min="0" max="100" value={settings.osdInfo.x} onChange={(e) => updateNestedSettings('osdInfo', 'x', parseInt(e.target.value))} className="w-full" />
-                <input type="range" min="0" max="100" value={settings.osdInfo.y} onChange={(e) => updateNestedSettings('osdInfo', 'y', parseInt(e.target.value))} className="w-full" />
+            {/* Global Position for OSD Elements */}
+            <div className="p-4 bg-gray-900/30 rounded-lg">
+              <label className="text-xs text-gray-400 block mb-2 font-medium uppercase tracking-wider">Position du Groupe OSD</label>
+              <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-xs text-gray-500 mb-1 block">Axe X ({settings.osdInfo.x}%)</span>
+                    <input type="range" min="0" max="100" value={settings.osdInfo.x} onChange={(e) => updateNestedSettings('osdInfo', 'x', parseInt(e.target.value))} className="w-full accent-blue-500" />
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500 mb-1 block">Axe Y ({settings.osdInfo.y}%)</span>
+                    <input type="range" min="0" max="100" value={settings.osdInfo.y} onChange={(e) => updateNestedSettings('osdInfo', 'y', parseInt(e.target.value))} className="w-full accent-blue-500" />
+                  </div>
+              </div>
             </div>
           </div>
 
+          {/* Custom Text Overlay */}
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-4">
                <h3 className="text-lg font-semibold text-white">Texte Personnalisé</h3>
-               <input type="checkbox" checked={settings.textOverlay.enabled} onChange={(e) => updateNestedSettings('textOverlay', 'enabled', e.target.checked)} className="w-5 h-5 accent-red-600"/>
+               <label className="relative inline-flex items-center cursor-pointer">
+                 <input
+                   type="checkbox"
+                   checked={settings.textOverlay.enabled}
+                   onChange={(e) => updateNestedSettings('textOverlay', 'enabled', e.target.checked)}
+                   className="sr-only peer"
+                 />
+                 <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+               </label>
             </div>
             {settings.textOverlay.enabled && (
-               <div className="space-y-3">
-                 <input type="text" value={settings.textOverlay.text} onChange={(e) => updateNestedSettings('textOverlay', 'text', e.target.value)} className="w-full bg-gray-800 text-white p-2 rounded" placeholder="Texte" />
-                 <div className="grid grid-cols-2 gap-3">
-                    <input type="range" min="0" max="100" value={settings.textOverlay.x} onChange={(e) => updateNestedSettings('textOverlay', 'x', parseInt(e.target.value))} className="w-full" />
-                    <input type="range" min="0" max="100" value={settings.textOverlay.y} onChange={(e) => updateNestedSettings('textOverlay', 'y', parseInt(e.target.value))} className="w-full" />
+               <div className="space-y-4 animate-fadeIn">
+                 <input 
+                    type="text" 
+                    value={settings.textOverlay.text} 
+                    onChange={(e) => updateNestedSettings('textOverlay', 'text', e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-600 rounded-lg text-white p-2 focus:border-red-500 outline-none"
+                    placeholder="Entrez le texte à afficher (Ex: Zone Nord)"
+                 />
+                 <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-400 mb-1 block">X (%)</label>
+                      <input type="range" min="0" max="100" value={settings.textOverlay.x} onChange={(e) => updateNestedSettings('textOverlay', 'x', parseInt(e.target.value))} className="w-full accent-red-600" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 mb-1 block">Y (%)</label>
+                      <input type="range" min="0" max="100" value={settings.textOverlay.y} onChange={(e) => updateNestedSettings('textOverlay', 'y', parseInt(e.target.value))} className="w-full accent-red-600" />
+                    </div>
                  </div>
                </div>
             )}
@@ -577,34 +628,71 @@ const VideoOverlay: React.FC = () => {
         </div>
       )}
 
-      {/* --- ADVANCED --- */}
+      {/* --- ADVANCED TAB --- */}
       {activeSection === 'advanced' && (
-        <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4">Avancé</h3>
-            
-            <div className="mb-6">
-                <label className="text-sm text-gray-300 block mb-2">Taille de Police</label>
-                <div className="flex gap-4">
-                    {['small', 'medium', 'large'].map(size => (
-                        <button key={size} onClick={() => handleUpdate({ ...settings, fontSize: size as any })} className={`px-4 py-2 rounded border ${settings.fontSize === size ? 'bg-red-600 border-red-600 text-white' : 'bg-transparent border-gray-600 text-gray-400'}`}>
-                            {size === 'small' ? 'Petite' : size === 'medium' ? 'Moyenne' : 'Grande'}
-                        </button>
-                    ))}
-                </div>
-            </div>
+        <div className="space-y-6">
+          <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-4">Apparence</h3>
+              
+              {/* Font Size */}
+              <div className="mb-6">
+                  <label className="text-sm text-gray-300 block mb-3">Taille de Police OSD</label>
+                  <div className="flex gap-4">
+                      {['small', 'medium', 'large'].map(size => (
+                          <button
+                              key={size}
+                              onClick={() => handleUpdate({ ...settings, fontSize: size as any })}
+                              className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
+                                settings.fontSize === size 
+                                  ? 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-900/30' 
+                                  : 'bg-transparent border-gray-600 text-gray-400 hover:border-gray-500 hover:text-white'
+                              }`}
+                          >
+                              {size === 'small' ? 'Petite' : size === 'medium' ? 'Moyenne' : 'Grande'}
+                          </button>
+                      ))}
+                  </div>
+              </div>
 
-            <div className="mb-6">
-                <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-300">Image Overlay</span>
-                    <input type="checkbox" checked={settings.overlayPicture.enabled} onChange={(e) => updateNestedSettings('overlayPicture', 'enabled', e.target.checked)} className="w-5 h-5 accent-red-600"/>
-                </div>
-                {settings.overlayPicture.enabled && (
-                    <div className="grid grid-cols-2 gap-3">
-                        <input type="range" min="0" max="100" value={settings.overlayPicture.x} onChange={(e) => updateNestedSettings('overlayPicture', 'x', parseInt(e.target.value))} className="w-full" />
-                        <input type="range" min="0" max="100" value={settings.overlayPicture.y} onChange={(e) => updateNestedSettings('overlayPicture', 'y', parseInt(e.target.value))} className="w-full" />
-                    </div>
-                )}
-            </div>
+              <div className="border-t border-gray-700 my-4"></div>
+
+              {/* Picture Overlay */}
+              <div className="mt-6">
+                  <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <span className="text-white font-medium block">Image Overlay (Logo)</span>
+                        <span className="text-xs text-gray-400">Superposer une image (ex: logo) sur le flux</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={settings.overlayPicture.enabled}
+                          onChange={(e) => updateNestedSettings('overlayPicture', 'enabled', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                      </label>
+                  </div>
+                  
+                  {settings.overlayPicture.enabled && (
+                      <div className="p-4 bg-gray-900/50 rounded-lg animate-fadeIn">
+                          <p className="text-xs text-yellow-500 mb-3">
+                            ⚠️ Note: L'image doit être uploadée via l'outil de gestion de fichiers avant d'être activée ici.
+                          </p>
+                          <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                 <label className="text-xs text-gray-400 mb-1 block">Position X</label>
+                                 <input type="range" min="0" max="100" value={settings.overlayPicture.x} onChange={(e) => updateNestedSettings('overlayPicture', 'x', parseInt(e.target.value))} className="w-full accent-green-500" />
+                              </div>
+                              <div>
+                                 <label className="text-xs text-gray-400 mb-1 block">Position Y</label>
+                                 <input type="range" min="0" max="100" value={settings.overlayPicture.y} onChange={(e) => updateNestedSettings('overlayPicture', 'y', parseInt(e.target.value))} className="w-full accent-green-500" />
+                              </div>
+                          </div>
+                      </div>
+                  )}
+              </div>
+          </div>
         </div>
       )}
     </div>
