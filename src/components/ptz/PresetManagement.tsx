@@ -42,6 +42,7 @@ const apiToUI = (data: any): Preset[] => {
     
     // Check if the key exists in the flat config object
     // Using Name as a primary check if the preset slot exists in config
+    console.log('Checking preset index:', i, 'Enable:', config[`${prefix}Enable`], 'Name:', config[`${prefix}Name`]);
     if (config[`${prefix}Name`] !== undefined) {
        const enabledStr = String(config[`${prefix}Enable`] ?? "false");
        const enabled = enabledStr === "true";
