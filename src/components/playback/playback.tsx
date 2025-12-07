@@ -190,7 +190,7 @@ const VideoListSidebar = () => {
 
     const getVideoUrl = (video: VideoFile) => {
         // Use downloadUrl from API response if available, otherwise construct URL
-        return video.downloadUrl || `${API_BASE_URL}/files/video/${video.date}/${video.name}`;
+        return `${API_BASE_URL}/${video.downloadUrl}` || `${API_BASE_URL}/files/video/${video.date}/${video.name}`;
     };
 
     // Get unique dates for date selector
