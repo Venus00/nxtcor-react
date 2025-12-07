@@ -48,11 +48,11 @@ const VideoListSidebar = () => {
         setError(null);
         try {
             const response = await axios.get(`${API_BASE_URL}/files`);
-            setAllVideos(response.data);
+            setAllVideos(response.data.videos);
 
             // Extract and set initial filtered videos
             const allVids: VideoFile[] = [];
-            Object.entries(response.data).forEach(([date, videos]) => {
+            Object.entries(response.data.videos).forEach(([date, videos]) => {
                 (videos as VideoFile[]).forEach(video => {
                     allVids.push({ ...video, date });
                 });
