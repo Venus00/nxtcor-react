@@ -380,7 +380,7 @@ const PTZSettings: React.FC = () => {
                     <label className="text-gray-400 text-sm">Camera:</label>
                     <select
                       value={selectedCamera}
-                      onChange={(e) => setSelectedCamera(e.target.value as 'camera1' | 'camera2')}
+                      onChange={(e) => setSelectedCamera(e.target.value as 'cam1' | 'cam2')}
                       className="bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all"
                     >
                       <option value="camera1">Camera 1</option>
@@ -415,7 +415,7 @@ const PTZSettings: React.FC = () => {
                   </div>
                   <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-700">
                     <span className="text-white text-sm font-medium">
-                      {selectedCamera === 'camera1' ? 'Camera 1' : 'Camera 2'}
+                      {selectedCamera === 'cam1' ? 'camera 1' : 'camera 2'}
                     </span>
                   </div>
                 </div>
