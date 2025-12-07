@@ -60,12 +60,27 @@ const PTZSettings: React.FC = () => {
     aperture: 50,
   });
 
-  const handleDirectionControl = (direction: 'up' | 'down' | 'left' | 'right' | 'center') => {
+  const handleDirectionControl = async (direction: 'up' | 'down' | 'left' | 'right' | 'center') => {
     console.log('Direction control:', direction);
 
     // Record movement if recording is active
     if (isRecording) {
       setRecordedMovements(prev => [...prev, `Direction: ${direction}`]);
+    }
+
+    // Send API request for PTZ control
+    if (direction !== 'center') {
+      try {
+        const response = await fetch(`http://${window.location.hostname}:3000/camera/${selectedCamera}/ptz/move/${direction}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channel: 0, speed: 4 }),
+        });
+        const data = await response.json();
+        console.log('PTZ move response:', data);
+      } catch (error) {
+        console.error('PTZ move error:', error);
+      }
     }
 
     setCurrentPosition(prev => {
@@ -94,12 +109,25 @@ const PTZSettings: React.FC = () => {
     });
   };
 
-  const handleZoomControl = (action: 'in' | 'out') => {
+  const handleZoomControl = async (action: 'in' | 'out') => {
     console.log('Zoom control:', action);
 
     // Record movement if recording is active
     if (isRecording) {
       setRecordedMovements(prev => [...prev, `Zoom: ${action}`]);
+    }
+
+    // Send API request for zoom control
+    try {
+      const response = await fetch(`http://${window.location.hostname}:3000/camera/${selectedCamera}/ptz/zoom/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: 0, speed: 4 }),
+      });
+      const data = await response.json();
+      console.log('Zoom response:', data);
+    } catch (error) {
+      console.error('Zoom error:', error);
     }
 
     setCurrentPosition(prev => ({
@@ -110,12 +138,25 @@ const PTZSettings: React.FC = () => {
     }));
   };
 
-  const handleFocusControl = (action: 'near' | 'far') => {
+  const handleFocusControl = async (action: 'near' | 'far') => {
     console.log('Focus control:', action);
 
     // Record movement if recording is active
     if (isRecording) {
       setRecordedMovements(prev => [...prev, `Focus: ${action}`]);
+    }
+
+    // Send API request for focus control
+    try {
+      const response = await fetch(`http://${window.location.hostname}:3000/camera/${selectedCamera}/ptz/focus/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: 0, speed: 4 }),
+      });
+      const data = await response.json();
+      console.log('Focus response:', data);
+    } catch (error) {
+      console.error('Focus error:', error);
     }
 
     setCurrentPosition(prev => ({
