@@ -40,20 +40,40 @@ const VideoStream: React.FC = () => {
   const move = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
     console.log(direction, `speed: ${speed}`);
     try {
-      if (direction === 'focus_in' || direction === 'focus_out') {
-        const res = await fetch(`http://${window.location.hostname}:3000/focus/${camId}/move`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ direction, time: 1, speed }),
-        });
-        const data = await res.json();
-        console.log(data);
-        return;
+      let endpoint = '';
+
+      // Map direction to specific API endpoint
+      switch (direction) {
+        case 'up':
+          endpoint = `/camera/${camId}/ptz/move/up`;
+          break;
+        case 'down':
+          endpoint = `/camera/${camId}/ptz/move/down`;
+          break;
+        case 'left':
+          endpoint = `/camera/${camId}/ptz/move/left`;
+          break;
+        case 'right':
+          endpoint = `/camera/${camId}/ptz/move/right`;
+          break;
+        case 'zoom_in':
+          endpoint = `/camera/${camId}/ptz/zoom/in`;
+          break;
+        case 'zoom_out':
+          endpoint = `/camera/${camId}/ptz/zoom/out`;
+          break;
+        case 'focus_in':
+          endpoint = `/camera/${camId}/ptz/focus/near`;
+          break;
+        case 'focus_out':
+          endpoint = `/camera/${camId}/ptz/focus/far`;
+          break;
       }
-      const res = await fetch(`http://${window.location.hostname}:3000/ptz/${camId}/move`, {
+
+      const res = await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ direction, time: 1, speed }),
+        body: JSON.stringify({ channel: 0, speed }),
       });
       const data = await res.json();
       console.log(data);
@@ -65,20 +85,40 @@ const VideoStream: React.FC = () => {
   const stop = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
     console.log(direction, `speed: ${speed}`);
     try {
-      if (direction === 'focus_in' || direction === 'focus_out') {
-        const res = await fetch(`http://${window.location.hostname}:3000/focus/${camId}/stop`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ direction, time: 1, speed }),
-        });
-        const data = await res.json();
-        console.log(data);
-        return;
+      let endpoint = '';
+
+      // Map direction to specific stop endpoint
+      switch (direction) {
+        case 'up':
+          endpoint = `/camera/${camId}/ptz/stop/up`;
+          break;
+        case 'down':
+          endpoint = `/camera/${camId}/ptz/stop/down`;
+          break;
+        case 'left':
+          endpoint = `/camera/${camId}/ptz/stop/left`;
+          break;
+        case 'right':
+          endpoint = `/camera/${camId}/ptz/stop/right`;
+          break;
+        case 'zoom_in':
+          endpoint = `/camera/${camId}/ptz/stop/zoom_in`;
+          break;
+        case 'zoom_out':
+          endpoint = `/camera/${camId}/ptz/stop/zoom_out`;
+          break;
+        case 'focus_in':
+          endpoint = `/camera/${camId}/ptz/stop/focus_in`;
+          break;
+        case 'focus_out':
+          endpoint = `/camera/${camId}/ptz/stop/focus_out`;
+          break;
       }
-      const res = await fetch(`http://${window.location.hostname}:3000/ptz/${camId}/stop`, {
+
+      const res = await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ direction, time: 1, speed }),
+        body: JSON.stringify({ channel: 0 }),
       });
       const data = await res.json();
       console.log(data);
