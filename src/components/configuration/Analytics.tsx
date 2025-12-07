@@ -9,10 +9,13 @@ interface TrackedObject {
   classificationName: string;
   trackId: number;
   x: number;
+  x1: number;
   y: number;
-  z: number;
-  x2: number;
-  y2: number;
+  y1: number;
+}
+
+interface TrackedObjectWithTimestamp extends TrackedObject {
+  lastSeen: number;
 }
 
 interface TrackingData {
@@ -30,12 +33,13 @@ type CameraType = "cam1" | "cam2"
 
 const Analytics: React.FC = () => {
   const [selectedCamera, setSelectedCamera] = useState<CameraType>("cam1")
-  const [objects, setObjects] = useState<TrackedObject[]>([])
+  const [objects, setObjects] = useState<TrackedObjectWithTimestamp[]>([])
   const [trackingId, setTrackingId] = useState<number | null>(null)
   const [wsConnected, setWsConnected] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
+  const objectMapRef = useRef<Map<number, TrackedObjectWithTimestamp>>(new Map())
 
   // WebSocket connection
   useEffect(() => {
@@ -51,8 +55,33 @@ const Analytics: React.FC = () => {
         console.log(event)
         const data: TrackingData = JSON.parse(event.data)
         if (data.type === 'tracking_data') {
-          // Update objects even if checksum validation fails (for debugging)
-          setObjects(data.data.objects)
+          const now = Date.now()
+          const objectMap = objectMapRef.current
+
+          // Update or add objects with current timestamp
+          data.data.objects.forEach(obj => {
+            objectMap.set(obj.trackId, {
+              ...obj,
+              lastSeen: now
+            })
+          })
+
+          // Remove objects not seen for more than 5 seconds
+          const activeObjects: TrackedObjectWithTimestamp[] = []
+          objectMap.forEach((obj, trackId) => {
+            if (now - obj.lastSeen < 5000) {
+              activeObjects.push(obj)
+            } else {
+              objectMap.delete(trackId)
+              // If the removed object was being tracked, clear tracking
+              if (trackingId === trackId) {
+                setTrackingId(null)
+              }
+            }
+          })
+
+          setObjects(activeObjects)
+
           if (!data.data.crcValid) {
             console.warn('Checksum validation failed, but displaying objects anyway')
           }
@@ -77,7 +106,7 @@ const Analytics: React.FC = () => {
     return () => {
       ws.close()
     }
-  }, [])
+  }, [trackingId])
 
   // Draw bounding boxes on canvas
   useEffect(() => {
@@ -110,13 +139,13 @@ const Analytics: React.FC = () => {
 
         // Scale coordinates from camera resolution (640x480) to actual canvas size
         const boxX = (obj.x / cameraWidth) * canvas.width
+        const boxX1 = (obj.x1 / cameraWidth) * canvas.width
         const boxY = (obj.y / cameraHeight) * canvas.height
-        const boxX2 = (obj.x2 / cameraWidth) * canvas.width
-        const boxY2 = (obj.y2 / cameraHeight) * canvas.height
+        const boxY1 = (obj.y1 / cameraHeight) * canvas.height
 
         // Calculate box dimensions from diagonal coordinates
-        const boxWidth = boxX2 - boxX
-        const boxHeight = boxY2 - boxY
+        const boxWidth = boxX1 - boxX
+        const boxHeight = boxY1 - boxY
 
         // Determine color based on tracking status
         const isTracking = trackingId === obj.trackId
@@ -140,7 +169,7 @@ const Analytics: React.FC = () => {
         ctx.fillText(labelText, boxX + 5, boxY - 10)
 
         // Draw position info
-        const posText = `(${obj.x.toFixed(1)}, ${obj.y.toFixed(1)}, ${obj.z.toFixed(1)})`
+        const posText = `(${obj.x.toFixed(0)}, ${obj.y.toFixed(0)}) - (${obj.x1.toFixed(0)}, ${obj.y1.toFixed(0)})`
         ctx.font = '11px sans-serif'
         ctx.fillStyle = '#ffffff'
         ctx.fillText(posText, boxX + 5, boxY + boxHeight + 15)
@@ -331,9 +360,8 @@ const Analytics: React.FC = () => {
                       </div>
 
                       <div className="text-xs text-slate-300 space-y-1 mb-3">
-                        <div>X: {obj.x.toFixed(2)}</div>
-                        <div>Y: {obj.y.toFixed(2)}</div>
-                        <div>Z: {obj.z.toFixed(2)}</div>
+                        <div>X: {obj.x.toFixed(2)} - {obj.x1.toFixed(2)}</div>
+                        <div>Y: {obj.y.toFixed(2)} - {obj.y1.toFixed(2)}</div>
                       </div>
 
                       {isTracking ? (
