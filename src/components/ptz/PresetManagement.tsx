@@ -135,11 +135,7 @@ const PresetManagement: React.FC = () => {
   const handleGotoPreset = (preset: Preset) => {
     setSelectedPresetId(preset.id);
     ptzActionMutation.mutate({
-        action: 'start',
-        channel: 0,
-        code: 'GotoPreset',
-        arg1: 0,
-        arg2: preset.id // 1-based ID
+      preset.id // 1-based ID
     });
   };
 
