@@ -107,7 +107,7 @@ const PresetManagement: React.FC = () => {
       return;
     }
 
-    const newTitle = `Preset${newId}`;
+    const newTitle = `No${newId}`;
     const apiIndex = newId - 1; // 0-based index for API
 
     setPresetMutation.mutate(
