@@ -230,6 +230,12 @@ export function useGotoPreset(camId: string) {
       apiFetch(`/camera/${camId}/ptz/preset/goto`, 'POST', { presetId }),
   });
 }
+export function useClearPreset(camId: string) {
+  return useMutation({
+    mutationFn: (presetId: number) =>
+      apiFetch(`/camera/${camId}/ptz/preset/clear`, 'POST', { presetId }),
+  });
+}
 
 export function useSetPreset(camId: string) {
   const queryClient = useQueryClient();

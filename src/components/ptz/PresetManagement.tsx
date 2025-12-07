@@ -3,8 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useCamId } from "../../contexts/CameraContext";
 import { usePresets as usePtzPreset } from "../../hooks/useCameraQueries";
 import { useSetPreset as useSetPtzPreset } from "../../hooks/useCameraMutations";
-import {useGotoPreset as useSetPTZStatus } from "../../hooks/useCameraMutations"; 
-
+import { useGotoPreset as useSetPTZStatus } from "../../hooks/useCameraMutations";
+import { useClearPreset } from "../../hooks/useCameraMutations";
 
 // =============================================================================
 // TYPES & INTERFACES
@@ -32,35 +32,35 @@ export interface Preset {
  */
 const apiToUI = (data: any): Preset[] => {
   if (!data || !data.presets) return [];
-  
+
   const config = data.presets;
   const presets: Preset[] = [];
   const MAX_PRESETS = 128; // 0-127 based on JSON
 
   for (let i = 0; i < MAX_PRESETS; i++) {
     const prefix = `table.PtzPreset[0][${i}].`;
-    
+
     // Check if the key exists in the flat config object
     // Using Name as a primary check if the preset slot exists in config
     // console.log('Checking preset index:', i, 'Enable:', config[`${prefix}Enable`], 'Name:', config[`${prefix}Name`]);
     if (config[`${prefix}Name`] !== undefined) {
-       const enabledStr = String(config[`${prefix}Enable`] ?? "false");
-       const enabled = enabledStr === "true";
-       const name = config[`${prefix}Name`];
+      const enabledStr = String(config[`${prefix}Enable`] ?? "false");
+      const enabled = enabledStr === "true";
+      const name = config[`${prefix}Name`];
 
-       // Only show presets that are explicitly enabled OR have been named (indicating usage)
-       if (enabled || (name && name !== `Preset${i+1}`)) {
-         presets.push({
-           id: i + 1, // UI uses 1-based IDs for display usually, but API is 0-based index. Let's store 1-based ID for UI.
-           title: name || `Preset ${i + 1}`,
-           enabled: enabled,
-           position: {
-             pan: Number(config[`${prefix}Position[0]`] ?? 0),
-             tilt: Number(config[`${prefix}Position[1]`] ?? 0),
-             zoom: Number(config[`${prefix}Position[2]`] ?? 0),
-           }
-         });
-       }
+      // Only show presets that are explicitly enabled OR have been named (indicating usage)
+      if (enabled || (name && name !== `Preset${i + 1}`)) {
+        presets.push({
+          id: i + 1, // UI uses 1-based IDs for display usually, but API is 0-based index. Let's store 1-based ID for UI.
+          title: name || `Preset ${i + 1}`,
+          enabled: enabled,
+          position: {
+            pan: Number(config[`${prefix}Position[0]`] ?? 0),
+            tilt: Number(config[`${prefix}Position[1]`] ?? 0),
+            zoom: Number(config[`${prefix}Position[2]`] ?? 0),
+          },
+        });
+      }
     }
   }
   return presets;
@@ -72,18 +72,18 @@ const apiToUI = (data: any): Preset[] => {
 
 const PresetManagement: React.FC = () => {
   const camId = useCamId();
-  
+
   // 1. Data Fetching
   const { data: apiData, isLoading, error, refetch } = usePtzPreset(camId);
-  
-  // 2. Mutations
-  const setPresetMutation = useSetPtzPreset(camId); 
-  const ptzActionMutation = useSetPTZStatus(camId);
 
+  // 2. Mutations
+  const setPresetMutation = useSetPtzPreset(camId);
+  const ptzActionMutation = useSetPTZStatus(camId);
+ const clearPreset = useClearPreset(camId);
   // 3. Local State
   const [presets, setPresets] = useState<Preset[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editingTitle, setEditingTitle] = useState('');
+  const [editingTitle, setEditingTitle] = useState("");
   const [selectedPresetId, setSelectedPresetId] = useState<number | null>(null);
 
   // Sync API -> UI
@@ -98,7 +98,7 @@ const PresetManagement: React.FC = () => {
   // ADD: Saves CURRENT position to a new ID
   const handleAddPreset = () => {
     // Find first available ID (1-128)
-    const usedIds = presets.map(p => p.id);
+    const usedIds = presets.map((p) => p.id);
     let newId = 1;
     while (usedIds.includes(newId) && newId <= 128) newId++;
 
@@ -111,70 +111,85 @@ const PresetManagement: React.FC = () => {
     const apiIndex = newId - 1; // 0-based index for API
 
     // 1. Send PTZ command to save current position to this ID
-    ptzActionMutation.mutate({
-        action: 'start',
+    ptzActionMutation.mutate(
+      {
+        action: "start",
         channel: 0,
-        code: 'SetPreset', 
-        arg1: 0, 
+        code: "SetPreset",
+        arg1: 0,
         arg2: newId, // PTZ command usually takes 1-based ID or matches protocol. Assuming 1-based for command.
-        arg3: 0 
-    }, {
+        arg3: 0,
+      },
+      {
         onSuccess: () => {
-             // 2. Enable it in config and set name
-             setPresetMutation.mutate({
-                [`table.PtzPreset[0][${apiIndex}].Enable`]: "true",
-                [`table.PtzPreset[0][${apiIndex}].Name`]: newTitle,
-             }, {
-                 onSuccess: () => refetch() // Refresh list to get new coordinates if API updates them
-             });
-        }
-    });
+          // 2. Enable it in config and set name
+          setPresetMutation.mutate(
+            {
+              [`table.PtzPreset[0][${apiIndex}].Enable`]: "true",
+              [`table.PtzPreset[0][${apiIndex}].Name`]: newTitle,
+            },
+            {
+              onSuccess: () => refetch(), // Refresh list to get new coordinates if API updates them
+            }
+          );
+        },
+      }
+    );
   };
 
   // GOTO: Moves camera to preset
   const handleGotoPreset = (preset: Preset) => {
     setSelectedPresetId(preset.id);
     ptzActionMutation.mutate({
-      preset.id // 1-based ID
+      presetId: preset.id, // 1-based ID
     });
   };
 
   // DELETE: Clears preset
   const handleDeletePreset = (id: number) => {
     const apiIndex = id - 1;
-    
+
     // 1. Clear via PTZ command
-    ptzActionMutation.mutate({
-        action: 'start',
-        channel: 0,
-        code: 'ClearPreset',
-        arg1: 0,
-        arg2: id
-    }, {
+    clearPreset.mutate(
+      {
+        presetId: id,
+      },
+      {
         onSuccess: () => {
-             // 2. Disable in config
-             setPresetMutation.mutate({
-                [`table.PtzPreset[0][${apiIndex}].Enable`]: "false",
-                [`table.PtzPreset[0][${apiIndex}].Name`]: `Preset${id}` // Reset name or leave empty
-             }, {
-                 onSuccess: () => refetch()
-             });
-        }
-    });
+          // 2. Disable in config
+          setPresetMutation.mutate(
+            {
+              [`table.PtzPreset[0][${apiIndex}].Enable`]: "false",
+              [`table.PtzPreset[0][${apiIndex}].Name`]: `Preset${id}`, // Reset name or leave empty
+            },
+            {
+              onSuccess: () => refetch(),
+            }
+          );
+        },
+      }
+    );
   };
 
   // RENAME
   const handleTitleBlur = () => {
     if (editingId !== null) {
       const apiIndex = editingId - 1;
-      setPresetMutation.mutate({
-          [`table.PtzPreset[0][${apiIndex}].Name`]: editingTitle
-      }, {
+      setPresetMutation.mutate(
+        {
+          [`table.PtzPreset[0][${apiIndex}].Name`]: editingTitle,
+        },
+        {
           onSuccess: () => {
-              setPresets(prev => prev.map(p => p.id === editingId ? { ...p, title: editingTitle } : p));
-              setEditingId(null);
-          }
-      });
+            setPresets((prev) =>
+              prev.map((p) =>
+                p.id === editingId ? { ...p, title: editingTitle } : p
+              )
+            );
+            setEditingId(null);
+          },
+        }
+      );
     }
   };
 
@@ -184,8 +199,8 @@ const PresetManagement: React.FC = () => {
   };
 
   const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleTitleBlur();
-    else if (e.key === 'Escape') setEditingId(null);
+    if (e.key === "Enter") handleTitleBlur();
+    else if (e.key === "Escape") setEditingId(null);
   };
 
   if (isLoading) {
@@ -201,28 +216,56 @@ const PresetManagement: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-white font-medium flex items-center gap-2">
-          <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          <svg
+            className="w-5 h-5 text-red-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            />
           </svg>
           Points de Préréglage (Presets)
         </h3>
-        <span className="text-sm text-gray-400">
-          {presets.length} actif(s)
-        </span>
+        <span className="text-sm text-gray-400">{presets.length} actif(s)</span>
       </div>
 
       {/* Instructions */}
       <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
         <div className="flex gap-3">
-          <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           <div className="text-sm text-blue-300 space-y-1">
-            <p><strong>Instructions :</strong></p>
+            <p>
+              <strong>Instructions :</strong>
+            </p>
             <ol className="list-decimal list-inside space-y-1 text-blue-200/90">
               <li>Positionnez la caméra (Pan/Tilt/Zoom).</li>
-              <li>Cliquez sur "Ajouter Preset" pour sauvegarder la position actuelle.</li>
+              <li>
+                Cliquez sur "Ajouter Preset" pour sauvegarder la position
+                actuelle.
+              </li>
               <li>Double-cliquez sur un nom pour le renommer.</li>
               <li>Cliquez sur "Go" pour appeler le préréglage.</li>
             </ol>
@@ -236,20 +279,44 @@ const PresetManagement: React.FC = () => {
         disabled={ptzActionMutation.isPending || setPresetMutation.isPending}
         className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white py-3 px-4 rounded-lg border border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 font-medium disabled:opacity-50"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 4v16m8-8H4"
+          />
         </svg>
-        {ptzActionMutation.isPending ? 'Enregistrement...' : 'Ajouter Preset (Position Actuelle)'}
+        {ptzActionMutation.isPending
+          ? "Enregistrement..."
+          : "Ajouter Preset (Position Actuelle)"}
       </button>
 
       {/* Presets List */}
       <div className="bg-gray-800/50 rounded-lg border border-gray-700 max-h-96 overflow-y-auto">
         {presets.length === 0 ? (
           <div className="p-8 text-center">
-            <svg className="w-16 h-16 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            <svg
+              className="w-16 h-16 text-gray-600 mx-auto mb-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+              />
             </svg>
-            <p className="text-gray-400 text-sm">Aucun préréglage enregistré.</p>
+            <p className="text-gray-400 text-sm">
+              Aucun préréglage enregistré.
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-gray-700">
@@ -257,7 +324,9 @@ const PresetManagement: React.FC = () => {
               <div
                 key={preset.id}
                 className={`p-4 hover:bg-gray-700/30 transition-colors ${
-                  selectedPresetId === preset.id ? 'bg-red-500/10 border-l-4 border-red-500' : ''
+                  selectedPresetId === preset.id
+                    ? "bg-red-500/10 border-l-4 border-red-500"
+                    : ""
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -300,8 +369,18 @@ const PresetManagement: React.FC = () => {
                       className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white px-4 py-2 rounded-lg border border-green-500 transition-all duration-200 shadow-lg hover:shadow-green-500/50 flex items-center gap-2 text-sm font-medium"
                       title="Aller vers"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M14 5l7 7m0 0l-7 7m7-7H3"
+                        />
                       </svg>
                       Go
                     </button>
@@ -311,27 +390,45 @@ const PresetManagement: React.FC = () => {
                       className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-red-600 hover:to-red-700 text-gray-400 hover:text-white p-2 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50"
                       title="Supprimer"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
                       </svg>
                     </button>
                   </div>
                 </div>
 
                 {/* Position Details (Read-only if available) */}
-                {(preset.position.pan !== 0 || preset.position.tilt !== 0 || preset.position.zoom !== 0) && (
+                {(preset.position.pan !== 0 ||
+                  preset.position.tilt !== 0 ||
+                  preset.position.zoom !== 0) && (
                   <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
                     <div className="bg-gray-700/50 rounded px-2 py-1">
                       <p className="text-gray-400">Pan</p>
-                      <p className="text-white font-mono">{preset.position.pan.toFixed(1)}</p>
+                      <p className="text-white font-mono">
+                        {preset.position.pan.toFixed(1)}
+                      </p>
                     </div>
                     <div className="bg-gray-700/50 rounded px-2 py-1">
                       <p className="text-gray-400">Tilt</p>
-                      <p className="text-white font-mono">{preset.position.tilt.toFixed(1)}</p>
+                      <p className="text-white font-mono">
+                        {preset.position.tilt.toFixed(1)}
+                      </p>
                     </div>
                     <div className="bg-gray-700/50 rounded px-2 py-1">
                       <p className="text-gray-400">Zoom</p>
-                      <p className="text-white font-mono">{preset.position.zoom}</p>
+                      <p className="text-white font-mono">
+                        {preset.position.zoom}
+                      </p>
                     </div>
                   </div>
                 )}
