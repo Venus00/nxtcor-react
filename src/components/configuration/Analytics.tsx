@@ -87,23 +87,27 @@ const Analytics: React.FC = () => {
     if (!ctx) return
 
     const drawBoxes = () => {
-      // Match canvas size to iframe container
-      canvas.width = iframe.clientWidth
-      canvas.height = iframe.clientHeight
+      // Get the actual rendered size of the iframe
+      const iframeRect = iframe.getBoundingClientRect()
+
+      // Update canvas to match iframe actual size
+      canvas.width = iframeRect.width
+      canvas.height = iframeRect.height
 
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       objects.forEach((obj) => {
-        // Coordinates appear to be absolute pixels (not percentages)
-        // Assuming camera resolution is around 640x480 or similar
-        // Scale from camera resolution to canvas size
-        const cameraWidth = 640  // Adjust if camera has different resolution
+        // Camera resolution (source coordinates from Python server)
+        const cameraWidth = 640
         const cameraHeight = 480
 
+        // Scale coordinates from camera resolution (640x480) to actual canvas size
         const boxX = (obj.x / cameraWidth) * canvas.width
         const boxY = (obj.y / cameraHeight) * canvas.height
-        const boxWidth = 80
-        const boxHeight = 120
+
+        // Scale box dimensions proportionally to canvas size
+        const boxWidth = (80 / cameraWidth) * canvas.width
+        const boxHeight = (120 / cameraHeight) * canvas.height
 
         // Determine color based on tracking status
         const isTracking = trackingId === obj.trackId
