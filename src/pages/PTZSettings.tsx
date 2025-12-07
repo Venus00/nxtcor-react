@@ -424,8 +424,8 @@ const PTZSettings: React.FC = () => {
                       onChange={(e) => setSelectedCamera(e.target.value as 'cam1' | 'cam2')}
                       className="bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all"
                     >
-                      <option value="camera1">Camera 1</option>
-                      <option value="camera2">Camera 2</option>
+                      <option value="cam1">Camera 1</option>
+                      <option value="cam2">Camera 2</option>
                     </select>
                   </div>
                 </div>
