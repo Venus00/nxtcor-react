@@ -97,6 +97,11 @@ const Analytics: React.FC = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       objects.forEach((obj) => {
+        // If tracking is active, only show the tracked object
+        if (trackingId !== null && obj.trackId !== trackingId) {
+          return; // Skip drawing this object
+        }
+
         // Camera resolution (source coordinates from Python server)
         const cameraWidth = 640
         const cameraHeight = 480
