@@ -160,45 +160,45 @@ const apiToUI = (data: any): VideoOverlayData => {
  * Converts UI state to API payload.
  */
 const uiToApi = (ui: VideoOverlayData) => {
-  const prefix = "table.VideoWidget[0].";
+  // const prefix = "table.VideoWidget[0].";
   
   const toApiCoord = (percent: number) => Math.round((percent / 100) * API_MAX_COORD);
 
   const payload: any = {
     // Channel Title
-    [`${prefix}ChannelTitle.EncodeBlend`]: ui.channelTitle.enabled,
-    [`${prefix}ChannelTitle.Name`]: ui.channelTitle.text,
-    [`${prefix}ChannelTitle.Rect[0]`]: toApiCoord(ui.channelTitle.x),
-    [`${prefix}ChannelTitle.Rect[1]`]: toApiCoord(ui.channelTitle.y),
+    [`ChannelTitle.EncodeBlend`]: ui.channelTitle.enabled,
+    [`ChannelTitle.Name`]: ui.channelTitle.text,
+    [`ChannelTitle.Rect[0]`]: toApiCoord(ui.channelTitle.x),
+    [`ChannelTitle.Rect[1]`]: toApiCoord(ui.channelTitle.y),
     
     // Time Title
-    [`${prefix}TimeTitle.EncodeBlend`]: ui.timeTitle.enabled,
-    [`${prefix}TimeTitle.Rect[0]`]: toApiCoord(ui.timeTitle.x),
-    [`${prefix}TimeTitle.Rect[1]`]: toApiCoord(ui.timeTitle.y),
+    [`TimeTitle.EncodeBlend`]: ui.timeTitle.enabled,
+    [`TimeTitle.Rect[0]`]: toApiCoord(ui.timeTitle.x),
+    [`TimeTitle.Rect[1]`]: toApiCoord(ui.timeTitle.y),
 
     // OSD Elements
-    [`${prefix}PTZPreset.EncodeBlend`]: ui.osdInfo.showPresetPoint,
-    [`${prefix}PTZCoordinates.EncodeBlend`]: ui.osdInfo.showPTZCoordinates,
+    [`PTZPreset.EncodeBlend`]: ui.osdInfo.showPresetPoint,
+    [`PTZCoordinates.EncodeBlend`]: ui.osdInfo.showPTZCoordinates,
     // Note: PTZ Coords Rect typically used for OSD Info position
-    [`${prefix}PTZCoordinates.Rect[0]`]: toApiCoord(ui.osdInfo.x),
-    [`${prefix}PTZCoordinates.Rect[1]`]: toApiCoord(ui.osdInfo.y),
+    [`PTZCoordinates.Rect[0]`]: toApiCoord(ui.osdInfo.x),
+    [`PTZCoordinates.Rect[1]`]: toApiCoord(ui.osdInfo.y),
 
     // Text Overlay (Custom Title 0)
-    [`${prefix}CustomTitle[0].EncodeBlend`]: ui.textOverlay.enabled,
-    [`${prefix}CustomTitle[0].Text`]: ui.textOverlay.text,
-    [`${prefix}CustomTitle[0].Rect[0]`]: toApiCoord(ui.textOverlay.x),
-    [`${prefix}CustomTitle[0].Rect[1]`]: toApiCoord(ui.textOverlay.y),
+    [`CustomTitle[0].EncodeBlend`]: ui.textOverlay.enabled,
+    [`CustomTitle[0].Text`]: ui.textOverlay.text,
+    [`CustomTitle[0].Rect[0]`]: toApiCoord(ui.textOverlay.x),
+    [`CustomTitle[0].Rect[1]`]: toApiCoord(ui.textOverlay.y),
 
     // Font Size
-    [`${prefix}FontSizeScale`]: ui.fontSize === 'small' ? 0.7 : ui.fontSize === 'large' ? 1.2 : 1,
+    [`FontSizeScale`]: ui.fontSize === 'small' ? 0.7 : ui.fontSize === 'large' ? 1.2 : 1,
 
     // Picture Overlay
-    [`${prefix}PictureTitle.EncodeBlend`]: ui.overlayPicture.enabled,
-    [`${prefix}PictureTitle.Rect[0]`]: toApiCoord(ui.overlayPicture.x),
-    [`${prefix}PictureTitle.Rect[1]`]: toApiCoord(ui.overlayPicture.y),
+    [`PictureTitle.EncodeBlend`]: ui.overlayPicture.enabled,
+    [`PictureTitle.Rect[0]`]: toApiCoord(ui.overlayPicture.x),
+    [`PictureTitle.Rect[1]`]: toApiCoord(ui.overlayPicture.y),
 
     // GPS
-    [`${prefix}GPSTitle.EncodeBlend`]: ui.gpsCoordinates.enabled,
+    [`GPSTitle.EncodeBlend`]: ui.gpsCoordinates.enabled,
   };
 
   return payload;
