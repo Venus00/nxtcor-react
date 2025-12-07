@@ -31,7 +31,7 @@ const Analytics: React.FC = () => {
   const [objects, setObjects] = useState<TrackedObject[]>([])
   const [trackingId, setTrackingId] = useState<number | null>(null)
   const [wsConnected, setWsConnected] = useState(false)
-  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
 
@@ -80,16 +80,16 @@ const Analytics: React.FC = () => {
   // Draw bounding boxes on canvas
   useEffect(() => {
     const canvas = canvasRef.current
-    const video = videoRef.current
-    if (!canvas || !video) return
+    const iframe = iframeRef.current
+    if (!canvas || !iframe) return
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
     const drawBoxes = () => {
-      // Match canvas size to video
-      canvas.width = video.videoWidth || video.clientWidth
-      canvas.height = video.videoHeight || video.clientHeight
+      // Match canvas size to iframe container
+      canvas.width = iframe.clientWidth
+      canvas.height = iframe.clientHeight
 
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
@@ -164,9 +164,10 @@ const Analytics: React.FC = () => {
   }
 
   const getCameraUrl = () => {
+    const hostname = window.location.hostname;
     return selectedCamera === "cam1"
-      ? "http://admin:admin123@192.168.1.108/cam/realmonitor?channel=1&subtype=0"
-      : "http://admin:admin123@192.168.1.108/cam/realmonitor?channel=1&subtype=0"
+      ? `http://${hostname}:8889/cam1`
+      : `http://${hostname}:8889/cam2`
   }
 
   return (
@@ -248,13 +249,16 @@ const Analytics: React.FC = () => {
             <div className="relative h-full p-4">
               <div className="w-full h-full bg-black rounded-md overflow-hidden border border-slate-700/50 relative">
                 <div className="relative w-full h-full">
-                  <video
-                    ref={videoRef}
-                    className="w-full h-full object-contain"
+                  <iframe
+                    ref={iframeRef}
                     src={getCameraUrl()}
-                    autoPlay
-                    muted
-                    playsInline
+                    className="w-full h-full object-contain"
+                    allow="autoplay; fullscreen"
+                    style={{
+                      transformOrigin: "center",
+                      transition: "transform 0.3s ease",
+                      border: "none"
+                    }}
                   />
                   <canvas
                     ref={canvasRef}
