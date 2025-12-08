@@ -219,10 +219,10 @@ const TourManagement: React.FC = () => {
     // });
 
     // // Clear remaining preset slots
-    for (let i = payloads.presets.length; i < 32; i++) {
-      payloads.presets[`${i}`] =[  -1 , 0 , 5 ];
-      // payload[`${prefix}Presets[${i}][1]`] = 0;
-    }
+    // for (let i = payloads.presets.length; i < 32; i++) {
+    //   payloads.presets[`${i}`] =[  -1 , 0 , 5 ];
+    //   // payload[`${prefix}Presets[${i}][1]`] = 0;
+    // }
 
     updateTourMutation.mutate(payloads, {
       onSuccess: () => {
