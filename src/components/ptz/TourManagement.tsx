@@ -1,15 +1,5 @@
 // components/camera/TourManagement.tsx
-import React, { useEffect, useState } from "react";
-import { useCamId } from "../../contexts/CameraContext";
-import {
-  useTours as usePtzTour,
-  usePresets,
-} from "../../hooks/useCameraQueries";
-import {
-  useStartTour,
-  useStopTour,
-  useUpdateTour,
-} from "../../hooks/useCameraMutations";
+import React from "react";
 
 // Tour Management is temporarily disabled
 const TourManagement: React.FC = () => {
@@ -24,8 +14,6 @@ const TourManagement: React.FC = () => {
 };
 
 export default TourManagement;
-
-/* ORIGINAL CODE - DISABLED FOR NOW
 
 // =============================================================================
 // TYPES & INTERFACES
@@ -207,10 +195,10 @@ const TourManagement: React.FC = () => {
       [field]: value,
       ...(field === "presetId"
         ? {
-            presetName:
-              availablePresets.find((p) => p.id === value)?.title ||
-              `Preset ${value}`,
-          }
+          presetName:
+            availablePresets.find((p) => p.id === value)?.title ||
+            `Preset ${value}`,
+        }
         : {}),
     };
 
@@ -336,22 +324,20 @@ const TourManagement: React.FC = () => {
               return (
                 <div
                   key={tour.id}
-                  className={`transition-colors ${
-                    activeTourId === tour.id
-                      ? "bg-green-900/20 border-l-4 border-green-500"
-                      : ""
-                  }`}
+                  className={`transition-colors ${activeTourId === tour.id
+                    ? "bg-green-900/20 border-l-4 border-green-500"
+                    : ""
+                    }`}
                 >
                   <div className="p-4">
                     <div className="flex items-center justify-between gap-4">
                       {/* Tour Info */}
                       <div className="flex items-center gap-3 flex-1">
                         <div
-                          className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-lg ${
-                            activeTourId === tour.id
-                              ? "bg-green-600 text-white"
-                              : "bg-gray-700 text-gray-300"
-                          }`}
+                          className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-lg ${activeTourId === tour.id
+                            ? "bg-green-600 text-white"
+                            : "bg-gray-700 text-gray-300"
+                            }`}
                         >
                           {tour.id}
                         </div>
@@ -443,9 +429,8 @@ const TourManagement: React.FC = () => {
                               }
                             >
                               <svg
-                                className={`w-4 h-4 transition-transform ${
-                                  isExpanded ? "rotate-180" : ""
-                                }`}
+                                className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""
+                                  }`}
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -491,7 +476,7 @@ const TourManagement: React.FC = () => {
                                   }`}
                               >
                                 {startTourMutation.isPending &&
-                                activeTourId === null ? (
+                                  activeTourId === null ? (
                                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                                 ) : (
                                   <svg
@@ -693,21 +678,4 @@ const TourManagement: React.FC = () => {
 };
 
 export default TourManagement;
-* /      {/ * Active Tour Warning */}
-{
-  activeTourId && (
-    <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-3 flex items-start gap-3">
-      <svg className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <div className="text-sm text-yellow-200">
-        <strong>Note :</strong> L'utilisation manuelle du PTZ (Pan/Tilt/Zoom) arrêtera automatiquement le tour en cours.
-      </div>
-    </div>
-  )
-}
-    </div >
-  );
-};
-
-export default TourManagement;
+*/
