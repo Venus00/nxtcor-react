@@ -41,7 +41,7 @@ const apiToUI = (data: any): Tour[] => {
   const config = data.tours;
   const tours: Tour[] = [];
   const MAX_TOURS = 31; // Typically 8 tours supported
-
+ console.log("API Tour Data:", config);
   for (let i = 0; i < MAX_TOURS; i++) {
     const prefix = `table.PtzTour[0][${i}].`;
 
@@ -82,8 +82,8 @@ const apiToUI = (data: any): Tour[] => {
 // =============================================================================
 
 const TourManagement: React.FC = () => {
-  const camId = useCamId();
-
+  const camId = 'cam2';
+  
   // 1. Data Fetching
   const { data: apiData, isLoading, error, refetch } = usePtzTour(camId);
   const { data: presetsData } = usePresets(camId);
