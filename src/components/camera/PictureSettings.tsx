@@ -2,15 +2,15 @@
 import React, { useEffect, useState } from "react";
 import SliderControl from "./SliderControl";
 import { useCamId } from "../../contexts/CameraContext";
-import { 
-  useVideoColor, 
-  useVideoSharpness, 
+import {
+  useVideoColor,
+  useVideoSharpness,
   useVideoInDenoise, // Assumed hook based on API 2.1.3
   useVideoImageControl // Assumed hook based on API 3.1.4
 } from "../../hooks/useCameraQueries";
-import { 
-  useSetVideoColor, 
-  useSetVideoSharpness, 
+import {
+  useSetVideoColor,
+  useSetVideoSharpness,
   useSetVideoInDenoise, // Assumed mutation
   useSetVideoImageControl // Assumed mutation
 } from "../../hooks/useCameraMutations";
@@ -37,6 +37,10 @@ export interface PictureSettingsData {
   // Image Control
   flip: "normal" | "inverted";
   eis: boolean; // API: Stable
+  // Thermal Camera Specific
+  pseudoColor?: string;
+  directZoom?: number;
+  ffcMode?: "auto" | "manual";
 }
 
 const DEFAULTS: PictureSettingsData = {
@@ -53,6 +57,9 @@ const DEFAULTS: PictureSettingsData = {
   grade: 50,
   flip: "normal",
   eis: false,
+  pseudoColor: "Iron Red",
+  directZoom: 10,
+  ffcMode: "auto",
 };
 
 // =============================================================================
@@ -72,17 +79,17 @@ const apiToUI = (
 ): PictureSettingsData => {
   const profileIdx = profile === "daytime" ? 0 : profile === "nighttime" ? 1 : 2; //
 
-  const getColor = (key: string, def: number) => 
+  const getColor = (key: string, def: number) =>
     colorData?.config?.[`table.VideoColor[0][${profileIdx}].${key}`] ?? def;
-  
-  const getSharp = (key: string, def: number) => 
+
+  const getSharp = (key: string, def: number) =>
     sharpData?.config?.[`table.VideoInSharpness[0][${profileIdx}].${key}`] ?? def;
 
-  const getDenoise = (key: string, def: number) => 
+  const getDenoise = (key: string, def: number) =>
     denoiseData?.config?.[`table.VideoInDenoise[0][${profileIdx}].${key}`] ?? def;
 
   // Image Control is usually Global (Index 0 only), not per profile
-  const getImgCtrl = (key: string, def: any) => 
+  const getImgCtrl = (key: string, def: any) =>
     imgCtrlData?.config?.[`table.VideoImageControl[0].${key}`] ?? def;
 
   return {
@@ -93,7 +100,7 @@ const apiToUI = (
     saturability: Number(getColor("Saturation", 50)),
     chromaCNT: Number(getColor("ChromaSuppress", 50)),
     gamma: Number(getColor("Gamma", 50)),
-    
+
     // VideoInSharpness
     sharpness: Number(getSharp("Sharpness", 50)),
     sharpnessCNT: Number(getSharp("Level", 50)),
@@ -114,7 +121,7 @@ const apiToUI = (
  */
 const uiToApi = (ui: PictureSettingsData) => {
   const profileIdx = ui.profile === "daytime" ? 0 : ui.profile === "nighttime" ? 1 : 2;
-  
+
   return {
     color: {
       [`Brightness`]: ui.brightness,
@@ -187,7 +194,7 @@ const PictureSettings: React.FC = () => {
 
   const handleSave = async () => {
     const payloads = uiToApi(settings);
-    
+
     // Execute all mutations in parallel
     await Promise.all([
       setColor.mutateAsync(payloads.color),
@@ -195,7 +202,7 @@ const PictureSettings: React.FC = () => {
       setDenoise.mutateAsync(payloads.denoise),
       setImgCtrl.mutateAsync(payloads.imageControl)
     ]);
-    
+
     setIsDirty(false);
     // Refresh data
     colorQ.refetch();
@@ -223,13 +230,13 @@ const PictureSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      
+
       {/* Messages */}
       {isPending && (
-         <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-700 text-blue-300 flex items-center gap-2 text-sm">
-           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300"></div>
-           Enregistrement en cours...
-         </div>
+        <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-700 text-blue-300 flex items-center gap-2 text-sm">
+          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300"></div>
+          Enregistrement en cours...
+        </div>
       )}
 
       {/* Profile Selection */}
@@ -247,11 +254,10 @@ const PictureSettings: React.FC = () => {
             <button
               key={p.id}
               onClick={() => handleProfileChange(p.id as any)}
-              className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all ${
-                activeProfile === p.id
+              className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all ${activeProfile === p.id
                   ? "bg-red-600 text-white shadow-lg shadow-red-500/20"
                   : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-              }`}
+                }`}
             >
               {p.label}
             </button>
@@ -261,7 +267,7 @@ const PictureSettings: React.FC = () => {
         {/* Action Bar */}
         <div className="mt-6 flex justify-end gap-3 border-t border-gray-700 pt-4">
           {isDirty && (
-             <span className="text-yellow-500 text-sm self-center mr-2">Modifications non enregistrées</span>
+            <span className="text-yellow-500 text-sm self-center mr-2">Modifications non enregistrées</span>
           )}
           <button
             onClick={handleRevert}
@@ -308,7 +314,7 @@ const PictureSettings: React.FC = () => {
             value={settings.chromaCNT}
             onChange={(v) => updateSetting("chromaCNT", v)}
           />
-           <SliderControl
+          <SliderControl
             label="Gamma"
             description="Correction non-linéaire de la luminosité."
             value={settings.gamma}
@@ -339,7 +345,7 @@ const PictureSettings: React.FC = () => {
       {/* Advanced / Denoise */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-6">Paramètres Avancés</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <SliderControl
             label="2D NR (Réduction Bruit Spatial)"
@@ -358,43 +364,141 @@ const PictureSettings: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-700">
           {/* Flip Control */}
           <div>
-             <label className="block text-sm font-medium text-gray-300 mb-2">Flip (Retournement)</label>
-             <div className="flex bg-gray-900/50 p-1 rounded-lg">
-                <button
-                  onClick={() => updateSetting("flip", "normal")}
-                  className={`flex-1 py-2 rounded text-sm ${settings.flip === "normal" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"}`}
-                >
-                  Normal
-                </button>
-                <button
-                  onClick={() => updateSetting("flip", "inverted")}
-                  className={`flex-1 py-2 rounded text-sm ${settings.flip === "inverted" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"}`}
-                >
-                  Inversé
-                </button>
-             </div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Flip (Retournement)</label>
+            <div className="flex bg-gray-900/50 p-1 rounded-lg">
+              <button
+                onClick={() => updateSetting("flip", "normal")}
+                className={`flex-1 py-2 rounded text-sm ${settings.flip === "normal" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"}`}
+              >
+                Normal
+              </button>
+              <button
+                onClick={() => updateSetting("flip", "inverted")}
+                className={`flex-1 py-2 rounded text-sm ${settings.flip === "inverted" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"}`}
+              >
+                Inversé
+              </button>
+            </div>
           </div>
 
           {/* EIS Control */}
           <div>
-             <label className="block text-sm font-medium text-gray-300 mb-2">EIS (Stabilisation)</label>
-             <div className="flex bg-gray-900/50 p-1 rounded-lg">
-                <button
-                  onClick={() => updateSetting("eis", true)}
-                  className={`flex-1 py-2 rounded text-sm ${settings.eis ? "bg-green-600 text-white" : "text-gray-400 hover:text-white"}`}
-                >
-                  Activé
-                </button>
-                <button
-                  onClick={() => updateSetting("eis", false)}
-                  className={`flex-1 py-2 rounded text-sm ${!settings.eis ? "bg-red-600 text-white" : "text-gray-400 hover:text-white"}`}
-                >
-                  Désactivé
-                </button>
-             </div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">EIS (Stabilisation)</label>
+            <div className="flex bg-gray-900/50 p-1 rounded-lg">
+              <button
+                onClick={() => updateSetting("eis", true)}
+                className={`flex-1 py-2 rounded text-sm ${settings.eis ? "bg-green-600 text-white" : "text-gray-400 hover:text-white"}`}
+              >
+                Activé
+              </button>
+              <button
+                onClick={() => updateSetting("eis", false)}
+                className={`flex-1 py-2 rounded text-sm ${!settings.eis ? "bg-red-600 text-white" : "text-gray-400 hover:text-white"}`}
+              >
+                Désactivé
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Thermal Camera Specific Settings */}
+      {camId === 'cam2' && (
+        <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+          <h2 className="text-xl font-semibold text-white mb-6">Paramètres Caméra Thermique</h2>
+
+          <div className="space-y-6">
+            {/* Pseudo Color */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Pseudo Color
+              </label>
+              <p className="text-xs text-gray-400 mb-3">
+                Sélectionnez la palette de couleurs pour la visualisation thermique.
+              </p>
+              <select
+                value={settings.pseudoColor}
+                onChange={(e) => updateSetting("pseudoColor", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
+              >
+                <option value="Purple">Purple</option>
+                <option value="Orange">Orange</option>
+                <option value="Black Hot">Black Hot</option>
+                <option value="Iron Red">Iron Red</option>
+                <option value="Rainbow 1">Rainbow 1</option>
+                <option value="Fulgurite">Fulgurite</option>
+                <option value="Rainbow 2">Rainbow 2</option>
+                <option value="Sky">Sky</option>
+                <option value="Mid Gray">Mid Gray</option>
+                <option value="Gray Red">Gray Red</option>
+                <option value="Purple Orange">Purple Orange</option>
+                <option value="Special Warning Red">Special Warning Red</option>
+                <option value="Ice Fire">Ice Fire</option>
+                <option value="Cyan Red">Cyan Red</option>
+                <option value="Special2">Special2</option>
+                <option value="Gradient Red">Gradient Red</option>
+                <option value="Gradient Green">Gradient Green</option>
+                <option value="Gradient Blue">Gradient Blue</option>
+                <option value="Green">Green</option>
+                <option value="Warning Blue">Warning Blue</option>
+              </select>
+            </div>
+
+            {/* DirectZoom */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                DirectZoom
+              </label>
+              <p className="text-xs text-gray-400 mb-3">
+                Niveau de zoom numérique (10-80).
+              </p>
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="10"
+                  max="80"
+                  value={settings.directZoom}
+                  onChange={(e) => updateSetting("directZoom", Number(e.target.value))}
+                  className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
+                />
+                <span className="text-white font-medium w-12 text-center">
+                  {settings.directZoom}
+                </span>
+              </div>
+            </div>
+
+            {/* FFC Mode */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                FFC Mode (Flat Field Correction)
+              </label>
+              <p className="text-xs text-gray-400 mb-3">
+                Mode de correction automatique ou manuelle.
+              </p>
+              <div className="flex bg-gray-900/50 p-1 rounded-lg">
+                <button
+                  onClick={() => updateSetting("ffcMode", "auto")}
+                  className={`flex-1 py-2 rounded text-sm font-medium transition-all ${settings.ffcMode === "auto"
+                      ? "bg-blue-600 text-white shadow-lg"
+                      : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+                    }`}
+                >
+                  Auto
+                </button>
+                <button
+                  onClick={() => updateSetting("ffcMode", "manual")}
+                  className={`flex-1 py-2 rounded text-sm font-medium transition-all ${settings.ffcMode === "manual"
+                      ? "bg-blue-600 text-white shadow-lg"
+                      : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+                    }`}
+                >
+                  Manual
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
