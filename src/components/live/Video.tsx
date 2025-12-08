@@ -35,28 +35,28 @@ const VideoStream: React.FC = () => {
       // Map direction to specific API endpoint
       switch (direction) {
         case 'up':
-          endpoint = `/camera/${camId}/ptz/move/up`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/up`;
           break;
         case 'down':
-          endpoint = `/camera/${camId}/ptz/move/down`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/down`;
           break;
         case 'left':
-          endpoint = `/camera/${camId}/ptz/move/left`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/left`;
           break;
         case 'right':
-          endpoint = `/camera/${camId}/ptz/move/right`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/right`;
           break;
         case 'zoom_in':
-          endpoint = `/camera/${camId}/ptz/zoom/in`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/zoom/in`;
           break;
         case 'zoom_out':
-          endpoint = `/camera/${camId}/ptz/zoom/out`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/zoom/out`;
           break;
         case 'focus_in':
-          endpoint = `/camera/${camId}/ptz/focus/near`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/focus/near`;
           break;
         case 'focus_out':
-          endpoint = `/camera/${camId}/ptz/focus/far`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/focus/far`;
           break;
       }
 
@@ -80,28 +80,28 @@ const VideoStream: React.FC = () => {
       // Map direction to specific stop endpoint
       switch (direction) {
         case 'up':
-          endpoint = `/camera/${camId}/ptz/move/stop`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/stop`;
           break;
         case 'down':
-          endpoint = `/camera/${camId}/ptz/move/stop`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/stop`;
           break;
         case 'left':
-          endpoint = `/camera/${camId}/ptz/move/stop`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/stop`;
           break;
         case 'right':
-          endpoint = `/camera/${camId}/ptz/move/stop`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/stop`;
           break;
         case 'zoom_in':
-          endpoint = `/camera/${camId}/ptz/zoom/stop`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/zoom/stop`;
           break;
         case 'zoom_out':
-          endpoint = `/camera/${camId}/ptz/zoom/stop`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/zoom/stop`;
           break;
         case 'focus_in':
-          endpoint = `/camera/${camId}/ptz/focus/stop`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/focus/stop`;
           break;
         case 'focus_out':
-          endpoint = `/camera/${camId}/ptz/focus/stop`;
+          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/focus/stop`;
           break;
       }
 
