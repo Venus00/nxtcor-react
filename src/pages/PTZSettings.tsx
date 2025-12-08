@@ -198,11 +198,11 @@ const PTZSettings: React.FC = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Live Preview with Controls */}
-          <div className="lg:col-span-2">
+        <div className="flex gap-6 h-[calc(100vh-12rem)]">
+          {/* Left Column - Live Preview with Controls - Full Screen */}
+          <div className="flex-1 flex flex-col">
             {/* Live Preview */}
-            <div className="bg-gray-800/30 rounded-lg border border-gray-700 overflow-hidden">
+            <div className="bg-gray-800/30 rounded-lg border border-gray-700 overflow-hidden flex-1 flex flex-col">
               <div className="bg-gray-800/50 px-4 py-3 border-b border-gray-700">
                 <div className="flex items-center justify-between">
                   <h2 className="text-white font-medium flex items-center gap-2">
@@ -228,13 +228,13 @@ const PTZSettings: React.FC = () => {
               </div>
 
               {/* Video Preview Area */}
-              <div className="relative aspect-video bg-gray-900">
+              <div className="relative flex-1 bg-gray-900">
                 {/* Live Camera Stream */}
                 <iframe
                   src={`http://${window.location.hostname}:8889/${selectedCamera}`}
                   width="640"
                   height="360"
-                  className="object-fill"
+                  className="object-fill absolute inset-0"
                   allow="autoplay; fullscreen"
                   style={{
                     transformOrigin: "center",
@@ -271,8 +271,8 @@ const PTZSettings: React.FC = () => {
           </div>
 
           {/* Right Column - Preset/Tour Management */}
-          <div className="lg:col-span-1">
-            <div className="bg-gray-800/30 rounded-lg border border-gray-700 overflow-hidden sticky top-6">
+          <div className="w-96 flex-shrink-0">
+            <div className="bg-gray-800/30 rounded-lg border border-gray-700 overflow-hidden h-full flex flex-col">
               {/* Tab Navigation */}
               <div className="bg-gray-800/50 px-4 py-3 border-b border-gray-700">
                 <div className="flex gap-2">
@@ -351,7 +351,7 @@ const PTZSettings: React.FC = () => {
               </div>
 
               {/* Tab Content */}
-              <div className="p-6">
+              <div className="p-6 flex-1 overflow-y-auto">
                 {activeTab === 'preset' ? (
                   <PresetManagement
                     presets={presets}
