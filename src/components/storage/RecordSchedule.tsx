@@ -149,6 +149,7 @@ const uiToApi = (ui: RecordScheduleData) => {
       }
     }
   }
+  console.log("Constructed payload:", payload);
   return payload;
 };
 
