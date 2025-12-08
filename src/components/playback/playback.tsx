@@ -209,60 +209,44 @@ const VideoListSidebar = () => {
     }
 
     return (
-        <div className="bg-white flex flex-col h-full p-4 rounded-lg">
-            {/* Controls Bar */}
-            <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-4 flex-shrink-0">
-                <div className="flex flex-wrap gap-4 items-end">
-                    {/* Date Selector */}
-                    <div className="flex-1 min-w-[200px]">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            <Calendar className="inline w-4 h-4 mr-1" />
-                            Select Date
-                        </label>
-                        <select
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                        >
-                            <option value="">All Dates</option>
-                            {availableDates.map(date => (
-                                <option key={date} value={date}>{date}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Search Input */}
-                    <div className="flex-1 min-w-[200px]">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            <Search className="inline w-4 h-4 mr-1" />
-                            Search Video
-                        </label>
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Enter video name..."
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                            />
-                            <button
-                                onClick={searchVideo}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        <div className="flex h-screen space-x-4 bg-gray-900" >
+            {/* Sidebar with video list */}
+            <div className={`${sidebarWidthClass} h-full rounded-lg p-4 flex flex-col bg-gray-900 shadow-md border border-gray-800 overflow-auto`}>
+                <h2 className="text-xl font-semibold mb-4 text-white">Video List</h2>
+                <ul className="space-y-2">
+                    {videos.length > 0 ? (
+                        videos.map((video, index) => (
+                            <li
+                                key={index}
+                                className={`flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-800 ${selectedVideo === video ? 'bg-blue-700 text-white' : 'text-gray-200'}`}
+                                onClick={() => handleSelectVideo(video)}
                             >
-                                Search
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Delete by Date Button */}
-                    {selectedDate && (
-                        <button
-                            onClick={() => deleteByDate(selectedDate)}
-                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center gap-2"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            Delete All ({selectedDate})
-                        </button>
+                                <span className="text-sm">{video}</span>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Prevent event bubbling to the list item
+                                        handleDelete(video);
+                                    }}
+                                    className="ml-2 text-red-400 hover:text-red-600"
+                                    aria-label="Delete Video"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="w-4 h-4 inline"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <path d="M3 6h18M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M4 6h16l1 14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1L4 6z" />
+                                    </svg>
+                                </button>
+                            </li>
+                        ))
+                    ) : (
+                        <li className="text-gray-500">No videos found</li>
                     )}
                 </div>
 
