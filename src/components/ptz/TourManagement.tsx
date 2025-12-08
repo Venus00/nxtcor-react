@@ -24,7 +24,7 @@ export interface Tour {
  *
  */
 const apiToUI = (data: any): Tour[] => {
-  if (!data || !data.config) return [];
+  if (!data || !data.tours) return [];
   
   const config = data.tours;
   const tours: Tour[] = [];
