@@ -137,17 +137,17 @@ const uiToApi = (ui: RecordScheduleData) => {
     const slots = dayData?.timeSlots || [];
     console.log(`Processing day ${dayKey} with slots:`, slots);
     // Fill up to 6 slots
-    for (let p = 0; p < 6; p++) {
+   
       const key = `${prefix}[${d}][${p}]`;
-      if (p < slots.length) {
-        const s = slots[p];
+      if (slots.length) {
+        const s = slots[0];
         // Construct "1 HH:mm:ss-HH:mm:ss" (Mask 1 for General)
         payload[key] = `1 ${s.start}:00-${s.end}:00`;
       } else {
         // Disable unused slots
-        // payload[key] = "0 00:00:00-23:59:59";
+        payload[key] = "0 00:00:00-23:59:59";
       }
-    }
+    
   }
   console.log("Constructed payload:", payload);
   return payload;
