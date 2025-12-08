@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useCamId } from "../../contexts/CameraContext";
 import { useRecordSettings as useRecordSchedule } from "../../hooks/useCameraQueries";
-import { useSetRecordSchedule } from "../../hooks/useCameraMutations";
+import {useSetRecordSettings as  useSetRecordSchedule } from "../../hooks/useCameraMutations";
 
 // =============================================================================
 // TYPES & INTERFACES
