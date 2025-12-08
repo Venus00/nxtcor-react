@@ -118,32 +118,31 @@ const apiToUI = (
 
 /**
  * Splits UI state into specific API payloads
+ * Currently unused - reserved for future save functionality
  */
-const uiToApi = (ui: PictureSettingsData) => {
-  // const profileIdx = ui.profile === "daytime" ? 0 : ui.profile === "nighttime" ? 1 : 2;
-
-  return {
-    color: {
-      [`Brightness`]: ui.brightness,
-      [`Contrast`]: ui.contrast,
-      [`Saturation`]: ui.saturability,
-      [`ChromaSuppress`]: ui.chromaCNT,
-      [`Gamma`]: ui.gamma,
-    },
-    sharpness: {
-      [`Sharpness`]: ui.sharpness,
-      [`Level`]: ui.sharpnessCNT,
-    },
-    denoise: {
-      [`2DLevel`]: ui.nr2D,
-      [`3DAutoType.AutoLevel`]: ui.nr3D,
-    },
-    imageControl: {
-      [`Flip`]: ui.flip === "inverted",
-      [`Stable`]: ui.eis ? 1 : 0, // 1=Electronic Stabilizer
-    }
-  };
-};
+// const uiToApi = (ui: PictureSettingsData) => {
+//   return {
+//     color: {
+//       [`Brightness`]: ui.brightness,
+//       [`Contrast`]: ui.contrast,
+//       [`Saturation`]: ui.saturability,
+//       [`ChromaSuppress`]: ui.chromaCNT,
+//       [`Gamma`]: ui.gamma,
+//     },
+//     sharpness: {
+//       [`Sharpness`]: ui.sharpness,
+//       [`Level`]: ui.sharpnessCNT,
+//     },
+//     denoise: {
+//       [`2DLevel`]: ui.nr2D,
+//       [`3DAutoType.AutoLevel`]: ui.nr3D,
+//     },
+//     imageControl: {
+//       [`Flip`]: ui.flip === "inverted",
+//       [`Stable`]: ui.eis ? 1 : 0,
+//     }
+//   };
+// };
 
 // =============================================================================
 // COMPONENT
@@ -165,9 +164,8 @@ const PictureSettings: React.FC = () => {
   const setImgCtrl = useSetVideoImageControl(camId);
 
   // 3. Local State
-  const [activeProfile, setActiveProfile] = useState<PictureSettingsData['profile']>("normal");
+  const [activeProfile] = useState<PictureSettingsData['profile']>("normal");
   const [settings, setSettings] = useState<PictureSettingsData>(DEFAULTS);
-  const [isDirty, setIsDirty] = useState(false);
 
   const isLoading = colorQ.isLoading || sharpQ.isLoading;
   const isPending = setColor.isPending || setSharp.isPending || setDenoise.isPending || setImgCtrl.isPending;
@@ -177,44 +175,12 @@ const PictureSettings: React.FC = () => {
     if (colorQ.data && sharpQ.data) {
       const parsed = apiToUI(activeProfile, colorQ.data, sharpQ.data, denoiseQ.data, imgCtrlQ.data);
       setSettings(parsed);
-      setIsDirty(false);
     }
   }, [activeProfile, colorQ.data, sharpQ.data, denoiseQ.data, imgCtrlQ.data]);
 
   // 5. Handlers
-  const handleProfileChange = (profile: PictureSettingsData['profile']) => {
-    setActiveProfile(profile);
-    // Data sync will happen in useEffect based on new profile index
-  };
-
   const updateSetting = <K extends keyof PictureSettingsData>(key: K, value: PictureSettingsData[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
-    setIsDirty(true);
-  };
-
-  const handleSave = async () => {
-    const payloads = uiToApi(settings);
-
-    // Execute all mutations in parallel
-    await Promise.all([
-      setColor.mutateAsync(payloads.color),
-      setSharp.mutateAsync(payloads.sharpness),
-      setDenoise.mutateAsync(payloads.denoise),
-      setImgCtrl.mutateAsync(payloads.imageControl)
-    ]);
-
-    setIsDirty(false);
-    // Refresh data
-    colorQ.refetch();
-    sharpQ.refetch();
-  };
-
-  const handleRevert = () => {
-    if (colorQ.data) {
-      const parsed = apiToUI(activeProfile, colorQ.data, sharpQ.data, denoiseQ.data, imgCtrlQ.data);
-      setSettings(parsed);
-      setIsDirty(false);
-    }
   };
 
   if (isLoading) {
