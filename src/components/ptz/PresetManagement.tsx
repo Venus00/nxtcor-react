@@ -121,7 +121,6 @@ const PresetManagement: React.FC = () => {
       },
     };
 
-    setPresets((prev) => [...prev, optimisticPreset]);
     setPresetMutation.mutate(
       {
         id: apiIndex,
@@ -129,7 +128,9 @@ const PresetManagement: React.FC = () => {
       {
         onSuccess: async (data) => {
           console.log("Preset set:", data);
-          await refetch();
+              setPresets((prev) => [...prev, optimisticPreset]);
+
+          // await refetch();
         },
         
         onError: (error) => {
@@ -167,7 +168,7 @@ const PresetManagement: React.FC = () => {
         onSuccess: async (data) => {
           console.log("Preset cleared:", data);
           setPresets((prev) => prev.filter((p) => p.id !== id));
-          await refetch();
+          // await refetch();
         },
         onError: (error) => {
           console.error("Error clearing preset:", error);
