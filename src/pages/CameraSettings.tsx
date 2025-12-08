@@ -391,7 +391,7 @@ const CameraSettingsPage: React.FC = () => {
                 <div className="aspect-square bg-gray-900 rounded-lg border border-gray-600 flex items-center justify-center overflow-hidden">
                   <div className="relative w-full h-full overflow-hidden bg-black">
                     <iframe
-                      src={`http://${window.location.hostname}:8889/${camId}`}
+                      src={`http://${window.location.hostname}:8889/${camId === 'cam1' ? 'cam2' : 'cam1'}`}
                       className="object-fill absolute inset-0"
                       style={{
                         transformOrigin: "center",
