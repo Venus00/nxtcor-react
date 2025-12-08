@@ -127,6 +127,7 @@ const uiToApi = (ui: PictureSettingsData) => {
       [`Saturation`]: ui.saturability,
       [`ChromaSuppress`]: ui.chromaCNT,
       [`Gamma`]: ui.gamma,
+      [`Style`]: ui.pseudoColor
     },
     sharpness: {
       [`Sharpness`]: ui.sharpness,
