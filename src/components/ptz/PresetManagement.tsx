@@ -50,7 +50,7 @@ const apiToUI = (data: any): Preset[] => {
       // Only include if explicitly enabled
       if (enabled) {
         presets.push({
-          id: i+1, // Use 0-based index to match API (important for gotoPreset calls)
+          id: i + 1, // Use 0-based index to match API (important for gotoPreset calls)
           title: name || `Preset ${i + 1}`,
           enabled: enabled,
           position: {
@@ -108,13 +108,11 @@ const PresetManagement: React.FC = () => {
       return;
     }
 
-    const newTitle = `Preset${newId}`;
+    // const newTitle = `Preset${newId}`;
     const apiIndex = newId; // 0-based index for API
 
     setPresetMutation.mutate(
       {
-        Enable: true,
-        Name: newTitle,
         id: apiIndex,
       },
       {
@@ -126,10 +124,15 @@ const PresetManagement: React.FC = () => {
   // GOTO: Moves camera to preset
   const handleGotoPreset = (id: number) => {
     setSelectedPresetId(id);
-  
-    ptzActionMutation.mutate({
-      id,
-    });
+
+    ptzActionMutation.mutate(
+      {
+        id
+      },
+      {
+        onSuccess: () => refetch(),
+      }
+    );
   };
 
   // DELETE: Clears preset
@@ -146,8 +149,8 @@ const PresetManagement: React.FC = () => {
       const apiIndex = editingId - 1;
       setPresetMutation.mutate(
         {
-          Name :editingTitle,
-          id : apiIndex,
+          Name: editingTitle,
+          id: apiIndex,
           // [`table.PtzPreset[0][${apiIndex}].Name`]: editingTitle,
         },
         {
