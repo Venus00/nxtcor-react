@@ -11,7 +11,6 @@ const VideoListSidebar = () => {
         axios.get('/cgi-bin/videosList.cgi')
             .then(response => {
                 console.log('Response data:', response.data); // Inspect the response
-
                 // Ensure response.data.videos is an array
                 if (Array.isArray(response.data.videos)) {
                     // Extract just the file names from the full paths
@@ -29,7 +28,6 @@ const VideoListSidebar = () => {
                 // setError('Failed to fetch videos list');
             });
     }, []);
-
     const handleSelectVideo = (video: string) => {
         setSelectedVideo(video);
     };
@@ -64,16 +62,16 @@ const VideoListSidebar = () => {
     const sidebarWidthClass = window.innerWidth >= 1024 ? 'w-1/6' : window.innerWidth >= 768 ? 'w-1/4' : 'w-1/2';
 
     return (
-        <div className="flex h-[calc(100vh-8rem)] mt-4 space-x-4">
+        <div className="flex h-screen space-x-4 bg-gray-900" >
             {/* Sidebar with video list */}
-            <div className={`${sidebarWidthClass} h-full rounded-lg p-4 flex flex-col bg-white shadow-md border border-gray-200 overflow-auto`}>
-                <h2 className="text-xl font-semibold mb-4 text-gray-900">Video List</h2>
+            <div className={`${sidebarWidthClass} h-full rounded-lg p-4 flex flex-col bg-gray-900 shadow-md border border-gray-800 overflow-auto`}>
+                <h2 className="text-xl font-semibold mb-4 text-white">Video List</h2>
                 <ul className="space-y-2">
                     {videos.length > 0 ? (
                         videos.map((video, index) => (
                             <li
                                 key={index}
-                                className={`flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-100 ${selectedVideo === video ? 'bg-blue-200' : ''}`}
+                                className={`flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-800 ${selectedVideo === video ? 'bg-blue-700 text-white' : 'text-gray-200'}`}
                                 onClick={() => handleSelectVideo(video)}
                             >
                                 <span className="text-sm">{video}</span>
@@ -82,7 +80,7 @@ const VideoListSidebar = () => {
                                         e.stopPropagation(); // Prevent event bubbling to the list item
                                         handleDelete(video);
                                     }}
-                                    className="ml-2 text-red-600 hover:text-red-800"
+                                    className="ml-2 text-red-400 hover:text-red-600"
                                     aria-label="Delete Video"
                                 >
                                     <svg

@@ -8,6 +8,7 @@ import RegionalIntrusion, { type RegionalIntrusionConfig } from '../components/e
 import AbandonedObject, { type AbandonedObjectConfig } from '../components/events/AbandonedObject';
 import FastMoving, { type FastMovingConfig } from '../components/events/FastMoving';
 import CrowdDetection, { type CrowdDetectionConfig } from '../components/events/CrowdDetection';
+import EventTable from '../components/events/EventTable';
 
 const EventsManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'motion' | 'tamper' | 'scene' | 'intrusion' | 'abandoned' | 'fastmoving' | 'crowd'>('motion');
@@ -364,6 +365,9 @@ const EventsManagement: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Event History Table */}
+        <EventTable />
       </div>
     </div>
   );
