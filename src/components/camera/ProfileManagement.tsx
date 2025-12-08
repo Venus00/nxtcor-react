@@ -674,7 +674,7 @@ const ProfileManagement: React.FC<ProfileManagementProps> = ({
         </div>
       )}
 
-      {/* Raw API Data (Debug) */}
+      {/* Raw API Data (Debug)
       {apiData && (
         <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
           <h2 className="text-xl font-semibold text-white mb-4">
@@ -713,10 +713,10 @@ const ProfileManagement: React.FC<ProfileManagementProps> = ({
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Status Summary */}
-      <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+      {/* <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">État Actuel</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 bg-gray-900/30 rounded-lg">
@@ -769,7 +769,7 @@ const ProfileManagement: React.FC<ProfileManagementProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
