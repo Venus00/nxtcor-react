@@ -743,7 +743,7 @@ const CameraSettingsPage: React.FC = () => {
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-4 justify-end mt-8">
+              {/* <div className="flex gap-4 justify-end mt-8">
                 <button
                   onClick={handleReset}
                   className="px-6 py-3 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors"
@@ -756,7 +756,7 @@ const CameraSettingsPage: React.FC = () => {
                 >
                   Enregistrer les Paramètres
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
