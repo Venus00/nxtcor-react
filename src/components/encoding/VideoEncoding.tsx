@@ -37,7 +37,7 @@ const defaultState: VideoEncodingData = {
 };
 
 const resolutionOptionsOptical = [
-  { value: '2688x2520', label: '2688x2520', minBitrate: 6144, maxBitrate: 10240 },
+  { value: '2688x1520', label: '2688x1520', minBitrate: 6144, maxBitrate: 10240 },
   { value: '1920x1080', label: 'Full HD (1920x1080)', minBitrate: 2048, maxBitrate: 6144 },
   { value: '1280x720', label: 'HD (1280x720)', minBitrate: 1024, maxBitrate: 3072 },
 ];
@@ -245,8 +245,8 @@ const VideoEncoding: React.FC = () => {
               key={codec}
               onClick={() => handleCodecChange(codec)}
               className={`py-4 px-4 rounded-lg font-medium transition-all ${settings.videoCodec === codec
-                  ? 'bg-red-600 text-white shadow-lg shadow-red-500/25'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                ? 'bg-red-600 text-white shadow-lg shadow-red-500/25'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 }`}
             >
               <div className="text-center">
@@ -270,8 +270,8 @@ const VideoEncoding: React.FC = () => {
               key={res.value}
               onClick={() => handleResolutionChange(res.value)}
               className={`py-4 px-5 rounded-lg font-medium transition-all text-left ${settings.resolution === res.value
-                  ? 'bg-red-600 text-white shadow-lg shadow-red-500/25'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                ? 'bg-red-600 text-white shadow-lg shadow-red-500/25'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 }`}
             >
               <div className="flex items-center justify-between">
@@ -315,8 +315,8 @@ const VideoEncoding: React.FC = () => {
             onClick={() => handleUpdate({ bitRateType: 'fixed' })}
             disabled={settings.videoCodec === 'MJPEG'}
             className={`py-4 px-6 rounded-lg font-medium transition-all ${settings.bitRateType === 'fixed'
-                ? 'bg-red-600 text-white shadow-lg'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              ? 'bg-red-600 text-white shadow-lg'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
           >
             Débit Fixe (CBR)
@@ -325,8 +325,8 @@ const VideoEncoding: React.FC = () => {
             onClick={() => handleUpdate({ bitRateType: 'variable' })}
             disabled={settings.videoCodec === 'MJPEG'}
             className={`py-4 px-6 rounded-lg font-medium transition-all ${settings.bitRateType === 'variable'
-                ? 'bg-red-600 text-white shadow-lg'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              ? 'bg-red-600 text-white shadow-lg'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
           >
             Débit Variable (VBR)
