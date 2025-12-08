@@ -202,7 +202,7 @@ const TourManagement: React.FC = () => {
       id : tourId -1,
       // name : editingTour.name,
       // enable : true,
-      presets : editingTour.presets.map(p => ({presetId : p.presetId, duration : p.duration}))
+      presets : editingTour.presets.map(p => ([ p.presetId, p.duration, 5]))
     }
     // Build API payload
     // const tourIndex = tourId - 1;
