@@ -360,8 +360,8 @@ const CameraSettingsPage: React.FC = () => {
                 <button
                   onClick={() => setCamId('cam1')}
                   className={`px-6 py-3 rounded-lg font-medium transition-all ${camId === 'cam1'
-                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/25'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/25'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                     }`}
                 >
                   Caméra 1
@@ -369,8 +369,8 @@ const CameraSettingsPage: React.FC = () => {
                 <button
                   onClick={() => setCamId('cam2')}
                   className={`px-6 py-3 rounded-lg font-medium transition-all ${camId === 'cam2'
-                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/25'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/25'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                     }`}
                 >
                   Caméra 2
@@ -538,7 +538,7 @@ const CameraSettingsPage: React.FC = () => {
                     >
                       Encodage Vidéo
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => setActiveTab('picture-stream')}
                       className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'picture-stream'
                         ? 'bg-red-600/20 text-red-400 font-medium'
@@ -573,7 +573,7 @@ const CameraSettingsPage: React.FC = () => {
                         }`}
                     >
                       Audio
-                    </button>
+                    </button> */}
                   </div>
                 )}
               </div>

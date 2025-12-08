@@ -1,13 +1,17 @@
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Minus, Plus, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Minus, Plus, ZoomIn, ZoomOut, Video as VideoIcon, Square } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
 const VideoStream: React.FC = () => {
   const [scale, setScale] = useState(1);
   const [position,] = useState({ x: 0, y: 0 });
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [rotation, setRotation] = useState(0);
   const [speed, setSpeed] = useState(5);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordingCompleted, setRecordingCompleted] = useState(false);
+  const [recordingFileName, setRecordingFileName] = useState('');
+  const recordingTimerRef = useRef<number | null>(null);
+  const maxRecordingDuration = 600; // 10 minutes in seconds
 
   const upIntervalRef = useRef<number | null>(null);
   const downIntervalRef = useRef<number | null>(null);
@@ -17,20 +21,6 @@ const VideoStream: React.FC = () => {
   const zoomOutIntervalRef = useRef<number | null>(null);
   const focusInIntervalRef = useRef<number | null>(null);
   const focusOutIntervalRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (videoRef.current && videoRef.current.readyState < 3) {
-        videoRef.current.load();
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const zoomIn = () => {
-    setScale((prevScale) => prevScale + 0.2);
-  };
 
   const camId = useParams().id;
 
@@ -174,6 +164,66 @@ const VideoStream: React.FC = () => {
           clearInterval(ref.current);
         }
       });
+
+      // Clean up recording timer on unmount
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+    };
+  }, []);
+
+  const startRecording = async () => {
+    setRecordingCompleted(false);
+    setIsRecording(true);
+    setRecordingDuration(0);
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const fileName = `recording_${camId}_${timestamp}.mp4`;
+    setRecordingFileName(fileName);
+
+    // Start timer
+    recordingTimerRef.current = window.setInterval(() => {
+      setRecordingDuration(prev => {
+        const newDuration = prev + 1;
+        // Auto-stop at max duration
+        if (newDuration >= maxRecordingDuration) {
+          stopRecording();
+        }
+        return newDuration;
+      });
+    }, 1000);
+  };
+
+  const stopRecording = async () => {
+    setIsRecording(false);
+    setRecordingCompleted(true);
+
+    // Clear timer
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+  };
+
+  const formatDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  useEffect(() => {
+    return () => {
+      [upIntervalRef, downIntervalRef, leftIntervalRef, rightIntervalRef, zoomInIntervalRef, zoomOutIntervalRef, focusInIntervalRef, focusOutIntervalRef].forEach(ref => {
+        if (ref.current) {
+          clearInterval(ref.current);
+        }
+      });
+
+      // Clean up recording timer on unmount
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
     };
   }, []);
 
@@ -187,6 +237,83 @@ const VideoStream: React.FC = () => {
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
                   <span className="text-white/90 text-xs font-medium tracking-wide">PTZ CONTROL</span>
+                </div>
+              </div>
+
+              {/* MANUAL RECORD */}
+              <div className="flex flex-col items-center mb-6">
+                <button
+                  onClick={isRecording ? stopRecording : startRecording}
+                  disabled={recordingCompleted}
+                  className={`group w-full h-12 ${isRecording
+                    ? 'bg-red-500/30 hover:bg-red-500/40 active:bg-red-500/50 border-red-400/50 hover:border-red-400/70 text-red-100 hover:shadow-red-500/20'
+                    : recordingCompleted
+                      ? 'bg-gray-500/20 border-gray-400/30 text-gray-400 cursor-not-allowed'
+                      : 'bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border-green-400/30 hover:border-green-400/50 text-green-100 hover:shadow-green-500/20'
+                    } border hover:text-white rounded-xl flex items-center justify-center space-x-2 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg disabled:hover:scale-100`}
+                  aria-label={isRecording ? "Stop Recording" : "Start Recording"}
+                >
+                  {isRecording ? (
+                    <>
+                      <Square size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200 fill-current" />
+                      <span className="text-sm font-medium tracking-wide">STOP</span>
+                    </>
+                  ) : (
+                    <>
+                      <VideoIcon size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                      <span className="text-sm font-medium tracking-wide">RECORD</span>
+                    </>
+                  )}
+                </button>
+
+                {isRecording && (
+                  <div className="mt-3 flex flex-col items-center space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
+                      <span className="text-red-400 text-sm font-mono font-bold tracking-wider">
+                        {formatDuration(recordingDuration)}
+                      </span>
+                    </div>
+                    <div className="text-white/40 text-xs">
+                      Max: {formatDuration(maxRecordingDuration)}
+                    </div>
+                    <div className="w-full bg-white/10 rounded-full h-1 mt-2">
+                      <div
+                        className="bg-red-500 h-1 rounded-full transition-all duration-1000"
+                        style={{ width: `${(recordingDuration / maxRecordingDuration) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
+
+                {recordingCompleted && (
+                  <div className="mt-3 flex flex-col items-center space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
+                      <span className="text-green-400 text-xs font-medium tracking-wide">
+                        Recording completed: {formatDuration(recordingDuration)}
+                      </span>
+                    </div>
+                    <a
+                      href={`http://${window.location.hostname}:3000/recordings/${recordingFileName}`}
+                      download={recordingFileName}
+                      className="group w-full h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center space-x-2 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      <span className="text-sm font-medium tracking-wide">DOWNLOAD</span>
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">PTZ</span>
                 </div>
               </div>
 
@@ -245,8 +372,8 @@ const VideoStream: React.FC = () => {
                   <ChevronDown size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
               </div>
-              {/* ZOOM */}
 
+              {/* ZOOM */}
               <div className="relative mb-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>
@@ -281,6 +408,7 @@ const VideoStream: React.FC = () => {
                   <ZoomIn size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
               </div>
+
               {/* FOCUS */}
               <div className="relative mb-6">
                 <div className="absolute inset-0 flex items-center">
@@ -299,7 +427,7 @@ const VideoStream: React.FC = () => {
                   onTouchStart={focusInHandlers.handleStart}
                   onTouchEnd={focusInHandlers.handleStop}
                   className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
-                  aria-label="Zoom Out"
+                  aria-label="Focus Near"
                 >
                   <Minus size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
@@ -311,11 +439,13 @@ const VideoStream: React.FC = () => {
                   onTouchStart={focusOutHandlers.handleStart}
                   onTouchEnd={focusOutHandlers.handleStop}
                   className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
-                  aria-label="Zoom In"
+                  aria-label="Focus Far"
                 >
                   <Plus size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
               </div>
+
+              {/* WIPER */}
               <div className="relative mb-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>
@@ -336,6 +466,7 @@ const VideoStream: React.FC = () => {
                 </button>
               </div>
 
+              {/* SPEED */}
               <div className="relative mb-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>
