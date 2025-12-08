@@ -459,15 +459,27 @@ const CameraSettingsPage: React.FC = () => {
                     >
                       Image
                     </button>
-                    <button
-                      onClick={() => setActiveTab('exposure')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'exposure'
-                        ? 'bg-red-600/20 text-red-400 font-medium'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                        }`}
-                    >
-                      Exposition
-                    </button>
+                    {camId === 'cam1' ? (
+                      <button
+                        onClick={() => setActiveTab('exposure')}
+                        className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'exposure'
+                          ? 'bg-red-600/20 text-red-400 font-medium'
+                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                          }`}
+                      >
+                        Exposition
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setActiveTab('zoom-focus')}
+                        className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'zoom-focus'
+                          ? 'bg-red-600/20 text-red-400 font-medium'
+                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                          }`}
+                      >
+                        Zoom/Focus
+                      </button>
+                    )}
                     {camId === 'cam1' && (
                       <>
                         <button
@@ -643,7 +655,7 @@ const CameraSettingsPage: React.FC = () => {
                   )}
 
                   {/* Exposure Settings Tab */}
-                  {activeTab === 'exposure' && (
+                  {activeTab === 'exposure' && camId === 'cam1' && (
                     <ExposureSettings
                       settings={exposureSettings}
                       onSettingsChange={setExposureSettings}
@@ -667,7 +679,7 @@ const CameraSettingsPage: React.FC = () => {
                   )}
 
                   {/* Zoom/Focus Settings Tab */}
-                  {activeTab === 'zoom-focus' && camId === 'cam1' && (
+                  {activeTab === 'zoom-focus' && (
                     <ZoomFocusSettings
                       settings={zoomFocusSettings}
                       onSettingsChange={setZoomFocusSettings}
