@@ -141,7 +141,7 @@ const uiToApi = (ui: RecordScheduleData) => {
       if (p < slots.length) {
         const s = slots[p];
         // Construct "1 HH:mm:ss-HH:mm:ss" (Mask 1 for General)
-        payload[key] = `1 ${s.start}:00-${s.end}:00`;
+        payload[key] = `0 ${s.start}:00-${s.end}:00`;
       } else {
         // Disable unused slots
         // payload[key] = "0 00:00:00-23:59:59";
