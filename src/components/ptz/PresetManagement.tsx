@@ -38,7 +38,7 @@ const apiToUI = (data: any): Preset[] => {
   const presets: Preset[] = [];
   const MAX_PRESETS = 128; // 0-127 based on JSON
 
-  for (let i = 0; i < MAX_PRESETS; i++) {
+  for (let i = 1; i < MAX_PRESETS; i++) {
     const prefix = `table.PtzPreset[0][${i}].`;
 
     // Check if the preset exists in config
@@ -100,7 +100,7 @@ const PresetManagement: React.FC = () => {
     // Find first available ID (1-128)
     const usedIds = presets.map((p) => p.id);
     console.log("Used IDs:", usedIds);
-    let newId = 0;
+    let newId = 1;
     while (usedIds.includes(newId) && newId <= 128) newId++;
     if (usedIds.length === 0) newId = 1;
     if (newId > 128) {
