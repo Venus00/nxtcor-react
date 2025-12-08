@@ -127,10 +127,14 @@ const PresetManagement: React.FC = () => {
         id: apiIndex,
       },
       {
-        onSuccess: async () => await refetch(),
+        onSuccess: async (data) => {
+          console.log("Preset set:", data);
+          await refetch();
+        },
         
-        onError: () => {
+        onError: (error) => {
           // Rollback on error
+          console.error("Error setting preset:", error);
           setPresets((prev) => prev.filter((p) => p.id !== newId));
         },
       },
@@ -160,10 +164,14 @@ const PresetManagement: React.FC = () => {
         id,
       },
       {
-        onSuccess: async () => {
+        onSuccess: async (data) => {
+          console.log("Preset cleared:", data);
           setPresets((prev) => prev.filter((p) => p.id !== id));
           await refetch();
         },
+        onError: (error) => {
+          console.error("Error clearing preset:", error);
+        },  
       }
     );
   };
