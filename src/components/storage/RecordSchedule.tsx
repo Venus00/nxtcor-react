@@ -126,7 +126,7 @@ const apiToUI = (data: any): RecordScheduleData => {
  *
  */
 const uiToApi = (ui: RecordScheduleData) => {
-  const prefix = "table.Record[0].TimeSection";
+  const prefix = "Record[0].TimeSection";
   const payload: any = {};
 
   // Loop through days 0-6
