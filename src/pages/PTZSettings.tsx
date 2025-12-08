@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PTZControl from '../components/ptz/PTZControl';
 import PresetManagement, { type Preset } from '../components/ptz/PresetManagement';
 import TourManagement, { type Tour } from '../components/ptz/TourManagement';
@@ -17,7 +17,6 @@ const PTZSettings: React.FC = () => {
   const [activeTourId, setActiveTourId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'preset' | 'tour' | 'scheduled' | 'restart' | 'default'>('preset');
   const { camId, setCamId } = useCameraContext();
-  setCamId('cam1')
   const [currentPosition, setCurrentPosition] = useState({
     pan: 0,
     tilt: 0,
@@ -25,6 +24,10 @@ const PTZSettings: React.FC = () => {
     focus: 50,
     aperture: 50,
   });
+
+  useEffect(() => {
+    setCamId('cam1')
+  }, [])
 
   const handleDirectionControl = async (direction: 'up' | 'down' | 'left' | 'right' | 'center') => {
     console.log('Direction control:', direction);
