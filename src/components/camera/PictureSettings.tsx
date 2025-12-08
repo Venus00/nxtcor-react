@@ -100,7 +100,8 @@ const apiToUI = (
     saturability: Number(getColor("Saturation", 50)),
     chromaCNT: Number(getColor("ChromaSuppress", 50)),
     gamma: Number(getColor("Gamma", 50)),
-
+    
+    pseudoColor: String(getColor("Style", "Iron Red")),
     // VideoInSharpness
     sharpness: Number(getSharp("Sharpness", 50)),
     sharpnessCNT: Number(getSharp("Level", 50)),
