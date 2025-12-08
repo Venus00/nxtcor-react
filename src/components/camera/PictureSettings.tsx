@@ -86,7 +86,7 @@ const apiToUI = (
     sharpData?.config?.[`table.VideoInSharpness[0][${profileIdx}].${key}`] ?? def;
 
   const getDenoise = (key: string, def: number) =>
-    denoiseData?.config?.[`table.VideoInDenoise[0][${profileIdx}].${key}`] ?? def;
+    denoiseData?.config?.[`table.VideoInDenoise[0][0].${key}`] ?? def;
 
   // Image Control is usually Global (Index 0 only), not per profile
   const getImgCtrl = (key: string, def: any) =>
