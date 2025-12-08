@@ -138,7 +138,7 @@ const uiToApi = (ui: RecordScheduleData) => {
     console.log(`Processing day ${dayKey} with slots:`, slots);
     // Fill up to 6 slots
    
-      const key = `${prefix}[${d}][${p}]`;
+      const key = `${prefix}[${d}][0]`;
       if (slots.length) {
         const s = slots[0];
         // Construct "1 HH:mm:ss-HH:mm:ss" (Mask 1 for General)
