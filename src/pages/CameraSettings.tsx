@@ -364,7 +364,7 @@ const CameraSettingsPage: React.FC = () => {
                     : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                     }`}
                 >
-                  Caméra 1
+                  Caméra Optique
                 </button>
                 <button
                   onClick={() => setCamId('cam2')}
@@ -373,7 +373,7 @@ const CameraSettingsPage: React.FC = () => {
                     : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                     }`}
                 >
-                  Caméra 2
+                  Caméra Thermique
                 </button>
               </div>
             </div>
@@ -468,42 +468,46 @@ const CameraSettingsPage: React.FC = () => {
                     >
                       Exposition
                     </button>
-                    <button
-                      onClick={() => setActiveTab('white-balance')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'white-balance'
-                        ? 'bg-red-600/20 text-red-400 font-medium'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                        }`}
-                    >
-                      Balance des Blancs
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('day-night')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'day-night'
-                        ? 'bg-red-600/20 text-red-400 font-medium'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                        }`}
-                    >
-                      Jour/Nuit
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('zoom-focus')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'zoom-focus'
-                        ? 'bg-red-600/20 text-red-400 font-medium'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                        }`}
-                    >
-                      Zoom/Focus
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('defog')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'defog'
-                        ? 'bg-red-600/20 text-red-400 font-medium'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                        }`}
-                    >
-                      Débrouillage
-                    </button>
+                    {camId === 'cam1' && (
+                      <>
+                        <button
+                          onClick={() => setActiveTab('white-balance')}
+                          className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'white-balance'
+                            ? 'bg-red-600/20 text-red-400 font-medium'
+                            : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                            }`}
+                        >
+                          Balance des Blancs
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('day-night')}
+                          className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'day-night'
+                            ? 'bg-red-600/20 text-red-400 font-medium'
+                            : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                            }`}
+                        >
+                          Jour/Nuit
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('zoom-focus')}
+                          className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'zoom-focus'
+                            ? 'bg-red-600/20 text-red-400 font-medium'
+                            : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                            }`}
+                        >
+                          Zoom/Focus
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('defog')}
+                          className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'defog'
+                            ? 'bg-red-600/20 text-red-400 font-medium'
+                            : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                            }`}
+                        >
+                          Débrouillage
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -647,7 +651,7 @@ const CameraSettingsPage: React.FC = () => {
                   )}
 
                   {/* White Balance Settings Tab */}
-                  {activeTab === 'white-balance' && (
+                  {activeTab === 'white-balance' && camId === 'cam1' && (
                     <WhiteBalanceSettings
                       settings={whiteBalanceSettings}
                       onSettingsChange={setWhiteBalanceSettings}
@@ -655,7 +659,7 @@ const CameraSettingsPage: React.FC = () => {
                   )}
 
                   {/* Day/Night Settings Tab */}
-                  {activeTab === 'day-night' && (
+                  {activeTab === 'day-night' && camId === 'cam1' && (
                     <DayNightSettings
                       settings={dayNightSettings}
                       onSettingsChange={setDayNightSettings}
@@ -663,7 +667,7 @@ const CameraSettingsPage: React.FC = () => {
                   )}
 
                   {/* Zoom/Focus Settings Tab */}
-                  {activeTab === 'zoom-focus' && (
+                  {activeTab === 'zoom-focus' && camId === 'cam1' && (
                     <ZoomFocusSettings
                       settings={zoomFocusSettings}
                       onSettingsChange={setZoomFocusSettings}
@@ -671,7 +675,7 @@ const CameraSettingsPage: React.FC = () => {
                   )}
 
                   {/* Defog Settings Tab */}
-                  {activeTab === 'defog' && (
+                  {activeTab === 'defog' && camId === 'cam1' && (
                     <DefogSettings
                       settings={defogSettings}
                       onSettingsChange={setDefogSettings}
