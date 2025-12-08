@@ -49,7 +49,7 @@ const apiToUI = (data: any): Tour[] => {
     const enabledStr = String(config[`${prefix}Enable`] ?? "false");
     const name = config[`${prefix}Name`];
 
-    if (enabledStr === "true" || (name && name !== "None")) {
+    if (enabledStr === "true" ) {
       const presets: TourPreset[] = [];
 
       // Get preset points
@@ -59,7 +59,7 @@ const apiToUI = (data: any): Tour[] => {
 
         if (pId > 0) {
           presets.push({
-            presetId: pId,
+            presetId: pId +1,
             presetName: `Preset ${pId}`,
             duration
           });
