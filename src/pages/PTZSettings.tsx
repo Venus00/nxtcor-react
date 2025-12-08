@@ -29,7 +29,7 @@ const PTZSettings: React.FC = () => {
     // Send API request for PTZ control
     if (direction !== 'center') {
       try {
-        const response = await fetch(`http://${window.location.hostname}:3000/camera/${selectedCamera === 'cam1' ? "cam2" : "cam1"}/ptz/move/${direction}`, {
+        const response = await fetch(`http://${window.location.hostname}:3000/camera/${selectedCamera}/ptz/move/${direction}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ channel: 0, speed: 4 }),
