@@ -190,7 +190,12 @@ const VideoListSidebar = () => {
 
     const getVideoUrl = (video: VideoFile) => {
         // Use downloadUrl from API response if available, otherwise construct URL
-        return `${API_BASE_URL}/files/search-video?date=${video.date}&name=${video.name}`;
+        if (video.downloadUrl) {
+            return video.downloadUrl.startsWith('http')
+                ? video.downloadUrl
+                : `${API_BASE_URL}${video.downloadUrl}`;
+        }
+        return `${API_BASE_URL}/files/video?date=${video.date}&name=${video.name}`;
     };
 
     // Get unique dates for date selector
@@ -209,79 +214,90 @@ const VideoListSidebar = () => {
     }
 
     return (
-     <>
-        <div className="flex h-screen space-x-4 bg-gray-900" >
-            {/* Sidebar with video list */}
-            <div className={`${sidebarWidthClass} h-full rounded-lg p-4 flex flex-col bg-gray-900 shadow-md border border-gray-800 overflow-auto`}>
-                <h2 className="text-xl font-semibold mb-4 text-white">Video List</h2>
-                <ul className="space-y-2">
-                    {videos.length > 0 ? (
-                        videos.map((video, index) => (
-                            <li
-                                key={index}
-                                className={`flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-800 ${selectedVideo === video ? 'bg-blue-700 text-white' : 'text-gray-200'}`}
-                                onClick={() => handleSelectVideo(video)}
-                            >
-                                <span className="text-sm">{video}</span>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation(); // Prevent event bubbling to the list item
-                                        handleDelete(video);
-                                    }}
-                                    className="ml-2 text-red-400 hover:text-red-600"
-                                    aria-label="Delete Video"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="w-4 h-4 inline"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <path d="M3 6h18M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M4 6h16l1 14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1L4 6z" />
-                                    </svg>
-                                </button>
-                            </li>
-                        ))
-                    ) : (
-                        <li className="text-gray-500">No videos found</li>
-                    )}
-                    </ul>
+        <div className="flex h-screen bg-gray-900">
+            {/* Controls and Date Selector */}
+            <div className="w-80 h-full rounded-lg p-4 flex flex-col bg-gray-800 shadow-md border border-gray-700 overflow-hidden">
+                <h2 className="text-xl font-semibold mb-4 text-white flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Playback Controls
+                </h2>
+
+                {/* Date Selector */}
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Select Date</label>
+                    <select
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">All Dates</option>
+                        {availableDates.map(date => (
+                            <option key={date} value={date}>{date}</option>
+                        ))}
+                    </select>
                 </div>
 
+                {/* Search */}
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Search Video</label>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Video name..."
+                            className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                            onClick={searchVideo}
+                            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center gap-1"
+                        >
+                            <Search className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Delete by Date */}
+                {selectedDate && (
+                    <button
+                        onClick={() => deleteByDate(selectedDate)}
+                        className="mb-4 w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md flex items-center justify-center gap-2"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        Delete All ({selectedDate})
+                    </button>
+                )}
+
                 {error && (
-                    <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                    <div className="mb-4 p-3 bg-red-900/50 border border-red-600 text-red-200 rounded-md text-sm">
                         {error}
                     </div>
                 )}
             </div>
 
-            <div className="flex flex-1 gap-4 overflow-hidden min-h-0">
+            <div className="flex flex-1 gap-4 overflow-hidden min-h-0 p-4">
                 {/* Sidebar with video list */}
-                <div className="w-1/3 h-full rounded-lg p-4 flex flex-col bg-gray-50 border border-gray-200 overflow-auto">
-                    <h2 className="text-xl font-semibold mb-4 text-gray-900 flex items-center gap-2">
+                <div className="w-1/3 h-full rounded-lg p-4 flex flex-col bg-gray-800 border border-gray-700 overflow-auto">
+                    <h2 className="text-xl font-semibold mb-4 text-white flex items-center gap-2">
                         <Video className="w-5 h-5" />
                         Videos ({filteredVideos.length})
                     </h2>
 
                     {loading ? (
-                        <div className="text-center text-gray-500">Loading...</div>
+                        <div className="text-center text-gray-400">Loading...</div>
                     ) : Object.keys(videosByHour).length > 0 ? (
                         <div className="space-y-4">
                             {Object.entries(videosByHour).sort().reverse().map(([hour, videos]) => (
-                                <div key={hour} className="border-b border-gray-200 pb-3">
+                                <div key={hour} className="border-b border-gray-700 pb-3">
                                     <div className="flex items-center justify-between mb-2">
-                                        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                                        <h3 className="font-semibold text-gray-200 flex items-center gap-2">
                                             <Clock className="w-4 h-4" />
                                             Hour {hour}:00
                                         </h3>
                                         {selectedDate && (
                                             <button
                                                 onClick={() => deleteByHour(selectedDate, hour)}
-                                                className="text-xs text-red-600 hover:text-red-800 flex items-center gap-1"
+                                                className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
                                             >
                                                 <Trash2 className="w-3 h-3" />
                                                 Delete Hour
@@ -292,22 +308,22 @@ const VideoListSidebar = () => {
                                         {videos.map((video, index) => (
                                             <li
                                                 key={`${video.date}-${video.name}-${index}`}
-                                                className={`flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-white transition-colors ${selectedVideo?.name === video.name && selectedVideo?.date === video.date
-                                                    ? 'bg-blue-100 border border-blue-300'
-                                                    : 'bg-white border border-transparent'
+                                                className={`flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-700 transition-colors ${selectedVideo?.name === video.name && selectedVideo?.date === video.date
+                                                    ? 'bg-blue-900/50 border border-blue-500'
+                                                    : 'bg-gray-900/50 border border-transparent'
                                                     }`}
                                                 onClick={() => handleSelectVideo(video)}
                                             >
                                                 <div className="flex-1 min-w-0">
-                                                    <span className="text-sm block truncate font-medium">{video.name}</span>
-                                                    <span className="text-xs text-gray-500">{video.date}</span>
+                                                    <span className="text-sm block truncate font-medium text-white">{video.name}</span>
+                                                    <span className="text-xs text-gray-400">{video.date}</span>
                                                 </div>
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         deleteVideo(video);
                                                     }}
-                                                    className="ml-2 text-red-600 hover:text-red-800 flex-shrink-0"
+                                                    className="ml-2 text-red-400 hover:text-red-300 flex-shrink-0"
                                                     aria-label="Delete Video"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -319,7 +335,7 @@ const VideoListSidebar = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center text-gray-500">No videos found</div>
+                        <div className="text-center text-gray-400">No videos found</div>
                     )}
                 </div>
 
@@ -342,8 +358,7 @@ const VideoListSidebar = () => {
                     )}
                 </div>
             </div>
-        </>
-
+        </div>
     );
 };
 

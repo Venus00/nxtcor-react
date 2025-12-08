@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
+import axios from 'axios';
 
 export interface EventRecord {
   id: string;
@@ -10,6 +10,17 @@ export interface EventRecord {
   confidence?: number;
   details?: string;
 }
+
+interface DetectionPhoto {
+  filename: string;
+  classification: string;
+  timestamp: string;
+  score: number;
+  path: string;
+  size: number;
+}
+
+const API_BASE_URL = `http://${window.location.hostname}:3000`;
 
 const EventTable: React.FC = () => {
   const [events, setEvents] = useState<EventRecord[]>([]);
@@ -25,43 +36,36 @@ const EventTable: React.FC = () => {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      // Replace with your actual API endpoint
-      // const response = await axios.get('/cgi-bin/getEvents.cgi');
-      // setEvents(response.data.events || []);
-      
-      // Mock data for demonstration
-      const mockEvents: EventRecord[] = [
-        {
-          id: '1',
-          timestamp: new Date().toISOString(),
-          eventType: 'Motion Detection',
-          classification: 'Person',
-          snapshotUrl: '/assets/placeholder-snapshot.jpg',
-          confidence: 95,
-          details: 'Motion detected in Zone A'
-        },
-        {
-          id: '2',
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          eventType: 'Regional Intrusion',
-          classification: 'Vehicle',
-          snapshotUrl: '/assets/placeholder-snapshot.jpg',
-          confidence: 88,
-          details: 'Intrusion detected in restricted area'
-        },
-        {
-          id: '3',
-          timestamp: new Date(Date.now() - 7200000).toISOString(),
+      // Fetch detection photos from the API
+      const response = await axios.get(`${API_BASE_URL}/detection/photos`, {
+        params: {
+          limit: 100,
+          // Add filters if needed
+          ...(filterType !== 'all' && { classification: filterType.toLowerCase() }),
+          ...(searchDate && { startDate: new Date(searchDate).toISOString() })
+        }
+      });
+
+      if (response.data.success && response.data.photos) {
+        // Convert detection photos to event records
+        const eventRecords: EventRecord[] = response.data.photos.map((photo: DetectionPhoto, index: number) => ({
+          id: `${photo.timestamp}-${index}`,
+          timestamp: photo.timestamp,
           eventType: 'Object Detection',
-          classification: 'Person, Car',
-          snapshotUrl: '/assets/placeholder-snapshot.jpg',
-          confidence: 92,
-          details: 'Multiple objects detected: Person, Car'
-        },
-      ];
-      setEvents(mockEvents);
+          classification: photo.classification.charAt(0).toUpperCase() + photo.classification.slice(1),
+          snapshotUrl: `${API_BASE_URL}${photo.path}`,
+          confidence: Math.round(photo.score * 100),
+          details: `Object detected: ${photo.classification} (Score: ${(photo.score * 100).toFixed(1)}%)`
+        }));
+
+        setEvents(eventRecords);
+      } else {
+        setEvents([]);
+      }
     } catch (error) {
-      console.error('Error fetching events:', error);
+      console.error('Error fetching detection photos:', error);
+      // Set empty array if API fails
+      setEvents([]);
     } finally {
       setLoading(false);
     }
@@ -69,7 +73,7 @@ const EventTable: React.FC = () => {
 
   const handleDeleteEvent = async (eventId: string) => {
     if (!confirm('Are you sure you want to delete this event?')) return;
-    
+
     try {
       // await axios.post('/cgi-bin/deleteEvent.cgi', { eventId });
       setEvents(events.filter(e => e.id !== eventId));
@@ -80,7 +84,7 @@ const EventTable: React.FC = () => {
 
   const handleClearAll = async () => {
     if (!confirm('Are you sure you want to clear all events?')) return;
-    
+
     try {
       // await axios.post('/cgi-bin/clearEvents.cgi');
       setEvents([]);
@@ -130,7 +134,7 @@ const EventTable: React.FC = () => {
             <h2 className="text-xl font-bold text-white mb-1">Event History</h2>
             <p className="text-sm text-gray-400">Detected events with snapshots and classifications</p>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <button
               onClick={fetchEvents}
@@ -141,7 +145,7 @@ const EventTable: React.FC = () => {
               </svg>
               Refresh
             </button>
-            
+
             <button
               onClick={handleClearAll}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
