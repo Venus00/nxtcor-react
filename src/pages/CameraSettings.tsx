@@ -383,16 +383,16 @@ const CameraSettingsPage: React.FC = () => {
         {/* Main Layout: Sidebar + Content */}
         <div className="flex gap-6">
           {/* Left Sidebar Navigation */}
-          <div className="w-64 flex-shrink-0">
+          <div className="w-80 flex-shrink-0">
             <div className="bg-gray-800/50 rounded-lg border border-gray-700 overflow-hidden sticky top-6">
-              {/* Live Feed Section */}
+              {/* Live Feed Section - Larger */}
               <div className="p-4 border-b border-gray-700">
                 <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">Aperçu en Direct</h3>
-                <div className="aspect-video bg-gray-900 rounded-lg border border-gray-600 flex items-center justify-center overflow-hidden">
+                <div className="aspect-square bg-gray-900 rounded-lg border border-gray-600 flex items-center justify-center overflow-hidden">
                   <div className="relative w-full h-full overflow-hidden bg-black">
                     <iframe
                       src={`http://${window.location.hostname}:8889/${camId}`}
-                      className="object-fill"
+                      className="object-fill absolute inset-0"
                       style={{
                         transformOrigin: "center",
                         transition: "transform 0.3s ease",
@@ -405,8 +405,8 @@ const CameraSettingsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Main Categories */}
-              <div className="p-3">
+              {/* Main Categories - Scrollable */}
+              <div className="p-3 overflow-y-auto">
                 <h3 className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">Catégories</h3>
 
                 {/* Profile Management */}
