@@ -190,11 +190,11 @@ const VideoListSidebar = () => {
 
     const getVideoUrl = (video: VideoFile) => {
         // Use downloadUrl from API response if available, otherwise construct URL
-        if (video.downloadUrl) {
-            return video.downloadUrl.startsWith('http')
-                ? video.downloadUrl
-                : `${API_BASE_URL}${video.downloadUrl}`;
-        }
+        // if (video.downloadUrl) {
+        //     return video.downloadUrl.startsWith('http')
+        //         ? video.downloadUrl
+        //         : `${API_BASE_URL}${video.downloadUrl}`;
+        // }
         return `${API_BASE_URL}/files/search-video?date=${video.date}&name=${video.name}`;
     };
 
