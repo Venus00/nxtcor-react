@@ -32,7 +32,7 @@ interface TrackingData {
 type CameraType = "cam1" | "cam2"
 
 const Analytics: React.FC = () => {
-  const selectedCamera = "cam1" // Fixed to optical camera only
+  const selectedCamera = "cam2" // Fixed to optical camera only
   const [objects, setObjects] = useState<TrackedObjectWithTimestamp[]>([])
   const [trackingId, setTrackingId] = useState<number | null>(null)
   const [wsConnected, setWsConnected] = useState(false)
