@@ -74,7 +74,7 @@ const EncodingSettingsPage: React.FC = () => {
               {/* Main Categories */}
               <div className="p-3">
                 <h3 className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">Catégories</h3>
-                
+
                 {/* Video Encoding */}
                 <button
                   className="w-full text-left px-3 py-3 rounded-lg mb-2 transition-all bg-red-600 text-white shadow-lg"
@@ -93,17 +93,17 @@ const EncodingSettingsPage: React.FC = () => {
           {/* Right Content Area */}
           <div className="flex-1 min-w-0">
             <div className="bg-gray-800/30 rounded-lg border border-gray-700 p-6">
-              
+
               {/* Video Encoding Section */}
               {activeCategory === 'video' && (
-                <VideoEncoding 
-                  settings={videoSettings} 
+                <VideoEncoding
+                  settings={videoSettings}
                   onSettingsChange={setVideoSettings}
                 />
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-4 justify-end mt-8">
+              {/* <div className="flex gap-4 justify-end mt-8">
                 <button
                   onClick={handleReset}
                   className="px-6 py-3 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors"
@@ -116,7 +116,7 @@ const EncodingSettingsPage: React.FC = () => {
                 >
                   Enregistrer les Paramètres
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
