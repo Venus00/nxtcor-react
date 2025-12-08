@@ -1,17 +1,128 @@
-import type React from "react"
+// components/camera/WhiteBalanceSettings.tsx
+import React, { useEffect, useState } from "react";
+import { useCamId } from "../../contexts/CameraContext";
+import { useWhiteBalance } from "../../hooks/useCameraQueries";
+import { useSetWhiteBalance } from "../../hooks/useCameraMutations"; // Assuming this hook exists
+
+// =============================================================================
+// TYPES & INTERFACES
+// =============================================================================
 
 export interface WhiteBalanceSettingsData {
   mode: 'auto' | 'indoor' | 'outdoor' | 'tracking' | 'manual' | 'sodium-lamp' | 'natural-light' | 'street-light';
+  gainRed?: number;   // API: GainRed (0-100) - Stored for logic, even if no slider in UI yet
+  gainBlue?: number;  // API: GainBlue (0-100)
+  gainGreen?: number; // API: GainGreen (0-100)
 }
 
 interface WhiteBalanceSettingsProps {
-  settings: WhiteBalanceSettingsData;
-  onSettingsChange: (settings: WhiteBalanceSettingsData) => void;
+  // Component is now self-contained via Context
 }
 
-const WhiteBalanceSettings: React.FC<WhiteBalanceSettingsProps> = ({ settings, onSettingsChange }) => {
+// =============================================================================
+// API MAPPING HELPERS
+// =============================================================================
+
+/**
+ * Mapping between UI Keys and API String Values
+ * API Values based on doc: Auto, Indoor, Outdoor, ATW, Manual, Sodium, Natural, StreetLamp
+ */
+const MODE_MAP_TO_UI: Record<string, WhiteBalanceSettingsData['mode']> = {
+  'Auto': 'auto',
+  'Indoor': 'indoor',
+  'Outdoor': 'outdoor',
+  'ATW': 'tracking', // ATW = Auto Tracking White Balance
+  'Manual': 'manual',
+  'Sodium': 'sodium-lamp',
+  'Natural': 'natural-light',
+  'StreetLamp': 'street-light'
+};
+
+const MODE_MAP_TO_API: Record<WhiteBalanceSettingsData['mode'], string> = {
+  'auto': 'Auto',
+  'indoor': 'Indoor',
+  'outdoor': 'Outdoor',
+  'tracking': 'ATW',
+  'manual': 'Manual',
+  'sodium-lamp': 'Sodium',
+  'natural-light': 'Natural',
+  'street-light': 'StreetLamp'
+};
+
+const defaultState: WhiteBalanceSettingsData = {
+  mode: 'auto',
+  gainRed: 50,
+  gainBlue: 50,
+  gainGreen: 50
+};
+
+/**
+ * Parses the flat API response keys into a structured UI object.
+ * Fixed to Index [0][0]
+ */
+const apiToUI = (data: any): WhiteBalanceSettingsData => {
+  if (!data) return defaultState;
+  
+  const config = data.config || data;
+  const prefix = "table.VideoInWhiteBalance[0][0].";
+
+  const getVal = (key: string, def: any) => {
+    const fullKey = prefix + key;
+    return config[fullKey] !== undefined ? config[fullKey] : def;
+  };
+
+  const apiMode = getVal("Mode", "Auto");
+  
+  return {
+    mode: MODE_MAP_TO_UI[apiMode] || 'auto',
+    gainRed: Number(getVal("GainRed", 50)),
+    gainBlue: Number(getVal("GainBlue", 50)),
+    gainGreen: Number(getVal("GainGreen", 50)),
+  };
+};
+
+/**
+ * Converts UI state back to API payload
+ */
+const uiToApi = (ui: WhiteBalanceSettingsData) => {
+  // const prefix = "table.VideoInWhiteBalance[0][0].";
+  
+  // We mainly update the Mode here based on the UI
+  return {
+    [`Mode`]: MODE_MAP_TO_API[ui.mode],
+    // We include gains in the payload to ensure state consistency, 
+    // though they are only effective in 'Manual' mode.
+    [`GainRed`]: ui.gainRed,
+    [`GainBlue`]: ui.gainBlue,
+    [`GainGreen`]: ui.gainGreen,
+  };
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+const WhiteBalanceSettings: React.FC<WhiteBalanceSettingsProps> = () => {
+  const camId = useCamId();
+  const { data: apiData, isLoading, error, refetch } = useWhiteBalance(camId);
+  const mutation = useSetWhiteBalance(camId);
+
+  // Local State
+  const [settings, setSettings] = useState<WhiteBalanceSettingsData>(defaultState);
+
+  // Sync API -> UI
+  useEffect(() => {
+    if (apiData) {
+      const parsed = apiToUI(apiData);
+      setSettings(parsed);
+    }
+  }, [apiData]);
+
+  // Handlers
   const handleModeChange = (mode: WhiteBalanceSettingsData['mode']) => {
-    onSettingsChange({ mode });
+    const newSettings = { ...settings, mode };
+    setSettings(newSettings); // Optimistic update
+    mutation.mutate(uiToApi(newSettings));
   };
 
   const getModeDescription = (mode: WhiteBalanceSettingsData['mode']) => {
@@ -19,7 +130,7 @@ const WhiteBalanceSettings: React.FC<WhiteBalanceSettingsProps> = ({ settings, o
       'auto': "Le mode automatique ajuste automatiquement la balance des blancs en fonction des conditions d'éclairage détectées.",
       'indoor': "Optimisé pour l'éclairage intérieur typique avec des ampoules incandescentes ou fluorescentes.",
       'outdoor': "Conçu pour les conditions d'éclairage extérieur avec lumière naturelle du soleil.",
-      'tracking': "Suit et ajuste continuellement la balance des blancs en fonction des changements d'éclairage.",
+      'tracking': "Suit et ajuste continuellement la balance des blancs en fonction des changements d'éclairage (ATW).",
       'manual': "Permet un contrôle manuel complet de la balance des blancs pour des ajustements précis.",
       'sodium-lamp': "Optimisé pour l'éclairage aux lampes à sodium, couramment utilisé dans l'éclairage public.",
       'natural-light': "Réglé pour la lumière naturelle, idéal pour les environnements extérieurs pendant la journée.",
@@ -39,8 +150,35 @@ const WhiteBalanceSettings: React.FC<WhiteBalanceSettingsProps> = ({ settings, o
     { value: 'street-light', label: 'Éclairage Public', icon: '🌃' },
   ];
 
+  // Loading State
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Chargement de la Balance des Blancs...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      
+      {/* Error & Success Feedback */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-900/50 border border-red-700 text-red-300">
+          Erreur: {(error as Error).message}
+          <button onClick={() => refetch()} className="ml-4 underline hover:no-underline">Réessayer</button>
+        </div>
+      )}
+      {mutation.isPending && (
+         <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-700 text-blue-300 flex items-center gap-2 text-sm">
+           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300"></div>
+           Enregistrement en cours...
+         </div>
+      )}
+
       {/* White Balance Mode Selection */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Mode de Balance des Blancs</h2>
@@ -55,6 +193,7 @@ const WhiteBalanceSettings: React.FC<WhiteBalanceSettingsProps> = ({ settings, o
             <button
               key={mode.value}
               onClick={() => handleModeChange(mode.value)}
+              disabled={mutation.isPending}
               className={`group relative py-4 px-4 rounded-lg font-medium transition-all ${
                 settings.mode === mode.value
                   ? 'bg-red-600 text-white shadow-lg shadow-red-500/25 scale-105'
@@ -94,7 +233,7 @@ const WhiteBalanceSettings: React.FC<WhiteBalanceSettingsProps> = ({ settings, o
         </div>
       </div>
 
-      {/* Visual Preview Section (Optional - for future enhancement) */}
+      {/* Visual Preview Section */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Informations sur la Balance des Blancs</h2>
         <div className="space-y-3">

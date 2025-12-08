@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import ProfileManagement, { type ProfileManagementData } from "../components/camera/ProfileManagement"
 import PictureSettings, { type PictureSettingsData } from "../components/camera/PictureSettings"
 import ExposureSettings, { type ExposureSettingsData } from "../components/camera/ExposureSettings"
@@ -163,7 +163,10 @@ const CameraSettingsPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'profile' | 'picture' | 'exposure' | 'white-balance' | 'day-night' | 'zoom-focus' | 'defog' | 'video-encoding' | 'picture-stream' | 'video-overlay' | 'roi' | 'audio'>('profile');
   const [activeCategory, setActiveCategory] = useState<'profile' | 'conditions' | 'encoding'>('profile');
+ const videoRef = useRef<HTMLVideoElement | null>(null)
 
+  const [scale] = useState(1)
+  const [position] = useState({ x: 0, y: 0 })
   const handleSave = () => {
     // TODO: Implement actual save functionality to camera API
     console.log('Saving profile settings:', profileSettings);
@@ -332,11 +335,24 @@ const CameraSettingsPage: React.FC = () => {
               <div className="p-4 border-b border-gray-700">
                 <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">Aperçu en Direct</h3>
                 <div className="aspect-video bg-gray-900 rounded-lg border border-gray-600 flex items-center justify-center overflow-hidden">
-                  <div className="text-center p-4">
-                    <svg className="w-12 h-12 text-gray-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <p className="text-xs text-gray-500">Flux vidéo</p>
+                      <div className="relative w-full h-full overflow-hidden bg-black">
+                    <video
+                      ref={videoRef}
+                      className="object-fill"
+                      poster="/mjpeg"
+                      style={{
+                        transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
+                        transformOrigin: "center",
+                        transition: "transform 0.3s ease",
+                        width: "100%",
+                        height: "100%",
+                      }}
+                      autoPlay
+                      muted
+                      playsInline
+                    >
+                      Your browser does not support the video tag.
+                    </video>
                   </div>
                 </div>
               </div>

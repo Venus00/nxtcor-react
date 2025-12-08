@@ -1,18 +1,26 @@
-"use client"
+// components/camera/VideoOverlay.tsx
+import React, { useEffect, useState } from "react";
+import { useCamId } from "../../contexts/CameraContext";
+import {useOSD as useVideoWidget } from "../../hooks/useCameraQueries";
+import {useSetOSD as useSetVideoWidget } from "../../hooks/useCameraMutations";
 
-import type React from "react"
-import { useState } from "react"
+// =============================================================================
+// TYPES & INTERFACES
+// =============================================================================
 
 export interface PrivacyMaskArea {
   id: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  index: number; // API Index (0-3)
+  enabled: boolean;
+  x: number; // %
+  y: number; // %
+  width: number; // %
+  height: number; // %
 }
 
 export interface VideoOverlayData {
   privacyMasks: PrivacyMaskArea[];
+  
   channelTitle: {
     enabled: boolean;
     text: string;
@@ -26,57 +34,261 @@ export interface VideoOverlayData {
     y: number;
   };
   osdInfo: {
-    enabled: boolean;
+    enabled: boolean; // General toggle
     showPresetPoint: boolean;
     showPTZCoordinates: boolean;
     showPattern: boolean;
-    alignment: 'left' | 'right';
+    showZoom: boolean;
     x: number;
     y: number;
   };
   textOverlay: {
     enabled: boolean;
     text: string;
-    alignment: 'left' | 'right';
     x: number;
     y: number;
   };
   fontSize: 'small' | 'medium' | 'large';
   overlayPicture: {
     enabled: boolean;
-    imageUrl: string | null;
     x: number;
     y: number;
-    width: number;
-    height: number;
   };
   osdWarning: {
     enabled: boolean;
   };
-  gpsCoordinates: {
-    enabled: boolean;
-    latitude: string;
-    longitude: string;
+}
+
+const defaultState: VideoOverlayData = {
+  privacyMasks: [],
+  channelTitle: { enabled: true, text: "Camera 1", x: 5, y: 5 },
+  timeTitle: { enabled: true, showWeek: true, x: 80, y: 5 },
+  osdInfo: { enabled: false, showPresetPoint: false, showPTZCoordinates: false, showPattern: false, showZoom: false, x: 5, y: 90 },
+  textOverlay: { enabled: false, text: "", x: 50, y: 50 },
+  fontSize: 'medium',
+  overlayPicture: { enabled: false, x: 10, y: 10 },
+  osdWarning: { enabled: false },
+};
+
+const API_MAX_COORD = 8192;
+
+// =============================================================================
+// API MAPPING HELPERS
+// =============================================================================
+
+/**
+ * Helper: Convert API Rect [0-8192] to UI Percent [0-100]
+ */
+const rectToPercent = (x1: number, y1: number, x2: number, y2: number) => {
+  const safeX2 = Math.max(x1, x2);
+  const safeY2 = Math.max(y1, y2);
+  
+  // Avoid division by zero or NaN
+  const width = safeX2 - x1;
+  const height = safeY2 - y1;
+
+  return {
+    x: Math.min(100, Math.max(0, (x1 / API_MAX_COORD) * 100)),
+    y: Math.min(100, Math.max(0, (y1 / API_MAX_COORD) * 100)),
+    width: Math.min(100, (width / API_MAX_COORD) * 100),
+    height: Math.min(100, (height / API_MAX_COORD) * 100)
   };
-}
+};
 
-interface VideoOverlayProps {
-  settings: VideoOverlayData;
-  onSettingsChange: (settings: VideoOverlayData) => void;
-}
+/**
+ * Helper: Convert UI Percent [0-100] to API Rect [0-8192]
+ */
+const percentToRect = (x: number, y: number, w: number, h: number) => {
+  const x1 = Math.round((x / 100) * API_MAX_COORD);
+  const y1 = Math.round((y / 100) * API_MAX_COORD);
+  const x2 = Math.round(((x + w) / 100) * API_MAX_COORD);
+  const y2 = Math.round(((y + h) / 100) * API_MAX_COORD);
+  return [x1, y1, x2, y2];
+};
 
-const VideoOverlay: React.FC<VideoOverlayProps> = ({ settings, onSettingsChange }) => {
-  const [activeSection, setActiveSection] = useState<string>('privacy');
+/**
+ * PARSE API RESPONSE (GET)
+ * Reads keys starting with "table.VideoWidget[0]."
+ */
+const apiToUI = (data: any): VideoOverlayData => {
+  if (!data) return defaultState;
+  
+  const config = data.config || data;
+  const prefix = "table.VideoWidget[0]."; // GET uses table. prefix
 
-  const updateSettings = (key: keyof VideoOverlayData, value: any) => {
-    onSettingsChange({
-      ...settings,
-      [key]: value,
-    });
+  const getVal = (key: string, def: any) => config[prefix + key] ?? def;
+  const getBool = (key: string) => String(getVal(key, "false")) === "true";
+  const getInt = (key: string) => Number(getVal(key, 0));
+
+  // --- Coordinates & Rects ---
+  const chRect = rectToPercent(getInt("ChannelTitle.Rect[0]"), getInt("ChannelTitle.Rect[1]"), getInt("ChannelTitle.Rect[2]"), getInt("ChannelTitle.Rect[3]"));
+  const timeRect = rectToPercent(getInt("TimeTitle.Rect[0]"), getInt("TimeTitle.Rect[1]"), getInt("TimeTitle.Rect[2]"), getInt("TimeTitle.Rect[3]"));
+  // Use PTZCoordinates as anchor for OSD Info group
+  const ptzRect = rectToPercent(getInt("PTZCoordinates.Rect[0]"), getInt("PTZCoordinates.Rect[1]"), getInt("PTZCoordinates.Rect[2]"), getInt("PTZCoordinates.Rect[3]"));
+  const textRect = rectToPercent(getInt("CustomTitle[0].Rect[0]"), getInt("CustomTitle[0].Rect[1]"), getInt("CustomTitle[0].Rect[2]"), getInt("CustomTitle[0].Rect[3]"));
+  const picRect = rectToPercent(getInt("PictureTitle.Rect[0]"), getInt("PictureTitle.Rect[1]"), getInt("PictureTitle.Rect[2]"), getInt("PictureTitle.Rect[3]"));
+
+  // --- Privacy Masks (Covers) ---
+  const privacyMasks: PrivacyMaskArea[] = [];
+  for (let i = 0; i < 4; i++) {
+    const enabled = getBool(`Covers[${i}].EncodeBlend`);
+    const rect = rectToPercent(getInt(`Covers[${i}].Rect[0]`), getInt(`Covers[${i}].Rect[1]`), getInt(`Covers[${i}].Rect[2]`), getInt(`Covers[${i}].Rect[3]`));
+    
+    // Show if enabled OR has non-zero size
+    if (enabled || (rect.width > 0 && rect.height > 0)) {
+        privacyMasks.push({ id: i, index: i, enabled, ...rect });
+    }
+  }
+
+  // --- Font Size ---
+  const fontScale = getInt("FontSizeScale");
+  const fontSize = fontScale < 1 ? 'small' : fontScale > 1 ? 'large' : 'medium';
+
+  return {
+    privacyMasks,
+    channelTitle: {
+      enabled: getBool("ChannelTitle.EncodeBlend"),
+      text: getVal("ChannelTitle.Name", "Camera 1"),
+      x: chRect.x,
+      y: chRect.y
+    },
+    timeTitle: {
+      enabled: getBool("TimeTitle.EncodeBlend"),
+      showWeek: getBool("TimeTitle.ShowWeek"),
+      x: timeRect.x,
+      y: timeRect.y
+    },
+    osdInfo: {
+      // Logic: enabled if any sub-component is enabled
+      enabled: getBool("PTZCoordinates.EncodeBlend") || getBool("PTZPreset.EncodeBlend"), 
+      showPresetPoint: getBool("PTZPreset.EncodeBlend"),
+      showPTZCoordinates: getBool("PTZCoordinates.EncodeBlend"),
+      showPattern: getBool("PtzPattern.EncodeBlend"),
+      showZoom: getBool("PTZZoom.EncodeBlend"),
+      x: ptzRect.x,
+      y: ptzRect.y
+    },
+    textOverlay: {
+      enabled: getBool("CustomTitle[0].EncodeBlend"),
+      text: getVal("CustomTitle[0].Text", ""),
+      x: textRect.x,
+      y: textRect.y
+    },
+    fontSize,
+    overlayPicture: {
+      enabled: getBool("PictureTitle.EncodeBlend"),
+      x: picRect.x,
+      y: picRect.y,
+    },
+    osdWarning: {
+      enabled: false
+    }
+  };
+};
+
+/**
+ * BUILD API PAYLOAD (SET)
+ * Uses keys starting with "VideoWidget[0]." (NO "table." prefix)
+ */
+const uiToApi = (ui: VideoOverlayData) => {
+  const prefix = ""; // SET uses prefix without 'table.'
+  const payload: any = {};
+
+  // Helper to set rect
+  const setRect = (keyBase: string, x: number, y: number, w: number = 0, h: number = 0) => {
+    const [x1, y1, x2, y2] = percentToRect(x, y, w || 20, h || 5); 
+    payload[`${prefix}${keyBase}.Rect[0]`] = x1;
+    payload[`${prefix}${keyBase}.Rect[1]`] = y1;
+    payload[`${prefix}${keyBase}.Rect[2]`] = x2;
+    payload[`${prefix}${keyBase}.Rect[3]`] = y2;
+  };
+
+  // --- Channel Title ---
+  payload[`${prefix}ChannelTitle.EncodeBlend`] = ui.channelTitle.enabled;
+  payload[`${prefix}ChannelTitle.Name`] = ui.channelTitle.text;
+  setRect("ChannelTitle", ui.channelTitle.x, ui.channelTitle.y);
+
+  // --- Time Title ---
+  payload[`${prefix}TimeTitle.EncodeBlend`] = ui.timeTitle.enabled;
+  payload[`${prefix}TimeTitle.ShowWeek`] = ui.timeTitle.showWeek;
+  setRect("TimeTitle", ui.timeTitle.x, ui.timeTitle.y);
+
+  // --- OSD Elements ---
+  payload[`${prefix}PTZPreset.EncodeBlend`] = ui.osdInfo.showPresetPoint;
+  payload[`${prefix}PTZCoordinates.EncodeBlend`] = ui.osdInfo.showPTZCoordinates;
+  payload[`${prefix}PtzPattern.EncodeBlend`] = ui.osdInfo.showPattern;
+  payload[`${prefix}PTZZoom.EncodeBlend`] = ui.osdInfo.showZoom;
+  
+  // Sync positions for all OSD elements to the main OSD coordinates group
+  setRect("PTZCoordinates", ui.osdInfo.x, ui.osdInfo.y);
+  setRect("PTZPreset", ui.osdInfo.x, ui.osdInfo.y);
+  setRect("PtzPattern", ui.osdInfo.x, ui.osdInfo.y);
+  setRect("PTZZoom", ui.osdInfo.x, ui.osdInfo.y);
+
+  // --- Text Overlay (CustomTitle[0]) ---
+  payload[`${prefix}CustomTitle[0].EncodeBlend`] = ui.textOverlay.enabled;
+  payload[`${prefix}CustomTitle[0].Text`] = ui.textOverlay.text;
+  setRect("CustomTitle[0]", ui.textOverlay.x, ui.textOverlay.y);
+
+  // --- Font Size ---
+  const scale = ui.fontSize === 'small' ? 0.7 : ui.fontSize === 'large' ? 1.2 : 1;
+  payload[`${prefix}FontSizeScale`] = scale;
+
+  // --- Picture Overlay ---
+  payload[`${prefix}PictureTitle.EncodeBlend`] = ui.overlayPicture.enabled;
+  setRect("PictureTitle", ui.overlayPicture.x, ui.overlayPicture.y);
+
+  // --- Privacy Masks (Covers) ---
+  for (let i = 0; i < 4; i++) {
+    const mask = ui.privacyMasks.find(m => m.index === i);
+    if (mask) {
+      payload[`${prefix}Covers[${i}].EncodeBlend`] = true;
+      payload[`${prefix}Covers[${i}].PreviewBlend`] = true;
+      const [x1, y1, x2, y2] = percentToRect(mask.x, mask.y, mask.width, mask.height);
+      payload[`${prefix}Covers[${i}].Rect[0]`] = x1;
+      payload[`${prefix}Covers[${i}].Rect[1]`] = y1;
+      payload[`${prefix}Covers[${i}].Rect[2]`] = x2;
+      payload[`${prefix}Covers[${i}].Rect[3]`] = y2;
+    } else {
+      payload[`${prefix}Covers[${i}].EncodeBlend`] = false;
+      // It's good practice to send EncodeBlend=false to disable
+    }
+  }
+
+  return payload;
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+const VideoOverlay: React.FC = () => {
+  const camId = useCamId();
+  const { data: apiData, isLoading, error } = useVideoWidget(camId);
+  const mutation = useSetVideoWidget(camId);
+
+  // Local State
+  const [settings, setSettings] = useState<VideoOverlayData>(defaultState);
+  const [activeSection, setActiveSection] = useState<string>('titles');
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Sync API -> UI
+  useEffect(() => {
+    if (apiData) {
+      const parsed = apiToUI(apiData);
+      setSettings(parsed);
+      setIsDirty(false);
+    }
+  }, [apiData]);
+
+  // Handlers
+  const handleUpdate = (newSettings: VideoOverlayData) => {
+    setSettings(newSettings);
+    setIsDirty(true);
   };
 
   const updateNestedSettings = (parentKey: keyof VideoOverlayData, childKey: string, value: any) => {
-    onSettingsChange({
+    handleUpdate({
       ...settings,
       [parentKey]: {
         ...(settings[parentKey] as any),
@@ -85,35 +297,38 @@ const VideoOverlay: React.FC<VideoOverlayProps> = ({ settings, onSettingsChange 
     });
   };
 
-  const handleDrawMask = () => {
-    // Add a new mask with default position
+  const handleSave = () => {
+    const payload = uiToApi(settings);
+    mutation.mutate(payload);
+    setIsDirty(false);
+  };
+
+  // --- Mask Handlers ---
+  const handleAddMask = () => {
+    if (settings.privacyMasks.length >= 4) return;
+    
+    const usedIndices = settings.privacyMasks.map(m => m.index);
+    let newIndex = 0;
+    while (usedIndices.includes(newIndex)) newIndex++;
+
     const newMask: PrivacyMaskArea = {
       id: Date.now(),
-      x: 20,
-      y: 20,
-      width: 100,
-      height: 80,
+      index: newIndex,
+      enabled: true,
+      x: 20 + (newIndex * 5),
+      y: 20 + (newIndex * 5),
+      width: 20,
+      height: 15,
     };
-    updateSettings('privacyMasks', [...settings.privacyMasks, newMask]);
+    handleUpdate({ ...settings, privacyMasks: [...settings.privacyMasks, newMask] });
   };
 
   const handleDeleteMask = (id: number) => {
-    updateSettings('privacyMasks', settings.privacyMasks.filter(mask => mask.id !== id));
+    handleUpdate({ ...settings, privacyMasks: settings.privacyMasks.filter(m => m.id !== id) });
   };
 
   const handleClearMasks = () => {
-    updateSettings('privacyMasks', []);
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateNestedSettings('overlayPicture', 'imageUrl', reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    handleUpdate({ ...settings, privacyMasks: [] });
   };
 
   const sections = [
@@ -123,17 +338,44 @@ const VideoOverlay: React.FC<VideoOverlayProps> = ({ settings, onSettingsChange 
     { id: 'advanced', name: 'Advanced', icon: '⚙️' },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Chargement des paramètres OSD...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b border-gray-700 pb-4">
-        <h2 className="text-2xl font-bold text-white mb-2">Video Overlay Configuration</h2>
-        <p className="text-gray-400 text-sm">
-          Configure on-screen display elements, privacy masks, and overlay settings
-        </p>
+      
+      {/* Header & Feedback */}
+      <div className="border-b border-gray-700 pb-4 flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Configuration OSD</h2>
+          <p className="text-gray-400 text-sm">
+            Titres, date, masques de confidentialité et informations superposées
+          </p>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={!isDirty || mutation.isPending}
+          className="px-6 py-2 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 shadow-lg transition-colors"
+        >
+          {mutation.isPending ? 'Enregistrement...' : 'Sauvegarder'}
+        </button>
       </div>
 
-      {/* Section Navigation */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-900/50 border border-red-700 text-red-300">
+          Erreur: {(error as Error).message}
+        </div>
+      )}
+
+      {/* Tabs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {sections.map((section) => (
           <button
@@ -155,113 +397,83 @@ const VideoOverlay: React.FC<VideoOverlayProps> = ({ settings, onSettingsChange 
         ))}
       </div>
 
-      {/* Privacy Mask Section */}
+      {/* --- PRIVACY MASK TAB --- */}
       {activeSection === 'privacy' && (
         <div className="space-y-4">
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              Privacy Mask
-            </h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Masques de Confidentialité (Covers)</h3>
             <p className="text-sm text-gray-400 mb-4">
-              Set shielding areas within the monitoring screen for privacy protection
+              Définissez jusqu'à 4 zones de masquage pour protéger la vie privée.
             </p>
 
             <div className="flex flex-wrap gap-3 mb-4">
-              <button
-                onClick={handleDrawMask}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              <button 
+                onClick={handleAddMask} 
+                disabled={settings.privacyMasks.length >= 4}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Draw Mask
+                Ajouter Masque
               </button>
-              <button
-                onClick={handleClearMasks}
+              <button 
+                onClick={handleClearMasks} 
                 disabled={settings.privacyMasks.length === 0}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Clear All
+                Tout Effacer
               </button>
             </div>
 
-            {/* Preview Area */}
-            <div className="relative bg-gray-900 rounded-lg border-2 border-gray-600 aspect-video overflow-hidden">
-              <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <svg className="w-16 h-16 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  <p className="text-sm">Video Preview Area</p>
+            {/* Visual Editor */}
+            <div className="relative bg-gray-900 rounded-lg border-2 border-gray-600 aspect-video overflow-hidden group/editor">
+                <div className="absolute inset-0 flex items-center justify-center text-gray-500 pointer-events-none">
+                  Zone de Prévisualisation (1920x1080)
                 </div>
-              </div>
-              
-              {/* Privacy Masks */}
-              {settings.privacyMasks.map((mask) => (
-                <div
-                  key={mask.id}
-                  className="absolute bg-black/80 border-2 border-red-500 group cursor-move"
-                  style={{
-                    left: `${mask.x}%`,
-                    top: `${mask.y}%`,
-                    width: `${mask.width}px`,
-                    height: `${mask.height}px`,
-                  }}
-                >
-                  <button
-                    onClick={() => handleDeleteMask(mask.id)}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                {settings.privacyMasks.map((mask) => (
+                  <div 
+                    key={mask.id} 
+                    className="absolute bg-black/90 border border-red-500 flex items-center justify-center group"
+                    style={{ left: `${mask.x}%`, top: `${mask.y}%`, width: `${mask.width}%`, height: `${mask.height}%` }}
                   >
-                    ×
-                  </button>
-                  <div className="absolute inset-0 flex items-center justify-center text-white text-xs">
-                    Privacy Area
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Mask List */}
-            {settings.privacyMasks.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <h4 className="text-sm font-semibold text-gray-300">Active Privacy Masks ({settings.privacyMasks.length})</h4>
-                {settings.privacyMasks.map((mask, index) => (
-                  <div key={mask.id} className="flex items-center justify-between p-3 bg-gray-900/50 rounded border border-gray-700">
-                    <span className="text-sm text-gray-400">
-                      Mask #{index + 1} - Position: ({mask.x}%, {mask.y}%) - Size: {mask.width}×{mask.height}px
-                    </span>
-                    <button
-                      onClick={() => handleDeleteMask(mask.id)}
-                      className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                    <span className="text-xs text-white opacity-50 font-bold select-none">#{mask.index + 1}</span>
+                    <button 
+                        onClick={() => handleDeleteMask(mask.id)}
+                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
+                        title="Supprimer"
                     >
-                      Delete
+                        ×
                     </button>
                   </div>
                 ))}
+            </div>
+            
+            {/* List View */}
+            {settings.privacyMasks.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                  {settings.privacyMasks.map(mask => (
+                      <div key={mask.id} className="p-2 bg-gray-900/50 border border-gray-700 rounded flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <span className="text-white text-sm">Masque {mask.index + 1}</span>
+                          </div>
+                          <span className="text-xs text-gray-400">Pos: {Math.round(mask.x)}%, {Math.round(mask.y)}%</span>
+                      </div>
+                  ))}
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Titles Section */}
+      {/* --- TITLES TAB --- */}
       {activeSection === 'titles' && (
         <div className="space-y-4">
           {/* Channel Title */}
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                </svg>
-                Channel Title
-              </h3>
+              <h3 className="text-lg font-semibold text-white">Titre du Canal</h3>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -269,50 +481,31 @@ const VideoOverlay: React.FC<VideoOverlayProps> = ({ settings, onSettingsChange 
                   onChange={(e) => updateNestedSettings('channelTitle', 'enabled', e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
               </label>
             </div>
-            <p className="text-sm text-gray-400 mb-4">
-              Enable or disable channel title in the monitoring screen and adjust its position
-            </p>
             
             {settings.channelTitle.enabled && (
-              <div className="space-y-3">
+              <div className="space-y-4 animate-fadeIn">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Channel Name</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Nom</label>
                   <input
                     type="text"
                     value={settings.channelTitle.text}
                     onChange={(e) => updateNestedSettings('channelTitle', 'text', e.target.value)}
-                    placeholder="Enter channel name"
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500"
+                    className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:border-red-500 outline-none"
+                    placeholder="Nom de la caméra"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">X Position (%)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="90"
-                      value={settings.channelTitle.x}
-                      onChange={(e) => updateNestedSettings('channelTitle', 'x', parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                    <span className="text-xs text-gray-400">{settings.channelTitle.x}%</span>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Y Position (%)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="90"
-                      value={settings.channelTitle.y}
-                      onChange={(e) => updateNestedSettings('channelTitle', 'y', parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                    <span className="text-xs text-gray-400">{settings.channelTitle.y}%</span>
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-xs text-gray-400 mb-1 block">Position X ({settings.channelTitle.x}%)</label>
+                        <input type="range" min="0" max="100" value={settings.channelTitle.x} onChange={(e) => updateNestedSettings('channelTitle', 'x', parseInt(e.target.value))} className="w-full accent-red-600" />
+                    </div>
+                    <div>
+                        <label className="text-xs text-gray-400 mb-1 block">Position Y ({settings.channelTitle.y}%)</label>
+                        <input type="range" min="0" max="100" value={settings.channelTitle.y} onChange={(e) => updateNestedSettings('channelTitle', 'y', parseInt(e.target.value))} className="w-full accent-red-600" />
+                    </div>
                 </div>
               </div>
             )}
@@ -321,12 +514,7 @@ const VideoOverlay: React.FC<VideoOverlayProps> = ({ settings, onSettingsChange 
           {/* Time Title */}
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Time Title
-              </h3>
+              <h3 className="text-lg font-semibold text-white">Affichage Heure</h3>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -334,510 +522,179 @@ const VideoOverlay: React.FC<VideoOverlayProps> = ({ settings, onSettingsChange 
                   onChange={(e) => updateNestedSettings('timeTitle', 'enabled', e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
               </label>
             </div>
-            <p className="text-sm text-gray-400 mb-4">
-              Enable or disable time display in the monitoring screen
-            </p>
-            
-            {settings.timeTitle.enabled && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded border border-gray-700">
-                  <input
-                    type="checkbox"
-                    id="showWeek"
-                    checked={settings.timeTitle.showWeek}
-                    onChange={(e) => updateNestedSettings('timeTitle', 'showWeek', e.target.checked)}
-                    className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500"
-                  />
-                  <label htmlFor="showWeek" className="text-sm text-gray-300">Show Week Day</label>
+             
+             {settings.timeTitle.enabled && (
+                <div className="space-y-4 animate-fadeIn">
+                     <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer hover:text-white">
+                        <input type="checkbox" checked={settings.timeTitle.showWeek} onChange={(e) => updateNestedSettings('timeTitle', 'showWeek', e.target.checked)} className="rounded border-gray-600 text-red-600 focus:ring-red-500" />
+                        Afficher le jour de la semaine
+                     </label>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs text-gray-400 mb-1 block">Position X ({settings.timeTitle.x}%)</label>
+                            <input type="range" min="0" max="100" value={settings.timeTitle.x} onChange={(e) => updateNestedSettings('timeTitle', 'x', parseInt(e.target.value))} className="w-full accent-red-600" />
+                        </div>
+                        <div>
+                            <label className="text-xs text-gray-400 mb-1 block">Position Y ({settings.timeTitle.y}%)</label>
+                            <input type="range" min="0" max="100" value={settings.timeTitle.y} onChange={(e) => updateNestedSettings('timeTitle', 'y', parseInt(e.target.value))} className="w-full accent-red-600" />
+                        </div>
+                    </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">X Position (%)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="90"
-                      value={settings.timeTitle.x}
-                      onChange={(e) => updateNestedSettings('timeTitle', 'x', parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                    <span className="text-xs text-gray-400">{settings.timeTitle.x}%</span>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Y Position (%)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="90"
-                      value={settings.timeTitle.y}
-                      onChange={(e) => updateNestedSettings('timeTitle', 'y', parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                    <span className="text-xs text-gray-400">{settings.timeTitle.y}%</span>
-                  </div>
-                </div>
-              </div>
-            )}
+             )}
           </div>
         </div>
       )}
 
-      {/* Overlay Section */}
+      {/* --- OVERLAY TAB --- */}
       {activeSection === 'overlay' && (
         <div className="space-y-4">
-          {/* OSD Info */}
+          {/* OSD Info Group */}
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                OSD Info
-              </h3>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.osdInfo.enabled}
-                  onChange={(e) => updateNestedSettings('osdInfo', 'enabled', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-              </label>
+            <h3 className="text-lg font-semibold text-white mb-4">Informations OSD</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+               <label className="flex items-center gap-3 p-3 bg-gray-900/50 rounded border border-gray-700 cursor-pointer hover:border-gray-600">
+                 <input type="checkbox" checked={settings.osdInfo.showPresetPoint} onChange={(e) => updateNestedSettings('osdInfo', 'showPresetPoint', e.target.checked)} className="w-4 h-4 text-red-600 rounded bg-gray-800 border-gray-600" />
+                 <span className="text-gray-300 text-sm">Nom du Préréglage (Preset)</span>
+               </label>
+               <label className="flex items-center gap-3 p-3 bg-gray-900/50 rounded border border-gray-700 cursor-pointer hover:border-gray-600">
+                 <input type="checkbox" checked={settings.osdInfo.showPTZCoordinates} onChange={(e) => updateNestedSettings('osdInfo', 'showPTZCoordinates', e.target.checked)} className="w-4 h-4 text-red-600 rounded bg-gray-800 border-gray-600" />
+                 <span className="text-gray-300 text-sm">Coordonnées PTZ</span>
+               </label>
+               <label className="flex items-center gap-3 p-3 bg-gray-900/50 rounded border border-gray-700 cursor-pointer hover:border-gray-600">
+                 <input type="checkbox" checked={settings.osdInfo.showZoom} onChange={(e) => updateNestedSettings('osdInfo', 'showZoom', e.target.checked)} className="w-4 h-4 text-red-600 rounded bg-gray-800 border-gray-600" />
+                 <span className="text-gray-300 text-sm">Taux de Zoom</span>
+               </label>
+               <label className="flex items-center gap-3 p-3 bg-gray-900/50 rounded border border-gray-700 cursor-pointer hover:border-gray-600">
+                 <input type="checkbox" checked={settings.osdInfo.showPattern} onChange={(e) => updateNestedSettings('osdInfo', 'showPattern', e.target.checked)} className="w-4 h-4 text-red-600 rounded bg-gray-800 border-gray-600" />
+                 <span className="text-gray-300 text-sm">Pattern / Tour Info</span>
+               </label>
             </div>
-            <p className="text-sm text-gray-400 mb-4">
-              Display preset point, PTZ coordinates, and pattern information
-            </p>
             
-            {settings.osdInfo.enabled && (
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded border border-gray-700">
-                    <input
-                      type="checkbox"
-                      id="showPreset"
-                      checked={settings.osdInfo.showPresetPoint}
-                      onChange={(e) => updateNestedSettings('osdInfo', 'showPresetPoint', e.target.checked)}
-                      className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500"
-                    />
-                    <label htmlFor="showPreset" className="text-sm text-gray-300">Show Preset Point</label>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded border border-gray-700">
-                    <input
-                      type="checkbox"
-                      id="showPTZ"
-                      checked={settings.osdInfo.showPTZCoordinates}
-                      onChange={(e) => updateNestedSettings('osdInfo', 'showPTZCoordinates', e.target.checked)}
-                      className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500"
-                    />
-                    <label htmlFor="showPTZ" className="text-sm text-gray-300">Show PTZ Coordinates</label>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded border border-gray-700">
-                    <input
-                      type="checkbox"
-                      id="showPattern"
-                      checked={settings.osdInfo.showPattern}
-                      onChange={(e) => updateNestedSettings('osdInfo', 'showPattern', e.target.checked)}
-                      className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500"
-                    />
-                    <label htmlFor="showPattern" className="text-sm text-gray-300">Show Pattern</label>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Alignment</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => updateNestedSettings('osdInfo', 'alignment', 'left')}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        settings.osdInfo.alignment === 'left'
-                          ? 'border-red-500 bg-red-500/10'
-                          : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-                      }`}
-                    >
-                      <span className={settings.osdInfo.alignment === 'left' ? 'text-red-400' : 'text-white'}>Left Align</span>
-                    </button>
-                    <button
-                      onClick={() => updateNestedSettings('osdInfo', 'alignment', 'right')}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        settings.osdInfo.alignment === 'right'
-                          ? 'border-red-500 bg-red-500/10'
-                          : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-                      }`}
-                    >
-                      <span className={settings.osdInfo.alignment === 'right' ? 'text-red-400' : 'text-white'}>Right Align</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+            {/* Global Position for OSD Elements */}
+            <div className="p-4 bg-gray-900/30 rounded-lg">
+              <label className="text-xs text-gray-400 block mb-2 font-medium uppercase tracking-wider">Position du Groupe OSD</label>
+              <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">X Position (%)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="90"
-                      value={settings.osdInfo.x}
-                      onChange={(e) => updateNestedSettings('osdInfo', 'x', parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                    <span className="text-xs text-gray-400">{settings.osdInfo.x}%</span>
+                    <span className="text-xs text-gray-500 mb-1 block">Axe X ({settings.osdInfo.x}%)</span>
+                    <input type="range" min="0" max="100" value={settings.osdInfo.x} onChange={(e) => updateNestedSettings('osdInfo', 'x', parseInt(e.target.value))} className="w-full accent-blue-500" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Y Position (%)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="90"
-                      value={settings.osdInfo.y}
-                      onChange={(e) => updateNestedSettings('osdInfo', 'y', parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                    <span className="text-xs text-gray-400">{settings.osdInfo.y}%</span>
+                    <span className="text-xs text-gray-500 mb-1 block">Axe Y ({settings.osdInfo.y}%)</span>
+                    <input type="range" min="0" max="100" value={settings.osdInfo.y} onChange={(e) => updateNestedSettings('osdInfo', 'y', parseInt(e.target.value))} className="w-full accent-blue-500" />
                   </div>
-                </div>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Text Overlay */}
+          {/* Custom Text Overlay */}
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Text Overlay
-              </h3>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.textOverlay.enabled}
-                  onChange={(e) => updateNestedSettings('textOverlay', 'enabled', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-              </label>
+               <h3 className="text-lg font-semibold text-white">Texte Personnalisé</h3>
+               <label className="relative inline-flex items-center cursor-pointer">
+                 <input
+                   type="checkbox"
+                   checked={settings.textOverlay.enabled}
+                   onChange={(e) => updateNestedSettings('textOverlay', 'enabled', e.target.checked)}
+                   className="sr-only peer"
+                 />
+                 <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+               </label>
             </div>
-            <p className="text-sm text-gray-400 mb-4">
-              Add custom text overlay to the monitoring screen
-            </p>
-            
             {settings.textOverlay.enabled && (
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Overlay Text</label>
-                  <input
-                    type="text"
-                    value={settings.textOverlay.text}
+               <div className="space-y-4 animate-fadeIn">
+                 <input 
+                    type="text" 
+                    value={settings.textOverlay.text} 
                     onChange={(e) => updateNestedSettings('textOverlay', 'text', e.target.value)}
-                    placeholder="Enter overlay text"
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Alignment</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => updateNestedSettings('textOverlay', 'alignment', 'left')}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        settings.textOverlay.alignment === 'left'
-                          ? 'border-red-500 bg-red-500/10'
-                          : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-                      }`}
-                    >
-                      <span className={settings.textOverlay.alignment === 'left' ? 'text-red-400' : 'text-white'}>Left Align</span>
-                    </button>
-                    <button
-                      onClick={() => updateNestedSettings('textOverlay', 'alignment', 'right')}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        settings.textOverlay.alignment === 'right'
-                          ? 'border-red-500 bg-red-500/10'
-                          : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-                      }`}
-                    >
-                      <span className={settings.textOverlay.alignment === 'right' ? 'text-red-400' : 'text-white'}>Right Align</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">X Position (%)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="90"
-                      value={settings.textOverlay.x}
-                      onChange={(e) => updateNestedSettings('textOverlay', 'x', parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                    <span className="text-xs text-gray-400">{settings.textOverlay.x}%</span>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Y Position (%)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="90"
-                      value={settings.textOverlay.y}
-                      onChange={(e) => updateNestedSettings('textOverlay', 'y', parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                    <span className="text-xs text-gray-400">{settings.textOverlay.y}%</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Font Size */}
-          <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Font Size
-            </h3>
-            <p className="text-sm text-gray-400 mb-4">
-              Set the font size for all video overlay elements
-            </p>
-            
-            <div className="grid grid-cols-3 gap-3">
-              {(['small', 'medium', 'large'] as const).map((size) => (
-                <button
-                  key={size}
-                  onClick={() => updateSettings('fontSize', size)}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    settings.fontSize === size
-                      ? 'border-red-500 bg-red-500/10'
-                      : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-                  }`}
-                >
-                  <div className={`font-semibold capitalize ${
-                    settings.fontSize === size ? 'text-red-400' : 'text-white'
-                  } ${size === 'small' ? 'text-sm' : size === 'large' ? 'text-xl' : 'text-base'}`}>
-                    {size}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Picture Overlay */}
-          <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Picture Overlay
-              </h3>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.overlayPicture.enabled}
-                  onChange={(e) => updateNestedSettings('overlayPicture', 'enabled', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-              </label>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">
-              Upload and superimpose a picture on the video surveillance window
-            </p>
-            
-            <div className="p-4 bg-yellow-900/20 border border-yellow-600/50 rounded-lg mb-4">
-              <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <p className="text-sm text-yellow-200">
-                  <strong>Note:</strong> Geographic/road information in OSD Info and Picture Overlay cannot be enabled at the same time
-                </p>
-              </div>
-            </div>
-            
-            {settings.overlayPicture.enabled && (
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Upload Picture</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-red-600 file:text-white hover:file:bg-red-700"
-                  />
-                </div>
-                
-                {settings.overlayPicture.imageUrl && (
-                  <div className="p-4 bg-gray-900/50 rounded border border-gray-700">
-                    <img src={settings.overlayPicture.imageUrl} alt="Overlay" className="max-h-32 mx-auto mb-2" />
-                    <p className="text-xs text-gray-400 text-center">Preview of overlay picture</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">X Position (%)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="90"
-                      value={settings.overlayPicture.x}
-                      onChange={(e) => updateNestedSettings('overlayPicture', 'x', parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                    <span className="text-xs text-gray-400">{settings.overlayPicture.x}%</span>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Y Position (%)</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="90"
-                      value={settings.overlayPicture.y}
-                      onChange={(e) => updateNestedSettings('overlayPicture', 'y', parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                    <span className="text-xs text-gray-400">{settings.overlayPicture.y}%</span>
-                  </div>
-                </div>
-              </div>
+                    className="w-full bg-gray-900 border border-gray-600 rounded-lg text-white p-2 focus:border-red-500 outline-none"
+                    placeholder="Entrez le texte à afficher (Ex: Zone Nord)"
+                 />
+                 <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-400 mb-1 block">X (%)</label>
+                      <input type="range" min="0" max="100" value={settings.textOverlay.x} onChange={(e) => updateNestedSettings('textOverlay', 'x', parseInt(e.target.value))} className="w-full accent-red-600" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 mb-1 block">Y (%)</label>
+                      <input type="range" min="0" max="100" value={settings.textOverlay.y} onChange={(e) => updateNestedSettings('textOverlay', 'y', parseInt(e.target.value))} className="w-full accent-red-600" />
+                    </div>
+                 </div>
+               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Advanced Section */}
+      {/* --- ADVANCED TAB --- */}
       {activeSection === 'advanced' && (
-        <div className="space-y-4">
-          {/* OSD Warning */}
+        <div className="space-y-6">
           <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                OSD Warning
-              </h3>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.osdWarning.enabled}
-                  onChange={(e) => updateNestedSettings('osdWarning', 'enabled', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-              </label>
-            </div>
-            <p className="text-sm text-gray-400">
-              Enable or disable OSD warning messages in the monitoring screen
-            </p>
-          </div>
+              <h3 className="text-lg font-semibold text-white mb-4">Apparence</h3>
+              
+              {/* Font Size */}
+              <div className="mb-6">
+                  <label className="text-sm text-gray-300 block mb-3">Taille de Police OSD</label>
+                  <div className="flex gap-4">
+                      {['small', 'medium', 'large'].map(size => (
+                          <button
+                              key={size}
+                              onClick={() => handleUpdate({ ...settings, fontSize: size as any })}
+                              className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
+                                settings.fontSize === size 
+                                  ? 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-900/30' 
+                                  : 'bg-transparent border-gray-600 text-gray-400 hover:border-gray-500 hover:text-white'
+                              }`}
+                          >
+                              {size === 'small' ? 'Petite' : size === 'medium' ? 'Moyenne' : 'Grande'}
+                          </button>
+                      ))}
+                  </div>
+              </div>
 
-          {/* GPS Coordinates */}
-          <div className="bg-gray-800/40 rounded-lg p-6 border border-gray-700 opacity-60">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                GPS Coordinates
-                <span className="text-xs bg-gray-700 text-gray-400 px-2 py-1 rounded">Unavailable</span>
-              </h3>
-              <label className="relative inline-flex items-center opacity-50 cursor-not-allowed">
-                <input
-                  type="checkbox"
-                  checked={settings.gpsCoordinates.enabled}
-                  disabled
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-              </label>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">
-              Display latitude and longitude in the monitoring screen
-            </p>
-            <div className="p-4 bg-gray-900/50 border border-gray-700 rounded">
-              <p className="text-sm text-gray-500 text-center italic">
-                This function is currently unavailable
-              </p>
-            </div>
+              <div className="border-t border-gray-700 my-4"></div>
+
+              {/* Picture Overlay */}
+              <div className="mt-6">
+                  <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <span className="text-white font-medium block">Image Overlay (Logo)</span>
+                        <span className="text-xs text-gray-400">Superposer une image (ex: logo) sur le flux</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={settings.overlayPicture.enabled}
+                          onChange={(e) => updateNestedSettings('overlayPicture', 'enabled', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                      </label>
+                  </div>
+                  
+                  {settings.overlayPicture.enabled && (
+                      <div className="p-4 bg-gray-900/50 rounded-lg animate-fadeIn">
+                          <p className="text-xs text-yellow-500 mb-3">
+                            ⚠️ Note: L'image doit être uploadée via l'outil de gestion de fichiers avant d'être activée ici.
+                          </p>
+                          <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                 <label className="text-xs text-gray-400 mb-1 block">Position X</label>
+                                 <input type="range" min="0" max="100" value={settings.overlayPicture.x} onChange={(e) => updateNestedSettings('overlayPicture', 'x', parseInt(e.target.value))} className="w-full accent-green-500" />
+                              </div>
+                              <div>
+                                 <label className="text-xs text-gray-400 mb-1 block">Position Y</label>
+                                 <input type="range" min="0" max="100" value={settings.overlayPicture.y} onChange={(e) => updateNestedSettings('overlayPicture', 'y', parseInt(e.target.value))} className="w-full accent-green-500" />
+                              </div>
+                          </div>
+                      </div>
+                  )}
+              </div>
           </div>
         </div>
       )}
-
-      {/* Summary */}
-      <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 rounded-lg p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          Active Overlay Elements
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          <div className={`p-4 rounded border ${settings.channelTitle.enabled ? 'bg-green-900/20 border-green-600/50' : 'bg-gray-900/50 border-gray-700'}`}>
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${settings.channelTitle.enabled ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-              <span className="text-sm text-gray-300">Channel Title</span>
-            </div>
-          </div>
-
-          <div className={`p-4 rounded border ${settings.timeTitle.enabled ? 'bg-green-900/20 border-green-600/50' : 'bg-gray-900/50 border-gray-700'}`}>
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${settings.timeTitle.enabled ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-              <span className="text-sm text-gray-300">Time Title</span>
-            </div>
-          </div>
-
-          <div className={`p-4 rounded border ${settings.osdInfo.enabled ? 'bg-green-900/20 border-green-600/50' : 'bg-gray-900/50 border-gray-700'}`}>
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${settings.osdInfo.enabled ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-              <span className="text-sm text-gray-300">OSD Info</span>
-            </div>
-          </div>
-
-          <div className={`p-4 rounded border ${settings.textOverlay.enabled ? 'bg-green-900/20 border-green-600/50' : 'bg-gray-900/50 border-gray-700'}`}>
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${settings.textOverlay.enabled ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-              <span className="text-sm text-gray-300">Text Overlay</span>
-            </div>
-          </div>
-
-          <div className={`p-4 rounded border ${settings.overlayPicture.enabled ? 'bg-green-900/20 border-green-600/50' : 'bg-gray-900/50 border-gray-700'}`}>
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${settings.overlayPicture.enabled ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-              <span className="text-sm text-gray-300">Picture Overlay</span>
-            </div>
-          </div>
-
-          <div className={`p-4 rounded border ${settings.osdWarning.enabled ? 'bg-green-900/20 border-green-600/50' : 'bg-gray-900/50 border-gray-700'}`}>
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${settings.osdWarning.enabled ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-              <span className="text-sm text-gray-300">OSD Warning</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 p-4 bg-gray-900/50 rounded border border-gray-700">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-400">Privacy Masks:</span>
-              <span className="ml-2 text-white font-semibold">{settings.privacyMasks.length}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Font Size:</span>
-              <span className="ml-2 text-white font-semibold capitalize">{settings.fontSize}</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

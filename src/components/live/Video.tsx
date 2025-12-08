@@ -40,20 +40,40 @@ const VideoStream: React.FC = () => {
   const move = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
     console.log(direction, `speed: ${speed}`);
     try {
-      if (direction === 'focus_in' || direction === 'focus_out') {
-        const res = await fetch(`http://${window.location.hostname}:3000/focus/${camId}/move`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ direction, time: 1, speed }),
-        });
-        const data = await res.json();
-        console.log(data);
-        return;
+      let endpoint = '';
+
+      // Map direction to specific API endpoint
+      switch (direction) {
+        case 'up':
+          endpoint = `/camera/${camId}/ptz/move/up`;
+          break;
+        case 'down':
+          endpoint = `/camera/${camId}/ptz/move/down`;
+          break;
+        case 'left':
+          endpoint = `/camera/${camId}/ptz/move/left`;
+          break;
+        case 'right':
+          endpoint = `/camera/${camId}/ptz/move/right`;
+          break;
+        case 'zoom_in':
+          endpoint = `/camera/${camId}/ptz/zoom/in`;
+          break;
+        case 'zoom_out':
+          endpoint = `/camera/${camId}/ptz/zoom/out`;
+          break;
+        case 'focus_in':
+          endpoint = `/camera/${camId}/ptz/focus/near`;
+          break;
+        case 'focus_out':
+          endpoint = `/camera/${camId}/ptz/focus/far`;
+          break;
       }
-      const res = await fetch(`http://${window.location.hostname}:3000/ptz/${camId}/move`, {
+
+      const res = await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ direction, time: 1, speed }),
+        body: JSON.stringify({ channel: 0, speed }),
       });
       const data = await res.json();
       console.log(data);
@@ -65,20 +85,40 @@ const VideoStream: React.FC = () => {
   const stop = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
     console.log(direction, `speed: ${speed}`);
     try {
-      if (direction === 'focus_in' || direction === 'focus_out') {
-        const res = await fetch(`http://${window.location.hostname}:3000/focus/${camId}/stop`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ direction, time: 1, speed }),
-        });
-        const data = await res.json();
-        console.log(data);
-        return;
+      let endpoint = '';
+
+      // Map direction to specific stop endpoint
+      switch (direction) {
+        case 'up':
+          endpoint = `/camera/${camId}/ptz/move/stop`;
+          break;
+        case 'down':
+          endpoint = `/camera/${camId}/ptz/move/stop`;
+          break;
+        case 'left':
+          endpoint = `/camera/${camId}/ptz/move/stop`;
+          break;
+        case 'right':
+          endpoint = `/camera/${camId}/ptz/move/stop`;
+          break;
+        case 'zoom_in':
+          endpoint = `/camera/${camId}/ptz/zoom/stop`;
+          break;
+        case 'zoom_out':
+          endpoint = `/camera/${camId}/ptz/zoom/stop`;
+          break;
+        case 'focus_in':
+          endpoint = `/camera/${camId}/ptz/focus/stop`;
+          break;
+        case 'focus_out':
+          endpoint = `/camera/${camId}/ptz/focus/stop`;
+          break;
       }
-      const res = await fetch(`http://${window.location.hostname}:3000/ptz/${camId}/stop`, {
+
+      const res = await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ direction, time: 1, speed }),
+        body: JSON.stringify({ channel: 0 }),
       });
       const data = await res.json();
       console.log(data);
@@ -112,6 +152,21 @@ const VideoStream: React.FC = () => {
   const zoomOutHandlers = createHoldHandlers('zoom_out', zoomOutIntervalRef);
   const focusInHandlers = createHoldHandlers('focus_in', focusInIntervalRef);
   const focusOutHandlers = createHoldHandlers('focus_out', focusOutIntervalRef);
+
+  const handleWiperOn = async () => {
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3000/camera/${camId}/ptz/wiper/on`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: 0 }),
+      });
+      const data = await res.json();
+      console.log('Wiper activated:', data);
+    } catch (err) {
+      console.error('Error activating wiper:', err);
+    }
+  };
+
   useEffect(() => {
     return () => {
       [upIntervalRef, downIntervalRef, leftIntervalRef, rightIntervalRef, zoomInIntervalRef, zoomOutIntervalRef, focusInIntervalRef, focusOutIntervalRef].forEach(ref => {
@@ -261,6 +316,26 @@ const VideoStream: React.FC = () => {
                   <Plus size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
               </div>
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">WIPER</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center mb-6">
+                <button
+                  onClick={handleWiperOn}
+                  className="group w-full h-12 bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 border border-purple-400/30 hover:border-purple-400/50 text-purple-100 hover:text-white rounded-xl flex items-center justify-center space-x-2 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20"
+                  aria-label="Activate Wiper"
+                >
+                  <Circle size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <span className="text-sm font-medium tracking-wide">WIPER ON</span>
+                </button>
+              </div>
+
               <div className="relative mb-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>

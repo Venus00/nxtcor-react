@@ -1,4 +1,12 @@
-import type React from "react"
+// components/camera/DefogSettings.tsx
+import React, { useEffect, useState } from "react";
+import { useCamId } from "../../contexts/CameraContext";
+import { useDefog } from "../../hooks/useCameraQueries";
+import { useSetDefog } from "../../hooks/useCameraMutations";
+
+// =============================================================================
+// TYPES & INTERFACES
+// =============================================================================
 
 export interface DefogSettingsData {
   mode: 'off' | 'auto' | 'manual';
@@ -6,17 +14,105 @@ export interface DefogSettingsData {
 }
 
 interface DefogSettingsProps {
-  settings: DefogSettingsData;
-  onSettingsChange: (settings: DefogSettingsData) => void;
+  // Component manages data internally now
 }
 
-const DefogSettings: React.FC<DefogSettingsProps> = ({ settings, onSettingsChange }) => {
+// =============================================================================
+// API MAPPING HELPERS
+// =============================================================================
+
+const defaultState: DefogSettingsData = {
+  mode: 'off',
+  intensity: 'middle',
+};
+
+/**
+ * Parses the flat API response keys into a structured UI object.
+ * Fixed to Index [0][0] per request.
+ * API Ref: Mode (Off, Auto, Manul), Intensity (0:Low, 1:Middle, 2:High)
+ */
+const apiToUI = (data: any): DefogSettingsData => {
+  if (!data) return defaultState;
+
+  const config = data.config || data;
+  const prefix = "table.VideoInDefog[0][0].";
+
+  const getVal = (key: string, def: any) => {
+    const fullKey = prefix + key;
+    return config[fullKey] !== undefined ? config[fullKey] : def;
+  };
+
+  // Map Mode
+  const apiMode = getVal("Mode", "Off");
+  let mode: DefogSettingsData['mode'] = 'off';
+  if (apiMode === "Auto") mode = 'auto';
+  else if (apiMode === "Manul") mode = 'manual'; // Note API spelling "Manul"
+
+  // Map Intensity
+  const apiIntensity = Number(getVal("Intensity", 1));
+  let intensity: DefogSettingsData['intensity'] = 'middle';
+  if (apiIntensity === 0) intensity = 'low';
+  else if (apiIntensity === 2) intensity = 'high';
+
+  return { mode, intensity };
+};
+
+/**
+ * Converts UI state back to API payload.
+ */
+const uiToApi = (ui: DefogSettingsData) => {
+  // const prefix = "table.VideoInDefog[0][0].";
+
+  // Map Mode
+  let apiMode = "Off";
+  if (ui.mode === 'auto') apiMode = "Auto";
+  else if (ui.mode === 'manual') apiMode = "Manul"; // API specific spelling
+
+  // Map Intensity
+  let apiIntensity = 1;
+  if (ui.intensity === 'low') apiIntensity = 0;
+  else if (ui.intensity === 'high') apiIntensity = 2;
+
+  return {
+    [`Mode`]: apiMode,
+    // Only send intensity if manual mode is active or being activated, 
+    // though sending it always is safer for state consistency
+    [`Intensity`]: apiIntensity,
+  };
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+const DefogSettings: React.FC<DefogSettingsProps> = () => {
+  const camId = useCamId();
+  const { data: apiData, isLoading, error, refetch } = useDefog(camId);
+  const mutation = useSetDefog(camId);
+
+  // Local State
+  const [settings, setSettings] = useState<DefogSettingsData>(defaultState);
+
+  // Sync API -> UI
+  useEffect(() => {
+    if (apiData) {
+      const parsed = apiToUI(apiData);
+      setSettings(parsed);
+    }
+  }, [apiData]);
+
+  // Handlers
+  const handleUpdate = (newSettings: DefogSettingsData) => {
+    setSettings(newSettings);
+    mutation.mutate(uiToApi(newSettings));
+  };
+
   const handleModeChange = (mode: DefogSettingsData['mode']) => {
-    onSettingsChange({ ...settings, mode });
+    handleUpdate({ ...settings, mode });
   };
 
   const handleIntensityChange = (intensity: DefogSettingsData['intensity']) => {
-    onSettingsChange({ ...settings, intensity });
+    handleUpdate({ ...settings, intensity });
   };
 
   const getModeDescription = (mode: DefogSettingsData['mode']) => {
@@ -28,8 +124,34 @@ const DefogSettings: React.FC<DefogSettingsProps> = ({ settings, onSettingsChang
     return descriptions[mode];
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Chargement du Débrouillage...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      
+      {/* Feedback Messages */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-900/50 border border-red-700 text-red-300">
+          Erreur: {(error as Error).message}
+          <button onClick={() => refetch()} className="ml-4 underline hover:no-underline">Réessayer</button>
+        </div>
+      )}
+      {mutation.isPending && (
+         <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-700 text-blue-300 flex items-center gap-2 text-sm">
+           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300"></div>
+           Enregistrement en cours...
+         </div>
+      )}
+
       {/* Mode Selection */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Mode de Débrouillage</h2>
@@ -169,7 +291,7 @@ const DefogSettings: React.FC<DefogSettingsProps> = ({ settings, onSettingsChang
                 </div>
                 <div>
                   <div className="font-bold text-lg">Faible</div>
-                  <div className="text-xs mt-1 opacity-90">Débrouillage léger</div>
+                  <div className="text-xs mt-1 opacity-90">Débrouillage léger (API: 0)</div>
                 </div>
               </div>
               {settings.intensity === 'low' && (
@@ -200,7 +322,7 @@ const DefogSettings: React.FC<DefogSettingsProps> = ({ settings, onSettingsChang
                 </div>
                 <div>
                   <div className="font-bold text-lg">Moyen</div>
-                  <div className="text-xs mt-1 opacity-90">Débrouillage équilibré</div>
+                  <div className="text-xs mt-1 opacity-90">Débrouillage équilibré (API: 1)</div>
                 </div>
               </div>
               {settings.intensity === 'middle' && (
@@ -231,7 +353,7 @@ const DefogSettings: React.FC<DefogSettingsProps> = ({ settings, onSettingsChang
                 </div>
                 <div>
                   <div className="font-bold text-lg">Élevé</div>
-                  <div className="text-xs mt-1 opacity-90">Débrouillage maximal</div>
+                  <div className="text-xs mt-1 opacity-90">Débrouillage maximal (API: 2)</div>
                 </div>
               </div>
               {settings.intensity === 'high' && (

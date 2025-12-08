@@ -1,56 +1,65 @@
 // hooks/useCameraQueries.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from './api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "./api";
 
 // =============================================================================
 // QUERY KEYS - Centralized for consistency
 // =============================================================================
 export const cameraKeys = {
   // System
-  system: (camId: string) => ['camera', camId, 'system'] as const,
-  systemInfo: (camId: string) => ['camera', camId, 'system', 'info'] as const,
-  systemTime: (camId: string) => ['camera', camId, 'system', 'time'] as const,
+  system: (camId: string) => ["camera", camId, "system"] as const,
+  systemInfo: (camId: string) => ["camera", camId, "system", "info"] as const,
+  systemTime: (camId: string) => ["camera", camId, "system", "time"] as const,
 
   // Video
-    videoMode: (camId: string) => ['camera', camId, 'video', 'mode'] as const,
-  setup: (camId: string) => ['camera', camId, 'setup'] as const,
-  videoColor: (camId: string) => ['camera', camId, 'video', 'color'] as const,
-  exposure: (camId: string) => ['camera', camId, 'video', 'exposure'] as const,
-  dayNight: (camId: string) => ['camera', camId, 'video', 'daynight'] as const,
-  focus: (camId: string) => ['camera', camId, 'video', 'focus'] as const,
-  zoom: (camId: string) => ['camera', camId, 'video', 'zoom'] as const,
-  flip: (camId: string) => ['camera', camId, 'video', 'flip'] as const,
-  backlight: (camId: string) => ['camera', camId, 'video', 'backlight'] as const,
-  defog: (camId: string) => ['camera', camId, 'video', 'defog'] as const,
-  encode: (camId: string) => ['camera', camId, 'encode'] as const,
-  osd: (camId: string) => ['camera', camId, 'osd'] as const,
-
+  videoMode: (camId: string) => ["camera", camId, "video", "mode"] as const,
+  setup: (camId: string) => ["camera", camId, "setup"] as const,
+  videoColor: (camId: string) => ["camera", camId, "video", "color"] as const,
+  videoSharpness: (camId: string) =>
+    ["camera", camId, "video", "Sharpness"] as const,
+  exposure: (camId: string) => ["camera", camId, "video", "exposure"] as const,
+  dayNight: (camId: string) => ["camera", camId, "video", "daynight"] as const,
+  whitebalance: (camId: string) =>
+    ["camera", camId, "video", "whitebalance"] as const,
+  focus: (camId: string) => ["camera", camId, "video", "focus"] as const,
+  zoom: (camId: string) => ["camera", camId, "video", "zoom"] as const,
+  flip: (camId: string) => ["camera", camId, "video", "flip"] as const,
+  backlight: (camId: string) =>
+    ["camera", camId, "video", "backlight"] as const,
+  defog: (camId: string) => ["camera", camId, "video", "defog"] as const,
+  denoise: (camId: string) => ["camera", camId, "video", "denoise"] as const,
+  encode: (camId: string) => ["camera", camId, "encode"] as const,
+  osd: (camId: string) => ["camera", camId, "osd"] as const,
+  audio: (camId: string) => ["camera", camId, "encode", "audio"] as const,
+  videoROI: (camId: string) => ["camera", camId, "videoROI"] as const,
   // Network
-  network: (camId: string) => ['camera', camId, 'network'] as const,
-  tcpIp: (camId: string) => ['camera', camId, 'network', 'tcpip'] as const,
-  rtsp: (camId: string) => ['camera', camId, 'network', 'rtsp'] as const,
-  onvif: (camId: string) => ['camera', camId, 'network', 'onvif'] as const,
+  network: (camId: string) => ["camera", camId, "network"] as const,
+  tcpIp: (camId: string) => ["camera", camId, "network", "tcpip"] as const,
+  rtsp: (camId: string) => ["camera", camId, "network", "rtsp"] as const,
+  onvif: (camId: string) => ["camera", camId, "network", "onvif"] as const,
 
   // PTZ
-  ptz: (camId: string) => ['camera', camId, 'ptz'] as const,
-  ptzStatus: (camId: string) => ['camera', camId, 'ptz', 'status'] as const,
-  presets: (camId: string) => ['camera', camId, 'ptz', 'presets'] as const,
-  tours: (camId: string) => ['camera', camId, 'ptz', 'tours'] as const,
+  ptz: (camId: string) => ["camera", camId, "ptz"] as const,
+  ptzStatus: (camId: string) => ["camera", camId, "ptz", "status"] as const,
+  presets: (camId: string) => ["camera", camId, "ptz", "presets"] as const,
+  tours: (camId: string) => ["camera", camId, "ptz", "tours"] as const,
 
   // Events
-  events: (camId: string) => ['camera', camId, 'events'] as const,
-  motion: (camId: string) => ['camera', camId, 'events', 'motion'] as const,
-  tamper: (camId: string) => ['camera', camId, 'events', 'tamper'] as const,
-  audioDetect: (camId: string) => ['camera', camId, 'events', 'audio'] as const,
+  events: (camId: string) => ["camera", camId, "events"] as const,
+  motion: (camId: string) => ["camera", camId, "events", "motion"] as const,
+  tamper: (camId: string) => ["camera", camId, "events", "tamper"] as const,
+  audioDetect: (camId: string) => ["camera", camId, "events", "audio"] as const,
 
   // Storage
-  storage: (camId: string) => ['camera', camId, 'storage'] as const,
-  storageDevice: (camId: string) => ['camera', camId, 'storage', 'device'] as const,
+  storage: (camId: string) => ["camera", camId, "storage"] as const,
+  storageDevice: (camId: string) =>
+    ["camera", camId, "storage", "device"] as const,
 
   // Live
-  rtspUrls: (camId: string) => ['camera', camId, 'live', 'rtsp'] as const,
-  snapshotUrls: (camId: string) => ['camera', camId, 'live', 'snapshot'] as const,
-  thermal: (camId: string) => ['camera', camId, 'live', 'thermal'] as const,
+  rtspUrls: (camId: string) => ["camera", camId, "live", "rtsp"] as const,
+  snapshotUrls: (camId: string) =>
+    ["camera", camId, "live", "snapshot"] as const,
+  thermal: (camId: string) => ["camera", camId, "live", "thermal"] as const,
 };
 
 // =============================================================================
@@ -84,29 +93,32 @@ export function useAllSystem(camId: string, enabled = true) {
 // VIDEO QUERIES
 // =============================================================================
 
-
-
 // =============================================================================
 // VIDEO MODE TYPES
 // =============================================================================
 export interface VideoInModeRaw {
-  mode: number;           // 0 = full-time, 1 = schedule
-  config0: number;        // 0=Day, 1=Night, 2=Normal
-  config1: number;        // Used in schedule mode
+  mode: number; // 0 = full-time, 1 = schedule
+  config0: number; // 0=Day, 1=Night, 2=Normal
+  config1: number; // Used in schedule mode
   timeSection: string[][]; // [7 days][6 periods] - "enabled HH:MM:SS-HH:MM:SS"
 }
 
 // =============================================================================
 // VIDEO MODE PARSER
 // =============================================================================
-function parseVideoInModeResponse(config: Record<string, any>, channel = 0): VideoInModeRaw {
+function parseVideoInModeResponse(
+  config: Record<string, any>,
+  channel = 0
+): VideoInModeRaw {
   const data: VideoInModeRaw = {
     mode: 0,
     config0: 0,
     config1: 0,
-    timeSection: Array(7).fill(null).map(() => Array(6).fill('0 00:00:00-23:59:59')),
+    timeSection: Array(7)
+      .fill(null)
+      .map(() => Array(6).fill("0 00:00:00-23:59:59")),
   };
-  console.log(config)
+  console.log(config);
   for (const [key, value] of Object.entries(config)) {
     if (key === `table.VideoInMode[${channel}].Mode`) {
       data.mode = parseInt(String(value), 10) || 0;
@@ -117,8 +129,10 @@ function parseVideoInModeResponse(config: Record<string, any>, channel = 0): Vid
     if (key === `table.VideoInMode[${channel}].Config[1]`) {
       data.config1 = parseInt(String(value), 10) || 0;
     }
-    
-    const tsMatch = key.match(/table\.VideoInMode\[(\d+)\]\.TimeSection\[(\d+)\]\[(\d+)\]/);
+
+    const tsMatch = key.match(
+      /table\.VideoInMode\[(\d+)\]\.TimeSection\[(\d+)\]\[(\d+)\]/
+    );
     if (tsMatch && parseInt(tsMatch[1], 10) === channel) {
       const day = parseInt(tsMatch[2], 10);
       const period = parseInt(tsMatch[3], 10);
@@ -160,10 +174,41 @@ export function useVideoColor(camId: string, enabled = true) {
   });
 }
 
+export function useVideoInDenoise(camId: string, enabled = true) {
+  return useQuery({
+    queryKey: cameraKeys.denoise(camId),
+    queryFn: () => apiFetch(`/camera/${camId}/video/denoise`),
+    enabled,
+  });
+}
+
+export function useVideoImageControl(camId: string, enabled = true) {
+  return useQuery({
+    queryKey: cameraKeys.flip(camId),
+    queryFn: () => apiFetch(`/camera/${camId}/video/flip`),
+    enabled,
+  });
+}
+export function useVideoSharpness(camId: string, enabled = true) {
+  return useQuery({
+    queryKey: cameraKeys.videoSharpness(camId),
+    queryFn: () => apiFetch(`/camera/${camId}/video/sharpness`),
+    enabled,
+  });
+}
+
 export function useExposure(camId: string, enabled = true) {
   return useQuery({
     queryKey: cameraKeys.exposure(camId),
     queryFn: () => apiFetch(`/camera/${camId}/video/exposure`),
+    enabled,
+  });
+}
+
+export function useWhiteBalance(camId: string, enabled = true) {
+  return useQuery({
+    queryKey: cameraKeys.whitebalance(camId),
+    queryFn: () => apiFetch(`/camera/${camId}/video/whitebalance`),
     enabled,
   });
 }
@@ -224,6 +269,22 @@ export function useEncode(camId: string, enabled = true) {
   });
 }
 
+export function useAudioEncode(camId: string) {
+  return useQuery({
+    queryKey: cameraKeys.audio(camId),
+
+    queryFn: () => apiFetch(`/camera/${camId}/encode/audio`),
+  });
+}
+// =============================================================================
+
+export function useVideoEncodeROI(camId: string, enabled = true) {
+  return useQuery({
+    queryKey: cameraKeys.videoROI(camId),
+    queryFn: () => apiFetch(`/camera/${camId}/video/videoROI`),
+    enabled,
+  });
+}
 export function useOSD(camId: string, enabled = true) {
   return useQuery({
     queryKey: cameraKeys.osd(camId),

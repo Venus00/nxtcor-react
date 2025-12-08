@@ -30,9 +30,9 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
         setIsPresetRunning(false);
         setActivePreset(null);
         try {
-            await axios.post(`http://${window.location.hostname}:3000/ptz/cam1/stop`, { direction: 'stop' });
-            await axios.post(`http://${window.location.hostname}:3000/focus/cam1/stop`, { direction: 'focus_in' });
-            await axios.post(`http://${window.location.hostname}:3000/focus/cam1/stop`, { direction: 'focus_out' });
+            await axios.post(`http://${window.location.hostname}:3000/ptz/cam1/move/stop`, { direction: 'stop' });
+            await axios.post(`http://${window.location.hostname}:3000/focus/cam1/focus/stop`, { direction: 'focus_in' });
+            await axios.post(`http://${window.location.hostname}:3000/focus/cam1/zoom/stop`, { direction: 'focus_out' });
         } catch (err) {
             // ignore errors for stop
         }
@@ -70,50 +70,7 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
                         }}
                     />
                 </div>
-                {/* Image and markers - smaller */}
-                <div className="relative w-full max-w-xs aspect-video" style={{ aspectRatio: '16/9' }}>
-                    <img src={`/assets/background${name === 'Normal Camera' ? '' : '2'}.jpeg`} alt="Preset Background" className="rounded-lg w-full h-auto border" />
-                    {/* Markers: 5 for Normal (one center), 3 horizontal for Thermal */}
-                    {isPresetRunning && activePreset !== null ? (
-                        <button
-                            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg px-6 py-2 shadow-lg border-2 border-white text-base font-bold z-20"
-                            style={{ minWidth: 80, minHeight: 40 }}
-                            onClick={handleStopClick}
-                        >Stop</button>
-                    ) : name === 'Normal Camera' ? (
-                        [
-                            { preset: 1, style: { top: '15%', left: '20%' } },
-                            { preset: 2, style: { top: '15%', left: '75%' } },
-                            { preset: 4, style: { top: '75%', left: '20%' } },
-                            { preset: 3, style: { top: '75%', left: '75%' } },
-                            { preset: 5, style: { top: '45%', left: '48%' } }, // center
-                        ].map(({ preset, style }) => (
-                            <button
-                                key={preset}
-                                className={`absolute bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg border-2 border-white text-base font-bold ${isPresetRunning ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:bg-blue-800'}`}
-                                style={style}
-                                title={`Preset ${preset}`}
-                                onClick={() => !isPresetRunning && handlePresetClick(preset)}
-                                disabled={isPresetRunning}
-                            >{preset}</button>
-                        ))
-                    ) : (
-                        [
-                            { preset: 6, style: { top: '50%', left: '20%', transform: 'translateY(-50%)' } },
-                            { preset: 7, style: { top: '50%', left: '50%', transform: 'translateY(-50%)' } },
-                            { preset: 8, style: { top: '50%', left: '80%', transform: 'translateY(-50%)' } },
-                        ].map(({ preset, style }) => (
-                            <button
-                                key={preset}
-                                className={`absolute bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg border-2 border-white text-base font-bold ${isPresetRunning ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:bg-red-800'}`}
-                                style={style}
-                                title={`Preset ${preset}`}
-                                onClick={() => !isPresetRunning && handlePresetClick(preset)}
-                                disabled={isPresetRunning}
-                            >{preset}</button>
-                        ))
-                    )}
-                </div>
+
             </div>
             <span className="text-xs text-gray-500 block text-center mt-2">Click a marker to move PTZ camera to preset</span>
         </div>

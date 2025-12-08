@@ -34,6 +34,15 @@ export function useSetVideoColor(camId: string) {
     },
   });
 }
+export function useSetVideoSharpness(camId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/sharpness`, 'POST', params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cameraKeys.videoSharpness(camId) });
+    },
+  });
+}
 
 export function useSetExposure(camId: string) {
   const queryClient = useQueryClient();
@@ -44,7 +53,34 @@ export function useSetExposure(camId: string) {
     },
   });
 }
+export function useSetWhiteBalance(camId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/whitebalance`, 'POST', params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cameraKeys.whitebalance(camId) });
+    },
+  });
+}
+export function useSetVideoImageControl(camId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/flip`, 'POST', params),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: cameraKeys.flip(camId) });
+        },
+    });
+}
 
+export function useSetVideoInDenoise(camId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/denoise`, 'POST', params),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: cameraKeys.denoise(camId) });
+        }
+    });
+}
 export function useSetDayNight(camId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -104,7 +140,27 @@ export function useSetEncode(camId: string) {
     },
   });
 }
-
+export function useSetAudioEncode(camId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (params: any) => apiFetch(`/camera/${camId}/encode/audio`, 'POST', params),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: cameraKeys.audio(camId) });
+        },
+    });
+}
+export function useSetVideoEncodeROI(camId: string) {
+  const queryClient = useQueryClient(); 
+    return useMutation({
+        mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/videoROI`, 'POST', params),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: cameraKeys.videoROI(camId) });
+        },
+    });
+}
+// =============================================================================
+// OSD MUTATIONS
+// =============================================================================
 export function useSetOSD(camId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -118,6 +174,8 @@ export function useSetOSD(camId: string) {
 // =============================================================================
 // PTZ MUTATIONS
 // =============================================================================
+
+
 export function usePtzMove(camId: string) {
   return useMutation({
     mutationFn: ({ direction, speed = 4 }: { direction: string; speed?: number }) =>
@@ -143,6 +201,23 @@ export function usePtzZoomOut(camId: string) {
   });
 }
 
+export function usePtzFocusIn(camId: string) {
+  return useMutation({
+    mutationFn: () => apiFetch(`/camera/${camId}/ptz/focus/near`, 'POST', {}),
+  });
+}
+
+export function usePtzFocusOut(camId: string) {
+  return useMutation({
+    mutationFn: () => apiFetch(`/camera/${camId}/ptz/focus/far`, 'POST', {}),
+  });
+}
+
+export function usePtzFocusStop(camId: string) {
+  return useMutation({
+    mutationFn: () => apiFetch(`/camera/${camId}/ptz/focus/stop`, 'POST', {}),
+  });
+}
 export function usePtzZoomStop(camId: string) {
   return useMutation({
     mutationFn: () => apiFetch(`/camera/${camId}/ptz/zoom/stop`, 'POST', {}),
@@ -155,11 +230,17 @@ export function useGotoPreset(camId: string) {
       apiFetch(`/camera/${camId}/ptz/preset/goto`, 'POST', { presetId }),
   });
 }
+export function useClearPreset(camId: string) {
+  return useMutation({
+    mutationFn: (presetId: number) =>
+      apiFetch(`/camera/${camId}/ptz/preset/clear`, 'POST', { presetId }),
+  });
+}
 
 export function useSetPreset(camId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (presetId: number) =>
+    mutationFn: (presetId: any) =>
       apiFetch(`/camera/${camId}/ptz/preset/set`, 'POST', { presetId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cameraKeys.presets(camId) });

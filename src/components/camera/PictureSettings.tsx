@@ -1,40 +1,46 @@
-import type React from "react";
-import { useEffect, useState } from "react";
+// components/camera/PictureSettings.tsx
+import React, { useEffect, useState } from "react";
 import SliderControl from "./SliderControl";
 import { useCamId } from "../../contexts/CameraContext";
-import { useVideoColor } from "../../hooks/useCameraQueries";
-import { useSetVideoColor } from "../../hooks/useCameraMutations";
+import { 
+  useVideoColor, 
+  useVideoSharpness, 
+  useVideoInDenoise, // Assumed hook based on API 2.1.3
+  useVideoImageControl // Assumed hook based on API 3.1.4
+} from "../../hooks/useCameraQueries";
+import { 
+  useSetVideoColor, 
+  useSetVideoSharpness, 
+  useSetVideoInDenoise, // Assumed mutation
+  useSetVideoImageControl // Assumed mutation
+} from "../../hooks/useCameraMutations";
 
-/**
- * Picture settings UI that:
- *  - loads from backend when available
- *  - if not fetched yet OR on error, shows the UI populated with DEFAULTS
- *  - still allows Save (mutation) so user can apply values even when device not reachable
- */
+// =============================================================================
+// TYPES & INTERFACES
+// =============================================================================
 
 export interface PictureSettingsData {
-  profile: 'normal' | 'daytime' | 'nighttime';
+  profile: "normal" | "daytime" | "nighttime";
+  // Color
   brightness: number;
   contrast: number;
   saturability: number;
-  chromaCNT: number;
-  sharpness: number;
-  sharpnessCNT: number;
+  chromaCNT: number; // API: ChromaSuppress
   gamma: number;
-  nr2D: number;
-  nr3D: number;
-  grade: number;
-  flip: 'normal' | 'inverted';
-  eis: boolean;
-}
-
-interface PictureSettingsProps {
-  settings?: PictureSettingsData;
-  onSettingsChange?: (settings: PictureSettingsData) => void;
+  // Sharpness
+  sharpness: number;
+  sharpnessCNT: number; // API: Level
+  // Denoise
+  nr2D: number; // API: 2DLevel
+  nr3D: number; // API: 3DAutoType.AutoLevel
+  grade: number; // Mapped to general denoise level if specific 2D/3D not available
+  // Image Control
+  flip: "normal" | "inverted";
+  eis: boolean; // API: Stable
 }
 
 const DEFAULTS: PictureSettingsData = {
-  profile: 'normal',
+  profile: "normal",
   brightness: 50,
   contrast: 50,
   saturability: 50,
@@ -45,196 +51,269 @@ const DEFAULTS: PictureSettingsData = {
   nr2D: 50,
   nr3D: 50,
   grade: 50,
-  flip: 'normal',
+  flip: "normal",
   eis: false,
 };
 
-// defensive mapper from API -> UI shape (adjust keys if your backend uses different naming)
-function apiToUIColor(data: any): PictureSettingsData {
-  if (!data) return { ...DEFAULTS };
-  return {
-    profile: (data.profile as any) || 'normal',
-    brightness: Number(data.brightness ?? data.Brightness ?? DEFAULTS.brightness),
-    contrast: Number(data.contrast ?? data.Contrast ?? DEFAULTS.contrast),
-    saturability: Number(data.saturability ?? data.Saturability ?? DEFAULTS.saturability),
-    chromaCNT: Number(data.chromaCNT ?? data.ChromaCNT ?? DEFAULTS.chromaCNT),
-    sharpness: Number(data.sharpness ?? data.Sharpness ?? DEFAULTS.sharpness),
-    sharpnessCNT: Number(data.sharpnessCNT ?? data.SharpnessCNT ?? DEFAULTS.sharpnessCNT),
-    gamma: Number(data.gamma ?? data.Gamma ?? DEFAULTS.gamma),
-    nr2D: Number(data.nr2D ?? data.NR2D ?? DEFAULTS.nr2D),
-    nr3D: Number(data.nr3D ?? data.NR3D ?? DEFAULTS.nr3D),
-    grade: Number(data.grade ?? data.Grade ?? DEFAULTS.grade),
-    flip: (data.flip === 'inverted' || data.Flip === 'inverted') ? 'inverted' : 'normal',
-    eis: Boolean(data.eis ?? data.EIS ?? false),
-  };
-}
+// =============================================================================
+// API MAPPING HELPERS
+// =============================================================================
 
-const PictureSettings: React.FC<PictureSettingsProps> = ({ settings: propSettings, onSettingsChange }) => {
+/**
+ * Aggregates data from multiple API endpoints into a single UI state object
+ * based on the selected profile.
+ */
+const apiToUI = (
+  profile: "normal" | "daytime" | "nighttime",
+  colorData: any,
+  sharpData: any,
+  denoiseData: any,
+  imgCtrlData: any
+): PictureSettingsData => {
+  const profileIdx = profile === "daytime" ? 0 : profile === "nighttime" ? 1 : 2; //
+
+  const getColor = (key: string, def: number) => 
+    colorData?.config?.[`table.VideoColor[0][${profileIdx}].${key}`] ?? def;
+  
+  const getSharp = (key: string, def: number) => 
+    sharpData?.config?.[`table.VideoInSharpness[0][${profileIdx}].${key}`] ?? def;
+
+  const getDenoise = (key: string, def: number) => 
+    denoiseData?.config?.[`table.VideoInDenoise[0][${profileIdx}].${key}`] ?? def;
+
+  // Image Control is usually Global (Index 0 only), not per profile
+  const getImgCtrl = (key: string, def: any) => 
+    imgCtrlData?.config?.[`table.VideoImageControl[0].${key}`] ?? def;
+
+  return {
+    profile,
+    // VideoColor
+    brightness: Number(getColor("Brightness", 50)),
+    contrast: Number(getColor("Contrast", 50)),
+    saturability: Number(getColor("Saturation", 50)),
+    chromaCNT: Number(getColor("ChromaSuppress", 50)),
+    gamma: Number(getColor("Gamma", 50)),
+    
+    // VideoInSharpness
+    sharpness: Number(getSharp("Sharpness", 50)),
+    sharpnessCNT: Number(getSharp("Level", 50)),
+
+    // VideoInDenoise
+    nr2D: Number(getDenoise("2DLevel", 50)),
+    nr3D: Number(getDenoise("3DAutoType.AutoLevel", 50)), // Specific 3D mapping
+    grade: 50, // Legacy/Placeholder if not in API
+
+    // VideoImageControl (Global)
+    flip: String(getImgCtrl("Flip", "false")) === "true" ? "inverted" : "normal",
+    eis: Number(getImgCtrl("Stable", 0)) !== 0, // 0=Off, 1=Elec, 2=Optical
+  };
+};
+
+/**
+ * Splits UI state into specific API payloads
+ */
+const uiToApi = (ui: PictureSettingsData) => {
+  const profileIdx = ui.profile === "daytime" ? 0 : ui.profile === "nighttime" ? 1 : 2;
+  
+  return {
+    color: {
+      [`Brightness`]: ui.brightness,
+      [`Contrast`]: ui.contrast,
+      [`Saturation`]: ui.saturability,
+      [`ChromaSuppress`]: ui.chromaCNT,
+      [`Gamma`]: ui.gamma,
+    },
+    sharpness: {
+      [`Sharpness`]: ui.sharpness,
+      [`Level`]: ui.sharpnessCNT,
+    },
+    denoise: {
+      [`2DLevel`]: ui.nr2D,
+      [`3DAutoType.AutoLevel`]: ui.nr3D,
+    },
+    imageControl: {
+      [`Flip`]: ui.flip === "inverted",
+      [`Stable`]: ui.eis ? 1 : 0, // 1=Electronic Stabilizer
+    }
+  };
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+const PictureSettings: React.FC = () => {
   const camId = useCamId();
 
-  // fetch current picture settings; we intentionally keep the UI rendering even when loading/error
-  const {
-    data: apiData,
-    isLoading,
-    isError,
-    refetch,
-  } = useVideoColor(camId, true);
+  // 1. Queries
+  const colorQ = useVideoColor(camId);
+  const sharpQ = useVideoSharpness(camId);
+  const denoiseQ = useVideoInDenoise(camId);
+  const imgCtrlQ = useVideoImageControl(camId);
 
-  const setVideoColor = useSetVideoColor(camId);
+  // 2. Mutations
+  const setColor = useSetVideoColor(camId);
+  const setSharp = useSetVideoSharpness(camId);
+  const setDenoise = useSetVideoInDenoise(camId);
+  const setImgCtrl = useSetVideoImageControl(camId);
 
-  // local editor state (always present)
-  const [local, setLocal] = useState<PictureSettingsData>(() => propSettings ?? DEFAULTS);
-  const [activeProfile, setActiveProfile] = useState<'normal' | 'daytime' | 'nighttime'>(local.profile);
-  const [dirty, setDirty] = useState(false);
+  // 3. Local State
+  const [activeProfile, setActiveProfile] = useState<PictureSettingsData['profile']>("normal");
+  const [settings, setSettings] = useState<PictureSettingsData>(DEFAULTS);
+  const [isDirty, setIsDirty] = useState(false);
 
-  // Flag: using defaults (no apiData yet OR query errored)
-  const usingDefaults = !apiData || isError;
+  const isLoading = colorQ.isLoading || sharpQ.isLoading;
+  const isPending = setColor.isPending || setSharp.isPending || setDenoise.isPending || setImgCtrl.isPending;
 
-  // When apiData arrives (or propSettings provided), populate local; otherwise keep defaults
+  // 4. Sync API -> Local State
   useEffect(() => {
-    if (apiData) {
-      const mapped = apiToUIColor(apiData);
-      setLocal((prev) => ({ ...prev, ...mapped }));
-      setActiveProfile(mapped.profile);
-      setDirty(false);
-    } else if (propSettings && !apiData) {
-      // fallback to propSettings if provided and api not present
-      setLocal(propSettings);
-      setActiveProfile(propSettings.profile);
-      setDirty(false);
-    } else {
-      // No api data and no props: keep defaults (no-op; but ensure state is defaults)
-      setLocal((prev) => ({ ...DEFAULTS, ...prev }));
-      setActiveProfile((prev) => prev ?? DEFAULTS.profile);
-      // do not flip dirty -> keep false
+    if (colorQ.data && sharpQ.data) {
+      const parsed = apiToUI(activeProfile, colorQ.data, sharpQ.data, denoiseQ.data, imgCtrlQ.data);
+      setSettings(parsed);
+      setIsDirty(false);
     }
-    // only run when apiData or propSettings updates
-  }, [apiData, propSettings]);
+  }, [activeProfile, colorQ.data, sharpQ.data, denoiseQ.data, imgCtrlQ.data]);
 
-  // update local helper
-  const updateLocal = <K extends keyof PictureSettingsData>(key: K, value: PictureSettingsData[K]) => {
-    setLocal(prev => {
-      const next = { ...prev, [key]: value };
-      setDirty(true);
-      return next;
-    });
+  // 5. Handlers
+  const handleProfileChange = (profile: PictureSettingsData['profile']) => {
+    setActiveProfile(profile);
+    // Data sync will happen in useEffect based on new profile index
   };
 
-  // Save: call mutation (works even if we used defaults)
-  const handleSave = () => {
-    const payload = {
-      profile: local.profile,
-      brightness: local.brightness,
-      contrast: local.contrast,
-      saturability: local.saturability,
-      chromaCNT: local.chromaCNT,
-      sharpness: local.sharpness,
-      sharpnessCNT: local.sharpnessCNT,
-      gamma: local.gamma,
-      nr2D: local.nr2D,
-      nr3D: local.nr3D,
-      grade: local.grade,
-      flip: local.flip,
-      eis: local.eis,
-    };
+  const updateSetting = <K extends keyof PictureSettingsData>(key: K, value: PictureSettingsData[K]) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+    setIsDirty(true);
+  };
 
-    setVideoColor.mutate(payload, {
-      onSuccess: () => {
-        setDirty(false);
-        // try to refresh from server to reflect actual saved state
-        refetch();
-        if (onSettingsChange) onSettingsChange(local);
-      },
-    });
+  const handleSave = async () => {
+    const payloads = uiToApi(settings);
+    
+    // Execute all mutations in parallel
+    await Promise.all([
+      setColor.mutateAsync(payloads.color),
+      setSharp.mutateAsync(payloads.sharpness),
+      setDenoise.mutateAsync(payloads.denoise),
+      setImgCtrl.mutateAsync(payloads.imageControl)
+    ]);
+    
+    setIsDirty(false);
+    // Refresh data
+    colorQ.refetch();
+    sharpQ.refetch();
   };
 
   const handleRevert = () => {
-    if (apiData) {
-      const mapped = apiToUIColor(apiData);
-      setLocal(mapped);
-      setActiveProfile(mapped.profile);
-      setDirty(false);
-    } else if (propSettings) {
-      setLocal(propSettings);
-      setActiveProfile(propSettings.profile);
-      setDirty(false);
-    } else {
-      setLocal(DEFAULTS);
-      setActiveProfile(DEFAULTS.profile);
-      setDirty(false);
+    if (colorQ.data) {
+      const parsed = apiToUI(activeProfile, colorQ.data, sharpQ.data, denoiseQ.data, imgCtrlQ.data);
+      setSettings(parsed);
+      setIsDirty(false);
     }
   };
 
-  const handleProfileChange = (profile: 'normal' | 'daytime' | 'nighttime') => {
-    setActiveProfile(profile);
-    updateLocal('profile', profile);
-  };
-
-  const handleFlipChange = (flip: 'normal' | 'inverted') => updateLocal('flip', flip);
-  const handleEISToggle = () => updateLocal('eis', !local.eis);
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Chargement des paramètres d'image...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Informational banner when we don't have server data */}
-      {usingDefaults && (
-        <div className="rounded-lg p-3 bg-yellow-900/40 border border-yellow-700 text-yellow-200">
-          <div className="flex items-center gap-3">
-            <svg className="w-5 h-5 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 8v4m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
-            </svg>
-            <div>
-              <div className="font-medium">Using default values</div>
-              <div className="text-sm text-yellow-200">
-                Could not load settings from the camera (not fetched yet or error). You may edit and Save — values will be pushed when you click Save.
-              </div>
-            </div>
-            <div className="ml-auto">
-              {isLoading && <span className="text-sm text-gray-300">Loading from device...</span>}
-              {isError && <button onClick={() => refetch()} className="underline text-sm">Retry</button>}
-            </div>
-          </div>
-        </div>
+      
+      {/* Messages */}
+      {isPending && (
+         <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-700 text-blue-300 flex items-center gap-2 text-sm">
+           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300"></div>
+           Enregistrement en cours...
+         </div>
       )}
 
       {/* Profile Selection */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold text-white mb-4">Profil</h2>
-        <p className="text-gray-400 text-sm mb-4">Sélectionnez le mode normal, jour ou nuit. La configuration correspondante est affichée ci-dessous.</p>
+        <h2 className="text-xl font-semibold text-white mb-4">Profil d'Image</h2>
+        <p className="text-gray-400 text-sm mb-4">
+          Sélectionnez le profil à configurer (Jour, Nuit, Normal). Les paramètres ci-dessous s'appliqueront à ce profil.
+        </p>
         <div className="flex gap-4">
-          <button onClick={() => handleProfileChange('normal')} className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all ${activeProfile === 'normal' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>Mode Normal</button>
-          <button onClick={() => handleProfileChange('daytime')} className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all ${activeProfile === 'daytime' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>Mode Jour</button>
-          <button onClick={() => handleProfileChange('nighttime')} className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all ${activeProfile === 'nighttime' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>Mode Nuit</button>
+          {[
+            { id: "normal", label: "Normal" },
+            { id: "daytime", label: "Jour (Day)" },
+            { id: "nighttime", label: "Nuit (Night)" }
+          ].map((p) => (
+            <button
+              key={p.id}
+              onClick={() => handleProfileChange(p.id as any)}
+              className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all ${
+                activeProfile === p.id
+                  ? "bg-red-600 text-white shadow-lg shadow-red-500/20"
+                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
 
-        {/* Save / Revert */}
-        <div className="mt-4 flex gap-3">
-          <button onClick={handleSave} disabled={!dirty || setVideoColor.isLoading} className={`px-4 py-2 rounded-lg font-medium transition-all ${dirty ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}`}>
-            {setVideoColor.isLoading ? 'Saving...' : 'Save'}
+        {/* Action Bar */}
+        <div className="mt-6 flex justify-end gap-3 border-t border-gray-700 pt-4">
+          {isDirty && (
+             <span className="text-yellow-500 text-sm self-center mr-2">Modifications non enregistrées</span>
+          )}
+          <button
+            onClick={handleRevert}
+            disabled={!isDirty || isPending}
+            className="px-4 py-2 rounded-lg font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 disabled:opacity-50"
+          >
+            Annuler
           </button>
-          <button onClick={handleRevert} disabled={!dirty} className={`px-4 py-2 rounded-lg font-medium transition-all ${dirty ? 'bg-yellow-600 text-white hover:bg-yellow-700' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}`}>
-            Revert
+          <button
+            onClick={handleSave}
+            disabled={!isDirty || isPending}
+            className="px-6 py-2 rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 shadow-lg"
+          >
+            Sauvegarder
           </button>
-          <div className="ml-auto text-sm text-gray-400 self-center">{dirty ? 'Unsaved changes' : 'Saved'}</div>
         </div>
-
-        {setVideoColor.isError && (
-          <div className="mt-3 text-sm text-red-300">
-            Save error: {(setVideoColor.error as any)?.message ?? 'Unknown'}
-          </div>
-        )}
-        {setVideoColor.isSuccess && (
-          <div className="mt-3 text-sm text-green-300">Saved successfully.</div>
-        )}
       </div>
 
       {/* Image Quality */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-6">Qualité d'Image</h2>
         <div className="space-y-4">
-          <SliderControl label="Luminosité (Brightness)" description="Réglez la teinte de l'image, plus la valeur est élevée, plus l'image est colorée." value={local.brightness} onChange={(v) => updateLocal('brightness', v)} />
-          <SliderControl label="Contraste (Contrast)" description="Définir le contraste de l'image, plus la valeur est élevée, plus le contraste de luminosité est grand." value={local.contrast} onChange={(v) => updateLocal('contrast', v)} />
-          <SliderControl label="Saturation (Saturability)" description="Définir la saturation des couleurs de l'image. Plus la saturation est élevée, plus l'image est vive." value={local.saturability} onChange={(v) => updateLocal('saturability', v)} />
-          <SliderControl label="Chroma CNT" description="Réglez le degré de suppression de la couleur de l'image, plus la valeur est élevée, plus la suppression est évidente." value={local.chromaCNT} onChange={(v) => updateLocal('chromaCNT', v)} />
+          <SliderControl
+            label="Luminosité (Brightness)"
+            description="Ajuste la clarté globale de l'image."
+            value={settings.brightness}
+            onChange={(v) => updateSetting("brightness", v)}
+          />
+          <SliderControl
+            label="Contraste (Contrast)"
+            description="Différence entre les zones claires et sombres."
+            value={settings.contrast}
+            onChange={(v) => updateSetting("contrast", v)}
+          />
+          <SliderControl
+            label="Saturation (Saturability)"
+            description="Intensité des couleurs."
+            value={settings.saturability}
+            onChange={(v) => updateSetting("saturability", v)}
+          />
+          <SliderControl
+            label="Chroma CNT"
+            description="Suppression de couleur (utile en faible luminosité)."
+            value={settings.chromaCNT}
+            onChange={(v) => updateSetting("chromaCNT", v)}
+          />
+           <SliderControl
+            label="Gamma"
+            description="Correction non-linéaire de la luminosité."
+            value={settings.gamma}
+            onChange={(v) => updateSetting("gamma", v)}
+          />
         </div>
       </div>
 
@@ -242,38 +321,77 @@ const PictureSettings: React.FC<PictureSettingsProps> = ({ settings: propSetting
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-6">Netteté</h2>
         <div className="space-y-4">
-          <SliderControl label="Netteté (Sharpness)" description="Ajustez la netteté du bord de l'image, plus la valeur est élevée, plus le bord est évident." value={local.sharpness} onChange={(v) => updateLocal('sharpness', v)} />
-          <SliderControl label="Sharpness CNT" description="Ajustez le degré de suppression de la netteté de l'image, plus la valeur est élevée, plus le degré est élevé." value={local.sharpnessCNT} onChange={(v) => updateLocal('sharpnessCNT', v)} />
+          <SliderControl
+            label="Netteté (Sharpness)"
+            description="Clarté des bords de l'image."
+            value={settings.sharpness}
+            onChange={(v) => updateSetting("sharpness", v)}
+          />
+          <SliderControl
+            label="Sharpness CNT (Level)"
+            description="Suppression de la netteté pour réduire le bruit."
+            value={settings.sharpnessCNT}
+            onChange={(v) => updateSetting("sharpnessCNT", v)}
+          />
         </div>
       </div>
 
-      {/* Advanced */}
+      {/* Advanced / Denoise */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-6">Paramètres Avancés</h2>
-        <div className="space-y-4">
-          <SliderControl label="Gamma" description="Modifie la luminosité de l'image par ajustement non linéaire et améliore la plage dynamique de l'image." value={local.gamma} onChange={(v) => updateLocal('gamma', v)} />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <SliderControl
+            label="2D NR (Réduction Bruit Spatial)"
+            description="Réduit le bruit dans une image unique."
+            value={settings.nr2D}
+            onChange={(v) => updateSetting("nr2D", v)}
+          />
+          <SliderControl
+            label="3D NR (Réduction Bruit Temporel)"
+            description="Réduit le bruit entre les images consécutives."
+            value={settings.nr3D}
+            onChange={(v) => updateSetting("nr3D", v)}
+          />
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <SliderControl label="2D NR (Réduction de Bruit 2D)" description="Utilisé pour contrôler le bruit, plus le degré est élevé, plus le bruit est faible." value={local.nr2D} onChange={(v) => updateLocal('nr2D', v)} />
-            <SliderControl label="3D NR (Réduction de Bruit 3D)" description="Utilisé pour contrôler le bruit temporel. Augmentez pour des scènes sombres et statiques." value={local.nr3D} onChange={(v) => updateLocal('nr3D', v)} />
-            <SliderControl label="Grade (Noise Grade)" description="Contrôle le niveau de réduction du bruit global." value={local.grade} onChange={(v) => updateLocal('grade', v)} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-700">
+          {/* Flip Control */}
+          <div>
+             <label className="block text-sm font-medium text-gray-300 mb-2">Flip (Retournement)</label>
+             <div className="flex bg-gray-900/50 p-1 rounded-lg">
+                <button
+                  onClick={() => updateSetting("flip", "normal")}
+                  className={`flex-1 py-2 rounded text-sm ${settings.flip === "normal" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"}`}
+                >
+                  Normal
+                </button>
+                <button
+                  onClick={() => updateSetting("flip", "inverted")}
+                  className={`flex-1 py-2 rounded text-sm ${settings.flip === "inverted" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"}`}
+                >
+                  Inversé
+                </button>
+             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Flip</label>
-              <div className="flex gap-3">
-                <button onClick={() => handleFlipChange('normal')} className={`py-2 px-4 rounded-lg ${local.flip === 'normal' ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Normal</button>
-                <button onClick={() => handleFlipChange('inverted')} className={`py-2 px-4 rounded-lg ${local.flip === 'inverted' ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Inversé</button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">EIS</label>
-              <div className="flex items-center gap-3">
-                <button onClick={handleEISToggle} className={`py-2 px-4 rounded-lg ${local.eis ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300'}`}>{local.eis ? 'Enabled' : 'Disabled'}</button>
-              </div>
-            </div>
+          {/* EIS Control */}
+          <div>
+             <label className="block text-sm font-medium text-gray-300 mb-2">EIS (Stabilisation)</label>
+             <div className="flex bg-gray-900/50 p-1 rounded-lg">
+                <button
+                  onClick={() => updateSetting("eis", true)}
+                  className={`flex-1 py-2 rounded text-sm ${settings.eis ? "bg-green-600 text-white" : "text-gray-400 hover:text-white"}`}
+                >
+                  Activé
+                </button>
+                <button
+                  onClick={() => updateSetting("eis", false)}
+                  className={`flex-1 py-2 rounded text-sm ${!settings.eis ? "bg-red-600 text-white" : "text-gray-400 hover:text-white"}`}
+                >
+                  Désactivé
+                </button>
+             </div>
           </div>
         </div>
       </div>

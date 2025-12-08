@@ -1,54 +1,222 @@
-import type React from "react"
-import { useState } from "react"
-import SliderControl from "./SliderControl"
+// components/camera/ZoomFocusSettings.tsx
+import React, { useEffect, useState } from "react";
+import SliderControl from "./SliderControl";
+import { useCamId } from "../../contexts/CameraContext";
+import { useZoom, useFocus } from "../../hooks/useCameraQueries";
+import { useSetZoom, useSetFocus } from "../../hooks/useCameraMutations";
+
+// =============================================================================
+// TYPES & INTERFACES
+// =============================================================================
 
 export interface ZoomFocusSettingsData {
   digitalZoom: boolean;
   zoomSpeed: number; // 0-100
   mode: 'semi-automatic' | 'automatic' | 'manual' | 'fast-semi-automatic' | 'fast-automatic';
   focusLimit: 'auto' | '1m' | '2m' | '5m' | '10m';
-  sensitivity: number; // 0-100
+  sensitivity: number; // 0-100 (Mapped from 0-2 in API)
   afTracking: boolean;
 }
 
 interface ZoomFocusSettingsProps {
-  settings: ZoomFocusSettingsData;
-  onSettingsChange: (settings: ZoomFocusSettingsData) => void;
+  // Component manages its own data fetching now
 }
 
-const ZoomFocusSettings: React.FC<ZoomFocusSettingsProps> = ({ settings, onSettingsChange }) => {
+// =============================================================================
+// API MAPPING HELPERS
+// =============================================================================
+
+const defaultState: ZoomFocusSettingsData = {
+  digitalZoom: false,
+  zoomSpeed: 50,
+  mode: 'semi-automatic',
+  focusLimit: 'auto',
+  sensitivity: 50,
+  afTracking: true,
+};
+
+/**
+ * Mappings for Focus Mode
+ * 2: Auto, 3: Semi-Auto, 4: Manual, 5: Fast Semi-Auto, 6: Fast Auto
+ */
+const FOCUS_MODE_MAP_TO_UI: Record<number, ZoomFocusSettingsData['mode']> = {
+  3: 'semi-automatic',
+  2: 'automatic',
+  4: 'manual',
+  5: 'fast-semi-automatic',
+  6: 'fast-automatic'
+};
+
+const FOCUS_MODE_MAP_TO_API: Record<ZoomFocusSettingsData['mode'], number> = {
+  'semi-automatic': 3,
+  'automatic': 2,
+  'manual': 4,
+  'fast-semi-automatic': 5,
+  'fast-automatic': 6
+};
+
+/**
+ * Mappings for Focus Limit (Values roughly based on documentation examples)
+ * API sends raw integer distance values (e.g. 1000 for 1m).
+ * Special handling: FocusLimitSelectMode="Auto" overrides specific limit.
+ */
+const mapApiLimitToUI = (limit: number, mode: string): ZoomFocusSettingsData['focusLimit'] => {
+  if (mode === "Auto") return 'auto';
+  if (limit <= 1000) return '1m';
+  if (limit <= 2000) return '2m';
+  if (limit <= 5000) return '5m';
+  return '10m';
+};
+
+const mapUILimitToApi = (uiLimit: ZoomFocusSettingsData['focusLimit']): { val: number, mode: string } => {
+  if (uiLimit === 'auto') return { val: 50, mode: "Auto" }; // Default val doesn't matter if mode is Auto
+  if (uiLimit === '1m') return { val: 1000, mode: "Manual" };
+  if (uiLimit === '2m') return { val: 2000, mode: "Manual" };
+  if (uiLimit === '5m') return { val: 5000, mode: "Manual" };
+  return { val: 10000, mode: "Manual" }; // 10m
+};
+
+/**
+ * Mappings for Sensitivity
+ * API: 0=High, 1=Middle, 2=Low
+ * UI: 0-100 Slider
+ */
+const mapApiSensitivityToUI = (val: number): number => {
+  if (val === 0) return 100; // High
+  if (val === 1) return 50;  // Middle
+  return 0;                 // Low
+};
+
+const mapUISensitivityToApi = (val: number): number => {
+  if (val > 66) return 0; // High
+  if (val > 33) return 1; // Middle
+  return 2;              // Low
+};
+
+/**
+ * Combines data from two separate API calls (Zoom and Focus) into one UI state
+ */
+const apiToUI = (zoomData: any, focusData: any): ZoomFocusSettingsData => {
+  const zoomConfig = zoomData?.config || zoomData;
+  const focusConfig = focusData?.config || focusData;
+  
+  // Prefixes
+  const zPfx = "table.VideoInZoom[0][0].";
+  const fPfx = "table.VideoInFocus[0][0].";
+
+  // Helpers
+  const getZ = (k: string, def: any) => (zoomConfig?.[zPfx + k] !== undefined ? zoomConfig[zPfx + k] : def);
+  const getF = (k: string, def: any) => (focusConfig?.[fPfx + k] !== undefined ? focusConfig[fPfx + k] : def);
+
+  // Zoom Parsing
+  const digitalZoom = String(getZ("DigitalZoom", "false")) === "true";
+  const zoomSpeed = Number(getZ("Speed", 50));
+
+  // Focus Parsing
+  const focusModeRaw = Number(getF("Mode", 2));
+  const focusMode = FOCUS_MODE_MAP_TO_UI[focusModeRaw] || 'automatic';
+  
+  const focusLimitVal = Number(getF("FocusLimit", 100));
+  const focusLimitMode = String(getF("FocusLimitSelectMode", "Auto"));
+  const focusLimit = mapApiLimitToUI(focusLimitVal, focusLimitMode);
+
+  const sensitivityRaw = Number(getF("Sensitivity", 1));
+  const sensitivity = mapApiSensitivityToUI(sensitivityRaw);
+
+  const afTracking = Number(getF("AutoFocusTrace", 1)) === 1;
+
+  return {
+    digitalZoom,
+    zoomSpeed,
+    mode: focusMode,
+    focusLimit,
+    sensitivity,
+    afTracking
+  };
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+const ZoomFocusSettings: React.FC<ZoomFocusSettingsProps> = () => {
+  const camId = useCamId();
+  
+  // 1. Hooks for Data
+  // We need two separate queries because parameters are split between Zoom and Focus APIs
+  const { data: zoomData, isLoading: zLoading, refetch: refetchZoom } = useZoom(camId);
+  const { data: focusData, isLoading: fLoading, refetch: refetchFocus } = useFocus(camId);
+
+  // 2. Hooks for Mutations
+  const setZoomMutation = useSetZoom(camId);
+  const setFocusMutation = useSetFocus(camId);
+
+  // 3. Local State
+  const [settings, setSettings] = useState<ZoomFocusSettingsData>(defaultState);
   const [isInitializing, setIsInitializing] = useState(false);
 
+  // 4. Sync API -> UI
+  useEffect(() => {
+    if (zoomData && focusData) {
+      const parsed = apiToUI(zoomData, focusData);
+      setSettings(parsed);
+    }
+  }, [zoomData, focusData]);
+
+  // 5. Handlers
   const handleDigitalZoomToggle = () => {
-    onSettingsChange({ ...settings, digitalZoom: !settings.digitalZoom });
+    const newVal = !settings.digitalZoom;
+    setSettings(prev => ({ ...prev, digitalZoom: newVal }));
+    setZoomMutation.mutate({ "DigitalZoom": newVal });
   };
 
   const handleZoomSpeedChange = (value: number) => {
-    onSettingsChange({ ...settings, zoomSpeed: value });
+    setSettings(prev => ({ ...prev, zoomSpeed: value }));
+    setZoomMutation.mutate({ "Speed": value });
   };
 
   const handleModeChange = (mode: ZoomFocusSettingsData['mode']) => {
-    onSettingsChange({ ...settings, mode });
+    setSettings(prev => ({ ...prev, mode }));
+    setFocusMutation.mutate({ "Mode": FOCUS_MODE_MAP_TO_API[mode] });
   };
 
   const handleFocusLimitChange = (focusLimit: ZoomFocusSettingsData['focusLimit']) => {
-    onSettingsChange({ ...settings, focusLimit });
+    setSettings(prev => ({ ...prev, focusLimit }));
+    const { val, mode } = mapUILimitToApi(focusLimit);
+    setFocusMutation.mutate({
+      "FocusLimit": val,
+      "FocusLimitSelectMode": mode
+    });
   };
 
   const handleSensitivityChange = (value: number) => {
-    onSettingsChange({ ...settings, sensitivity: value });
+    setSettings(prev => ({ ...prev, sensitivity: value }));
+    const apiVal = mapUISensitivityToApi(value);
+    setFocusMutation.mutate({ "Sensitivity": apiVal });
   };
 
   const handleAFTrackingToggle = () => {
-    onSettingsChange({ ...settings, afTracking: !settings.afTracking });
+    const newVal = !settings.afTracking;
+    setSettings(prev => ({ ...prev, afTracking: newVal }));
+    // API uses 1/0 for integer boolean here
+    setFocusMutation.mutate({ "AutoFocusTrace": newVal ? 1 : 0 });
   };
 
-  const handleLensInit = () => {
+  const handleLensInit = async () => {
     setIsInitializing(true);
-    // TODO: Implement actual lens initialization API call
+    // Lens Initialization is often a separate command or a special focus mode reset.
+    // Based on doc 3.1.11, there isn't a direct "Init" command listed in the config table,
+    // but usually setting mode to Auto triggers a re-eval. 
+    // However, if your API has a specific 'LensInit' command (e.g. via ptz.cgi or magicBox), call it here.
+    // Assuming purely config based on provided context: we might just refresh.
+    // If there is a specific command (like `ptz.cgi?action=start&code=Reset`), it would go here.
+    // For now, simulating the delay as requested in UI.
+    
+    // Simulating API call delay
     setTimeout(() => {
       setIsInitializing(false);
-      alert('Initialisation de l\'objectif terminée avec succès!');
+      refetchZoom();
+      refetchFocus();
     }, 3000);
   };
 
@@ -63,8 +231,31 @@ const ZoomFocusSettings: React.FC<ZoomFocusSettingsProps> = ({ settings, onSetti
     return descriptions[mode];
   };
 
+  const isPending = setZoomMutation.isPending || setFocusMutation.isPending;
+  const isLoading = zLoading || fLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Chargement Zoom/Focus...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      
+      {/* Feedback Messages */}
+      {isPending && (
+         <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-700 text-blue-300 flex items-center gap-2 text-sm">
+           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300"></div>
+           Enregistrement en cours...
+         </div>
+      )}
+
       {/* Digital Zoom Toggle */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Zoom Numérique</h2>
@@ -98,7 +289,7 @@ const ZoomFocusSettings: React.FC<ZoomFocusSettingsProps> = ({ settings, onSetti
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-6">Vitesse de Zoom</h2>
         <p className="text-gray-400 text-sm mb-6">
-          Définit la vitesse de zoom de la caméra. Une valeur plus élevée réalise une vitesse de zoom plus rapide. Valeur par défaut: 100.
+          Définit la vitesse de zoom de la caméra (0-100). Une valeur plus élevée réalise une vitesse de zoom plus rapide.
         </p>
 
         <SliderControl
@@ -247,8 +438,7 @@ const ZoomFocusSettings: React.FC<ZoomFocusSettingsProps> = ({ settings, onSetti
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Limite de Mise au Point</h2>
         <p className="text-gray-400 text-sm mb-6">
-          Définit la longueur la plus proche de la mise au point pour se concentrer sur la scène au-delà de la longueur. 
-          L'option automatique sélectionnera automatiquement la longueur la plus proche appropriée selon les différentes valeurs de zoom.
+          Définit la distance minimale de mise au point. En mode Auto, la caméra sélectionne la distance appropriée selon le zoom.
         </p>
 
         <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
@@ -275,8 +465,7 @@ const ZoomFocusSettings: React.FC<ZoomFocusSettingsProps> = ({ settings, onSetti
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-6">Sensibilité de Mise au Point</h2>
         <p className="text-gray-400 text-sm mb-6">
-          Définit la stabilité ou la capacité anti-interférence de la mise au point. 
-          Une valeur inférieure réalise une stabilité plus élevée, et une valeur supérieure réalise une capacité anti-interférence plus élevée.
+          0=Haute Sensibilité (Rapide), 2=Basse Sensibilité (Stable). Le curseur mappe 0-100 à ces niveaux discrets.
         </p>
 
         <SliderControl
@@ -290,16 +479,16 @@ const ZoomFocusSettings: React.FC<ZoomFocusSettingsProps> = ({ settings, onSetti
 
         <div className="mt-4 grid grid-cols-3 gap-3 text-center text-xs">
           <div className="p-2 bg-gray-900/30 rounded">
-            <div className="text-gray-400">0-33</div>
-            <div className="text-white font-semibold mt-1">Très Stable</div>
+            <div className="text-gray-400">0-33 (API 2)</div>
+            <div className="text-white font-semibold mt-1">Stable (Low)</div>
           </div>
           <div className="p-2 bg-gray-900/30 rounded">
-            <div className="text-gray-400">34-66</div>
-            <div className="text-white font-semibold mt-1">Équilibré</div>
+            <div className="text-gray-400">34-66 (API 1)</div>
+            <div className="text-white font-semibold mt-1">Moyen</div>
           </div>
           <div className="p-2 bg-gray-900/30 rounded">
-            <div className="text-gray-400">67-100</div>
-            <div className="text-white font-semibold mt-1">Anti-Interférence</div>
+            <div className="text-gray-400">67-100 (API 0)</div>
+            <div className="text-white font-semibold mt-1">Rapide (High)</div>
           </div>
         </div>
       </div>
@@ -308,8 +497,7 @@ const ZoomFocusSettings: React.FC<ZoomFocusSettingsProps> = ({ settings, onSetti
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Suivi Autofocus (AF Tracking)</h2>
         <p className="text-gray-400 text-sm mb-6">
-          Cette fonction permet à l'image d'être relativement claire pendant le processus de zoom. 
-          Si la fonction est désactivée, la vitesse de zoom sera plus élevée pendant le processus de zoom.
+          Permet de garder l'image claire pendant le zoom. Si désactivé, le zoom est plus rapide mais flou pendant le mouvement.
         </p>
 
         <div className="flex items-center justify-between p-4 bg-gray-900/30 rounded-lg">
@@ -340,8 +528,7 @@ const ZoomFocusSettings: React.FC<ZoomFocusSettingsProps> = ({ settings, onSetti
       <div className="bg-gradient-to-br from-blue-900/20 to-blue-800/10 rounded-lg p-6 border border-blue-700/30">
         <h2 className="text-xl font-semibold text-white mb-4">Initialisation de l'Objectif</h2>
         <p className="text-gray-400 text-sm mb-6">
-          Cliquez sur ce bouton pour effectuer une initialisation automatique de l'objectif. 
-          L'objectif de l'appareil effectuera une action d'étirement pour calibrer le zoom et la mise au point de l'objectif.
+          Cliquez sur ce bouton pour effectuer une initialisation automatique de l'objectif (Lens Init).
         </p>
 
         <button
@@ -355,10 +542,7 @@ const ZoomFocusSettings: React.FC<ZoomFocusSettingsProps> = ({ settings, onSetti
         >
           {isInitializing ? (
             <div className="flex items-center justify-center gap-3">
-              <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
               <span>Initialisation en cours...</span>
             </div>
           ) : (
@@ -378,43 +562,6 @@ const ZoomFocusSettings: React.FC<ZoomFocusSettingsProps> = ({ settings, onSetti
             </p>
           </div>
         )}
-      </div>
-
-      {/* Status Summary */}
-      <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold text-white mb-4">Résumé des Paramètres</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div className="p-3 bg-gray-900/30 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">Zoom Numérique</div>
-            <div className="text-white font-semibold">{settings.digitalZoom ? 'ON' : 'OFF'}</div>
-          </div>
-          <div className="p-3 bg-gray-900/30 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">Vitesse de Zoom</div>
-            <div className="text-white font-semibold">{settings.zoomSpeed}</div>
-          </div>
-          <div className="p-3 bg-gray-900/30 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">Mode</div>
-            <div className="text-white font-semibold text-xs">
-              {settings.mode === 'semi-automatic' ? 'Semi-Auto' :
-               settings.mode === 'automatic' ? 'Auto' :
-               settings.mode === 'manual' ? 'Manuel' :
-               settings.mode === 'fast-semi-automatic' ? 'Semi-Auto Rapide' :
-               'Auto Rapide'}
-            </div>
-          </div>
-          <div className="p-3 bg-gray-900/30 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">Limite Focus</div>
-            <div className="text-white font-semibold">{settings.focusLimit === 'auto' ? 'Auto' : settings.focusLimit}</div>
-          </div>
-          <div className="p-3 bg-gray-900/30 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">Sensibilité</div>
-            <div className="text-white font-semibold">{settings.sensitivity}</div>
-          </div>
-          <div className="p-3 bg-gray-900/30 rounded-lg">
-            <div className="text-gray-400 text-xs mb-1">Suivi AF</div>
-            <div className="text-white font-semibold">{settings.afTracking ? 'ON' : 'OFF'}</div>
-          </div>
-        </div>
       </div>
     </div>
   );
