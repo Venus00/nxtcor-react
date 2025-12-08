@@ -63,23 +63,23 @@ export function useSetWhiteBalance(camId: string) {
   });
 }
 export function useSetVideoImageControl(camId: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/flip`, 'POST', params),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: cameraKeys.flip(camId) });
-        },
-    });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/flip`, 'POST', params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cameraKeys.flip(camId) });
+    },
+  });
 }
 
 export function useSetVideoInDenoise(camId: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/denoise`, 'POST', params),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: cameraKeys.denoise(camId) });
-        }
-    });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/denoise`, 'POST', params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cameraKeys.denoise(camId) });
+    }
+  });
 }
 export function useSetDayNight(camId: string) {
   const queryClient = useQueryClient();
@@ -141,22 +141,22 @@ export function useSetEncode(camId: string) {
   });
 }
 export function useSetAudioEncode(camId: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (params: any) => apiFetch(`/camera/${camId}/encode/audio`, 'POST', params),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: cameraKeys.audio(camId) });
-        },
-    });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: any) => apiFetch(`/camera/${camId}/encode/audio`, 'POST', params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cameraKeys.audio(camId) });
+    },
+  });
 }
 export function useSetVideoEncodeROI(camId: string) {
-  const queryClient = useQueryClient(); 
-    return useMutation({
-        mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/videoROI`, 'POST', params),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: cameraKeys.videoROI(camId) });
-        },
-    });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: any) => apiFetch(`/camera/${camId}/video/videoROI`, 'POST', params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cameraKeys.videoROI(camId) });
+    },
+  });
 }
 // =============================================================================
 // OSD MUTATIONS
@@ -262,6 +262,17 @@ export function useStopTour(camId: string) {
   });
 }
 
+export function useUpdateTour(camId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: any) =>
+      apiFetch(`/camera/${camId}/ptz/tour/update`, 'POST', params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cameraKeys.tours(camId) });
+    },
+  });
+}
+
 export function useLightOn(camId: string) {
   return useMutation({
     mutationFn: () => apiFetch(`/camera/${camId}/ptz/light/on`, 'POST', {}),
@@ -316,9 +327,9 @@ export interface VideoInModeParams {
 
 export function useSetVideoInMode(camId: string) {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (params: VideoInModeParams) => 
+    mutationFn: (params: VideoInModeParams) =>
       apiFetch(`/camera/${camId}/video/mode`, 'POST', {
         channel: params.channel ?? 0,
         mode: params.mode,
