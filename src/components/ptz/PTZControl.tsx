@@ -21,8 +21,8 @@ const PTZControl: React.FC<PTZControlProps> = () => {
   const camId = useCamId();
 
   // 1. Initialize specific mutations
-  const moveMutation = usePtzMove("cam2");
-  const stopMoveMutation = usePtzStop("cam2");
+  const moveMutation = usePtzMove(camId);
+  const stopMoveMutation = usePtzStop(camId);
   const zoomInMutation = usePtzZoomIn(camId);
   const zoomOutMutation = usePtzZoomOut(camId);
   const stopZoomMutation = usePtzZoomStop(camId);
@@ -84,7 +84,7 @@ const PTZControl: React.FC<PTZControlProps> = () => {
     console.log(`Focus ${type} start - Hook not provided`);
     setActiveButton(`focus${type}`);
 
-     const key = `focus${type}`;
+    const key = `focus${type}`;
     setActiveButton(key);
     if (type === "near") {
       focusMutationIn.mutate();
@@ -139,11 +139,10 @@ const PTZControl: React.FC<PTZControlProps> = () => {
               onMouseDown={() => handleDirectionStart("up")}
               onMouseUp={() => handleDirectionStop("up")}
               onMouseLeave={() => handleDirectionStop("up")}
-              className={`absolute top-0 left-1/2 -translate-x-1/2 w-10 h-10 bg-gradient-to-b from-gray-700 to-gray-800 hover:from-red-600 hover:to-red-700 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center group ${
-                activeButton === "up"
-                  ? "from-red-600 to-red-700 border-red-500"
-                  : ""
-              }`}
+              className={`absolute top-0 left-1/2 -translate-x-1/2 w-10 h-10 bg-gradient-to-b from-gray-700 to-gray-800 hover:from-red-600 hover:to-red-700 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center group ${activeButton === "up"
+                ? "from-red-600 to-red-700 border-red-500"
+                : ""
+                }`}
             >
               <svg
                 className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors"
@@ -159,11 +158,10 @@ const PTZControl: React.FC<PTZControlProps> = () => {
               onMouseDown={() => handleDirectionStart("left")}
               onMouseUp={() => handleDirectionStop("left")}
               onMouseLeave={() => handleDirectionStop("left")}
-              className={`absolute top-1/2 left-0 -translate-y-1/2 w-10 h-10 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-red-600 hover:to-red-700 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center group ${
-                activeButton === "left"
-                  ? "from-red-600 to-red-700 border-red-500"
-                  : ""
-              }`}
+              className={`absolute top-1/2 left-0 -translate-y-1/2 w-10 h-10 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-red-600 hover:to-red-700 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center group ${activeButton === "left"
+                ? "from-red-600 to-red-700 border-red-500"
+                : ""
+                }`}
             >
               <svg
                 className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors"
@@ -193,11 +191,10 @@ const PTZControl: React.FC<PTZControlProps> = () => {
               onMouseDown={() => handleDirectionStart("right")}
               onMouseUp={() => handleDirectionStop("right")}
               onMouseLeave={() => handleDirectionStop("right")}
-              className={`absolute top-1/2 right-0 -translate-y-1/2 w-10 h-10 bg-gradient-to-l from-gray-700 to-gray-800 hover:from-red-600 hover:to-red-700 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center group ${
-                activeButton === "right"
-                  ? "from-red-600 to-red-700 border-red-500"
-                  : ""
-              }`}
+              className={`absolute top-1/2 right-0 -translate-y-1/2 w-10 h-10 bg-gradient-to-l from-gray-700 to-gray-800 hover:from-red-600 hover:to-red-700 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center group ${activeButton === "right"
+                ? "from-red-600 to-red-700 border-red-500"
+                : ""
+                }`}
             >
               <svg
                 className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors"
@@ -213,11 +210,10 @@ const PTZControl: React.FC<PTZControlProps> = () => {
               onMouseDown={() => handleDirectionStart("down")}
               onMouseUp={() => handleDirectionStop("down")}
               onMouseLeave={() => handleDirectionStop("down")}
-              className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-10 bg-gradient-to-t from-gray-700 to-gray-800 hover:from-red-600 hover:to-red-700 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center group ${
-                activeButton === "down"
-                  ? "from-red-600 to-red-700 border-red-500"
-                  : ""
-              }`}
+              className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-10 bg-gradient-to-t from-gray-700 to-gray-800 hover:from-red-600 hover:to-red-700 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center group ${activeButton === "down"
+                ? "from-red-600 to-red-700 border-red-500"
+                : ""
+                }`}
             >
               <svg
                 className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors"
@@ -254,11 +250,10 @@ const PTZControl: React.FC<PTZControlProps> = () => {
             onMouseDown={() => handleZoomStart("in")}
             onMouseUp={() => handleZoomStop("in")}
             onMouseLeave={() => handleZoomStop("in")}
-            className={`flex-1 bg-gradient-to-r from-gray-700/90 to-gray-800/90 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 group text-sm ${
-              activeButton === "zoomin"
-                ? "from-red-600 to-red-700 border-red-500"
-                : ""
-            }`}
+            className={`flex-1 bg-gradient-to-r from-gray-700/90 to-gray-800/90 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 group text-sm ${activeButton === "zoomin"
+              ? "from-red-600 to-red-700 border-red-500"
+              : ""
+              }`}
           >
             <svg
               className="w-4 h-4"
@@ -279,11 +274,10 @@ const PTZControl: React.FC<PTZControlProps> = () => {
             onMouseDown={() => handleZoomStart("out")}
             onMouseUp={() => handleZoomStop("out")}
             onMouseLeave={() => handleZoomStop("out")}
-            className={`flex-1 bg-gradient-to-r from-gray-700/90 to-gray-800/90 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 group text-sm ${
-              activeButton === "zoomout"
-                ? "from-red-600 to-red-700 border-red-500"
-                : ""
-            }`}
+            className={`flex-1 bg-gradient-to-r from-gray-700/90 to-gray-800/90 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 group text-sm ${activeButton === "zoomout"
+              ? "from-red-600 to-red-700 border-red-500"
+              : ""
+              }`}
           >
             <svg
               className="w-4 h-4"
@@ -332,11 +326,10 @@ const PTZControl: React.FC<PTZControlProps> = () => {
             onMouseDown={() => handleFocusStart("near")}
             onMouseUp={handleFocusStop}
             onMouseLeave={handleFocusStop}
-            className={`flex-1 bg-gradient-to-r from-gray-700/90 to-gray-800/90 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 group text-sm ${
-              activeButton === "focusnear"
-                ? "from-red-600 to-red-700 border-red-500"
-                : ""
-            }`}
+            className={`flex-1 bg-gradient-to-r from-gray-700/90 to-gray-800/90 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 group text-sm ${activeButton === "focusnear"
+              ? "from-red-600 to-red-700 border-red-500"
+              : ""
+              }`}
           >
             <svg
               className="w-4 h-4"
@@ -357,11 +350,10 @@ const PTZControl: React.FC<PTZControlProps> = () => {
             onMouseDown={() => handleFocusStart("far")}
             onMouseUp={handleFocusStop}
             onMouseLeave={handleFocusStop}
-            className={`flex-1 bg-gradient-to-r from-gray-700/90 to-gray-800/90 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 group text-sm ${
-              activeButton === "focusfar"
-                ? "from-red-600 to-red-700 border-red-500"
-                : ""
-            }`}
+            className={`flex-1 bg-gradient-to-r from-gray-700/90 to-gray-800/90 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 group text-sm ${activeButton === "focusfar"
+              ? "from-red-600 to-red-700 border-red-500"
+              : ""
+              }`}
           >
             <span className="font-medium">Far</span>
             <svg
@@ -404,11 +396,10 @@ const PTZControl: React.FC<PTZControlProps> = () => {
             onMouseDown={() => handleApertureStart("open")}
             onMouseUp={handleApertureStop}
             onMouseLeave={handleApertureStop}
-            className={`flex-1 bg-gradient-to-r from-gray-700/90 to-gray-800/90 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 group text-sm ${
-              activeButton === "irisopen"
-                ? "from-red-600 to-red-700 border-red-500"
-                : ""
-            }`}
+            className={`flex-1 bg-gradient-to-r from-gray-700/90 to-gray-800/90 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 group text-sm ${activeButton === "irisopen"
+              ? "from-red-600 to-red-700 border-red-500"
+              : ""
+              }`}
           >
             <svg
               className="w-4 h-4"
@@ -429,11 +420,10 @@ const PTZControl: React.FC<PTZControlProps> = () => {
             onMouseDown={() => handleApertureStart("close")}
             onMouseUp={handleApertureStop}
             onMouseLeave={handleApertureStop}
-            className={`flex-1 bg-gradient-to-r from-gray-700/90 to-gray-800/90 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 group text-sm ${
-              activeButton === "irisclose"
-                ? "from-red-600 to-red-700 border-red-500"
-                : ""
-            }`}
+            className={`flex-1 bg-gradient-to-r from-gray-700/90 to-gray-800/90 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg border border-gray-600 hover:border-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/50 flex items-center justify-center gap-2 group text-sm ${activeButton === "irisclose"
+              ? "from-red-600 to-red-700 border-red-500"
+              : ""
+              }`}
           >
             <svg
               className="w-4 h-4"

@@ -7,6 +7,7 @@ import TourManagement, { type Tour } from '../components/ptz/TourManagement';
 import ScheduledTaskManagement, { type ScheduledTask } from '../components/ptz/ScheduledTaskManagement';
 import PTZRestart from '../components/ptz/PTZRestart';
 import RestoreDefault from '../components/ptz/RestoreDefault';
+import { useCameraContext } from '../contexts/CameraContext';
 
 const PTZSettings: React.FC = () => {
   const [selectedCamera, setSelectedCamera] = useState<'cam1' | 'cam2'>('cam1');
@@ -15,6 +16,8 @@ const PTZSettings: React.FC = () => {
   const [scheduledTasks, setScheduledTasks] = useState<ScheduledTask[]>([]);
   const [activeTourId, setActiveTourId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'preset' | 'tour' | 'scheduled' | 'restart' | 'default'>('preset');
+  const { camId, setCamId } = useCameraContext();
+  setCamId('cam1')
   const [currentPosition, setCurrentPosition] = useState({
     pan: 0,
     tilt: 0,
@@ -217,7 +220,7 @@ const PTZSettings: React.FC = () => {
                     <label className="text-gray-400 text-sm">Camera:</label>
                     <select
                       value={selectedCamera}
-                      onChange={(e) => setSelectedCamera(e.target.value as 'cam1' | 'cam2')}
+                      onChange={(e) => { setSelectedCamera(e.target.value as 'cam1' | 'cam2'), setCamId('cam1') }}
                       className="bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all"
                     >
                       <option value="cam2">Camera Optique</option>
