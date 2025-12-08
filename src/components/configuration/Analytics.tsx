@@ -32,10 +32,11 @@ interface TrackingData {
 type CameraType = "cam1" | "cam2"
 
 const Analytics: React.FC = () => {
-  const [selectedCamera, setSelectedCamera] = useState<CameraType>("cam1")
+  const selectedCamera = "cam1" // Fixed to optical camera only
   const [objects, setObjects] = useState<TrackedObjectWithTimestamp[]>([])
   const [trackingId, setTrackingId] = useState<number | null>(null)
   const [wsConnected, setWsConnected] = useState(false)
+  const [detectionEnabled, setDetectionEnabled] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
@@ -210,6 +211,32 @@ const Analytics: React.FC = () => {
     drawBoxes()
   }, [objects, trackingId])
 
+  const enableDetection = async () => {
+    try {
+      await fetch(`http://${window.location.hostname}:3000/detection/start`, {
+        method: 'POST',
+      })
+      setDetectionEnabled(true)
+    } catch (error) {
+      console.error('Error enabling detection:', error)
+    }
+  }
+
+  const disableDetection = async () => {
+    try {
+      await fetch(`http://${window.location.hostname}:3000/detection/stop`, {
+        method: 'POST',
+      })
+      setDetectionEnabled(false)
+      // Clear tracking when detection is disabled
+      setTrackingId(null)
+      setObjects([])
+      objectMapRef.current.clear()
+    } catch (error) {
+      console.error('Error disabling detection:', error)
+    }
+  }
+
   const enableTracking = async (id: number) => {
     try {
       await fetch(`http://${window.location.hostname}:3000/track/object/${id}`, {
@@ -256,37 +283,43 @@ const Analytics: React.FC = () => {
           </div>
         </div>
 
-        {/* Camera Selection */}
+        {/* Detection Controls */}
         <div className="mb-6">
           <div className="bg-slate-800/60 border border-slate-600/50 rounded-lg p-4">
             <div className="flex items-center gap-4">
-              <label className="text-sm font-medium text-white">Camera:</label>
+              <label className="text-sm font-medium text-white">Camera: Caméra Optique (cam1)</label>
+
               <div className="flex gap-2">
-                <button
-                  onClick={() => setSelectedCamera("cam1")}
-                  className={`px-4 py-2 rounded-md transition-all ${selectedCamera === "cam1"
-                    ? "bg-red-600 text-white"
-                    : "bg-slate-700/60 text-slate-300 hover:bg-slate-600/60"
-                    }`}
-                >
-                  Camera 1
-                </button>
-                <button
-                  onClick={() => setSelectedCamera("cam2")}
-                  className={`px-4 py-2 rounded-md transition-all ${selectedCamera === "cam2"
-                    ? "bg-red-600 text-white"
-                    : "bg-slate-700/60 text-slate-300 hover:bg-slate-600/60"
-                    }`}
-                >
-                  Camera 2
-                </button>
+                {detectionEnabled ? (
+                  <button
+                    onClick={disableDetection}
+                    className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white transition-all"
+                  >
+                    Disable Detection
+                  </button>
+                ) : (
+                  <button
+                    onClick={enableDetection}
+                    className="px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white transition-all"
+                  >
+                    Enable Detection
+                  </button>
+                )}
               </div>
 
-              <div className="flex items-center gap-2 ml-auto">
-                <Circle className={`h-3 w-3 ${wsConnected ? 'text-green-500 fill-green-500' : 'text-red-500 fill-red-500'}`} />
-                <span className="text-sm text-slate-300">
-                  {wsConnected ? 'WebSocket Connected' : 'WebSocket Disconnected'}
-                </span>
+              <div className="flex items-center gap-4 ml-auto">
+                <div className="flex items-center gap-2">
+                  <Circle className={`h-3 w-3 ${detectionEnabled ? 'text-green-500 fill-green-500' : 'text-gray-500 fill-gray-500'}`} />
+                  <span className="text-sm text-slate-300">
+                    {detectionEnabled ? 'Detection Active' : 'Detection Inactive'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Circle className={`h-3 w-3 ${wsConnected ? 'text-green-500 fill-green-500' : 'text-red-500 fill-red-500'}`} />
+                  <span className="text-sm text-slate-300">
+                    {wsConnected ? 'WebSocket Connected' : 'WebSocket Disconnected'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -302,7 +335,7 @@ const Analytics: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Camera className="h-5 w-5 text-slate-400" />
                   <h3 className="text-base font-medium text-white">
-                    {selectedCamera.toUpperCase()} Feed
+                    Caméra Optique Feed
                   </h3>
                 </div>
                 <div className="flex items-center gap-4">
@@ -338,7 +371,8 @@ const Analytics: React.FC = () => {
                 {/* Status Overlay */}
                 <div className="absolute top-3 left-3 bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-md border border-slate-600/50">
                   <div className="text-xs text-slate-200 font-mono space-y-1">
-                    <div>Camera: {selectedCamera.toUpperCase()}</div>
+                    <div>Camera: Caméra Optique</div>
+                    <div>Detection: {detectionEnabled ? 'Active' : 'Inactive'}</div>
                     <div>Objects: {objects.length}</div>
                     {trackingId !== null && (
                       <div className="flex items-center gap-1 text-red-400">
@@ -396,15 +430,19 @@ const Analytics: React.FC = () => {
                       {isTracking ? (
                         <button
                           onClick={disableTracking}
-                          className="w-full px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-md text-sm transition-colors"
+                          disabled={!detectionEnabled}
+                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${!detectionEnabled
+                            ? 'bg-slate-700/50 text-slate-500 cursor-not-allowed'
+                            : 'bg-slate-600 hover:bg-slate-500 text-white'
+                            }`}
                         >
                           Stop Tracking
                         </button>
                       ) : (
                         <button
                           onClick={() => enableTracking(obj.trackId)}
-                          disabled={trackingId !== null}
-                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${trackingId !== null
+                          disabled={!detectionEnabled || trackingId !== null}
+                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${!detectionEnabled || trackingId !== null
                             ? 'bg-slate-700/50 text-slate-500 cursor-not-allowed'
                             : 'bg-red-600 hover:bg-red-700 text-white'
                             }`}
