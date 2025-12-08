@@ -102,14 +102,14 @@ const PresetManagement: React.FC = () => {
     console.log("Used IDs:", usedIds);
     let newId = 0;
     while (usedIds.includes(newId) && newId <= 128) newId++;
-
+    if (usedIds.length === 0) newId = 1;
     if (newId > 128) {
       alert("Maximum presets reached (128)");
       return;
     }
 
     const newTitle = `Preset${newId}`;
-    const apiIndex = newId ; // 0-based index for API
+    const apiIndex = newId; // 0-based index for API
 
     setPresetMutation.mutate(
       {
