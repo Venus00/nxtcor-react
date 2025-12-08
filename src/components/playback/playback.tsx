@@ -209,6 +209,7 @@ const VideoListSidebar = () => {
     }
 
     return (
+     <>
         <div className="flex h-screen space-x-4 bg-gray-900" >
             {/* Sidebar with video list */}
             <div className={`${sidebarWidthClass} h-full rounded-lg p-4 flex flex-col bg-gray-900 shadow-md border border-gray-800 overflow-auto`}>
@@ -248,6 +249,7 @@ const VideoListSidebar = () => {
                     ) : (
                         <li className="text-gray-500">No videos found</li>
                     )}
+                    </ul>
                 </div>
 
                 {error && (
@@ -340,7 +342,8 @@ const VideoListSidebar = () => {
                     )}
                 </div>
             </div>
-        </div>
+        </>
+
     );
 };
 
