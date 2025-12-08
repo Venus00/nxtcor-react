@@ -77,7 +77,7 @@ const apiToUI = (
   denoiseData: any,
   imgCtrlData: any
 ): PictureSettingsData => {
-  const profileIdx = profile === "daytime" ? 0 : profile === "nighttime" ? 1 : 2; //
+  const profileIdx = profile === "daytime" ? 2 : profile === "nighttime" ? 2 : 2; //
 
   const getColor = (key: string, def: number) =>
     colorData?.config?.[`table.VideoColor[0][${profileIdx}].${key}`] ?? def;
