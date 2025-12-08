@@ -1,8 +1,8 @@
 // components/camera/VideoEncoding.tsx
 import React, { useEffect, useState } from "react";
 import { useCamId } from "../../contexts/CameraContext";
-import {useEncode as useVideoEncode } from "../../hooks/useCameraQueries";
-import {useSetEncode as useSetVideoEncode } from "../../hooks/useCameraMutations";
+import { useEncode as useVideoEncode } from "../../hooks/useCameraQueries";
+import { useSetEncode as useSetVideoEncode } from "../../hooks/useCameraMutations";
 
 // =============================================================================
 // TYPES & INTERFACES
@@ -36,15 +36,16 @@ const defaultState: VideoEncodingData = {
   subStreamEnabled: true
 };
 
-const resolutionOptions = [
-  { value: '3840x2160', label: '4K (3840x2160)', minBitrate: 8192, maxBitrate: 16384 },
-  { value: '2688x1520', label: '4MP (2688x1520)', minBitrate: 6144, maxBitrate: 10240 }, // Added from JSON
-  { value: '2560x1440', label: '2K (2560x1440)', minBitrate: 4096, maxBitrate: 8192 },
+const resolutionOptionsOptical = [
+  { value: '2688x2520', label: '2688x2520', minBitrate: 6144, maxBitrate: 10240 },
   { value: '1920x1080', label: 'Full HD (1920x1080)', minBitrate: 2048, maxBitrate: 6144 },
   { value: '1280x720', label: 'HD (1280x720)', minBitrate: 1024, maxBitrate: 3072 },
-  { value: '704x576', label: 'D1 (704x576)', minBitrate: 512, maxBitrate: 2048 },
-  { value: '640x480', label: 'VGA (640x480)', minBitrate: 384, maxBitrate: 1536 },
-  { value: '352x288', label: 'CIF (352x288)', minBitrate: 256, maxBitrate: 1024 },
+];
+
+const resolutionOptionsThermal = [
+  { value: '1280x1024', label: '1280x1024', minBitrate: 1536, maxBitrate: 4096 },
+  { value: '1280x720', label: 'HD (1280x720)', minBitrate: 1024, maxBitrate: 3072 },
+  { value: '640x512', label: '640x512', minBitrate: 512, maxBitrate: 2048 },
 ];
 
 // =============================================================================
@@ -56,9 +57,9 @@ const resolutionOptions = [
  * Uses table.Encode[0].MainFormat[0] for main video settings.
  * Uses table.Encode[0].ExtraFormat[0] for sub-stream enable status.
  */
-const apiToUI = (data: any): VideoEncodingData => {
+const apiToUI = (data: any, camId: string): VideoEncodingData => {
   if (!data) return defaultState;
-  
+
   const config = data.config || data;
   const mainPrefix = "table.Encode[0].MainFormat[0].Video.";
   const subPrefix = "table.Encode[0].ExtraFormat[0].";
@@ -69,16 +70,17 @@ const apiToUI = (data: any): VideoEncodingData => {
   let codec = getVal(mainPrefix + "Compression", "H.264");
   // Map specific H.264 profiles if needed, otherwise pass through
   if (!['H.264', 'H.264H', 'H.264B', 'H.265', 'MJPEG'].includes(codec)) {
-      if (codec === 'MJPG') codec = 'MJPEG'; // Handle potential API variance
+    if (codec === 'MJPG') codec = 'MJPEG'; // Handle potential API variance
   }
 
   // BitRate Control
   const brControl = getVal(mainPrefix + "BitRateControl", "CBR");
-  
+
   // Resolution
   const resolution = getVal(mainPrefix + "resolution", "1920x1080");
-  
+
   // Calculate reference bitrate for UI display
+  const resolutionOptions = camId === 'cam2' ? resolutionOptionsThermal : resolutionOptionsOptical;
   const resOption = resolutionOptions.find(r => r.value === resolution);
   const refBitRate = resOption ? Math.floor((resOption.minBitrate + resOption.maxBitrate) / 2) : 4096;
 
@@ -91,7 +93,7 @@ const apiToUI = (data: any): VideoEncodingData => {
     referenceBitRate: refBitRate,
     bitRate: Number(getVal(mainPrefix + "BitRate", 4096)),
     iFrameInterval: Number(getVal(mainPrefix + "GOP", 50)),
-    
+
     // Substream (ExtraFormat[0])
     subStreamEnabled: String(getVal(subPrefix + "VideoEnable", "false")) === "true",
 
@@ -131,6 +133,9 @@ const VideoEncoding: React.FC = () => {
   const { data: apiData, isLoading, error, refetch } = useVideoEncode(camId);
   const mutation = useSetVideoEncode(camId);
 
+  // Get resolution options based on camera type
+  const resolutionOptions = camId === 'cam2' ? resolutionOptionsThermal : resolutionOptionsOptical;
+
   // Local State
   const [settings, setSettings] = useState<VideoEncodingData>(defaultState);
   const [watermarkInput, setWatermarkInput] = useState("");
@@ -139,12 +144,12 @@ const VideoEncoding: React.FC = () => {
   // Sync API -> UI
   useEffect(() => {
     if (apiData) {
-      const parsed = apiToUI(apiData);
+      const parsed = apiToUI(apiData, camId);
       setSettings(parsed);
       setWatermarkInput(parsed.watermarkText);
       setIsDirty(false);
     }
-  }, [apiData]);
+  }, [apiData, camId]);
 
   // Handlers
   const handleUpdate = (updates: Partial<VideoEncodingData>) => {
@@ -160,8 +165,8 @@ const VideoEncoding: React.FC = () => {
 
   const handleResolutionChange = (resolution: string) => {
     const selectedRes = resolutionOptions.find(r => r.value === resolution);
-    const newRefBitRate = selectedRes 
-      ? Math.floor((selectedRes.minBitrate + selectedRes.maxBitrate) / 2) 
+    const newRefBitRate = selectedRes
+      ? Math.floor((selectedRes.minBitrate + selectedRes.maxBitrate) / 2)
       : settings.referenceBitRate;
 
     handleUpdate({
@@ -194,7 +199,7 @@ const VideoEncoding: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      
+
       {/* Feedback */}
       {error && (
         <div className="p-4 rounded-lg bg-red-900/50 border border-red-700 text-red-300">
@@ -203,10 +208,10 @@ const VideoEncoding: React.FC = () => {
         </div>
       )}
       {mutation.isPending && (
-         <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-700 text-blue-300 flex items-center gap-2 text-sm">
-           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300"></div>
-           Enregistrement en cours...
-         </div>
+        <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-700 text-blue-300 flex items-center gap-2 text-sm">
+          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-300"></div>
+          Enregistrement en cours...
+        </div>
       )}
       {mutation.isSuccess && (
         <div className="p-3 rounded-lg bg-green-900/30 border border-green-700 text-green-300 text-sm">
@@ -239,17 +244,16 @@ const VideoEncoding: React.FC = () => {
             <button
               key={codec}
               onClick={() => handleCodecChange(codec)}
-              className={`py-4 px-4 rounded-lg font-medium transition-all ${
-                settings.videoCodec === codec
+              className={`py-4 px-4 rounded-lg font-medium transition-all ${settings.videoCodec === codec
                   ? 'bg-red-600 text-white shadow-lg shadow-red-500/25'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
+                }`}
             >
               <div className="text-center">
                 <div className="font-bold text-lg">{codec}</div>
                 <div className="text-xs mt-1 opacity-75">
-                  {codec === 'H.265' ? 'HEVC' : 
-                   codec === 'MJPEG' ? 'Motion JPEG' : 'Standard'}
+                  {codec === 'H.265' ? 'HEVC' :
+                    codec === 'MJPEG' ? 'Motion JPEG' : 'Standard'}
                 </div>
               </div>
             </button>
@@ -265,11 +269,10 @@ const VideoEncoding: React.FC = () => {
             <button
               key={res.value}
               onClick={() => handleResolutionChange(res.value)}
-              className={`py-4 px-5 rounded-lg font-medium transition-all text-left ${
-                settings.resolution === res.value
+              className={`py-4 px-5 rounded-lg font-medium transition-all text-left ${settings.resolution === res.value
                   ? 'bg-red-600 text-white shadow-lg shadow-red-500/25'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -306,27 +309,25 @@ const VideoEncoding: React.FC = () => {
       {/* Bit Rate */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-semibold text-white mb-4">Contrôle du Débit</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <button
             onClick={() => handleUpdate({ bitRateType: 'fixed' })}
             disabled={settings.videoCodec === 'MJPEG'}
-            className={`py-4 px-6 rounded-lg font-medium transition-all ${
-              settings.bitRateType === 'fixed'
+            className={`py-4 px-6 rounded-lg font-medium transition-all ${settings.bitRateType === 'fixed'
                 ? 'bg-red-600 text-white shadow-lg'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
+              }`}
           >
             Débit Fixe (CBR)
           </button>
           <button
             onClick={() => handleUpdate({ bitRateType: 'variable' })}
             disabled={settings.videoCodec === 'MJPEG'}
-            className={`py-4 px-6 rounded-lg font-medium transition-all ${
-              settings.bitRateType === 'variable'
+            className={`py-4 px-6 rounded-lg font-medium transition-all ${settings.bitRateType === 'variable'
                 ? 'bg-red-600 text-white shadow-lg'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
+              }`}
           >
             Débit Variable (VBR)
           </button>
@@ -336,8 +337,8 @@ const VideoEncoding: React.FC = () => {
         {settings.bitRateType === 'variable' && (
           <div className="mb-6 p-4 bg-gray-900/50 rounded border border-gray-600">
             <div className="flex justify-between mb-2">
-               <label className="text-white">Qualité d'Image</label>
-               <span className="text-gray-400">{settings.pictureQuality}/6</span>
+              <label className="text-white">Qualité d'Image</label>
+              <span className="text-gray-400">{settings.pictureQuality}/6</span>
             </div>
             <input
               type="range"
@@ -348,29 +349,29 @@ const VideoEncoding: React.FC = () => {
               className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
             />
             <div className="flex justify-between text-xs text-gray-500 mt-1">
-               <span>Faible (1)</span>
-               <span>Haute (6)</span>
+              <span>Faible (1)</span>
+              <span>Haute (6)</span>
             </div>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           {/* Reference */}
-           <div className="p-4 bg-blue-900/20 border border-blue-700/30 rounded-lg">
-             <div className="text-sm text-blue-300 mb-1">Recommandé</div>
-             <div className="text-2xl font-bold text-blue-400">{currentResolution.minBitrate} - {currentResolution.maxBitrate} kbps</div>
-           </div>
-           
-           {/* Input */}
-           <div className="p-4 bg-gray-900/50 rounded-lg border border-gray-600">
-             <div className="text-sm text-gray-300 mb-1">Débit Actuel (kbps)</div>
-             <input
-               type="number"
-               value={settings.bitRate}
-               onChange={(e) => handleUpdate({ bitRate: parseInt(e.target.value) || 0 })}
-               className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white focus:border-red-500 outline-none"
-             />
-           </div>
+          {/* Reference */}
+          <div className="p-4 bg-blue-900/20 border border-blue-700/30 rounded-lg">
+            <div className="text-sm text-blue-300 mb-1">Recommandé</div>
+            <div className="text-2xl font-bold text-blue-400">{currentResolution.minBitrate} - {currentResolution.maxBitrate} kbps</div>
+          </div>
+
+          {/* Input */}
+          <div className="p-4 bg-gray-900/50 rounded-lg border border-gray-600">
+            <div className="text-sm text-gray-300 mb-1">Débit Actuel (kbps)</div>
+            <input
+              type="number"
+              value={settings.bitRate}
+              onChange={(e) => handleUpdate({ bitRate: parseInt(e.target.value) || 0 })}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white focus:border-red-500 outline-none"
+            />
+          </div>
         </div>
       </div>
 
@@ -423,8 +424,8 @@ const VideoEncoding: React.FC = () => {
         <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
           <div className="flex justify-between items-center">
             <div>
-               <h3 className="text-white font-medium">Flux Secondaire</h3>
-               <p className="text-xs text-gray-400">Activer le flux ExtraFormat[0]</p>
+              <h3 className="text-white font-medium">Flux Secondaire</h3>
+              <p className="text-xs text-gray-400">Activer le flux ExtraFormat[0]</p>
             </div>
             <button
               onClick={() => handleUpdate({ subStreamEnabled: !settings.subStreamEnabled })}

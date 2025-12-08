@@ -11,6 +11,22 @@ import {
   useUpdateTour,
 } from "../../hooks/useCameraMutations";
 
+// Tour Management is temporarily disabled
+const TourManagement: React.FC = () => {
+  return (
+    <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+      <div className="text-center py-8">
+        <h3 className="text-xl font-semibold text-gray-400 mb-2">Tour Management</h3>
+        <p className="text-gray-500">Cette fonctionnalité est temporairement désactivée</p>
+      </div>
+    </div>
+  );
+};
+
+export default TourManagement;
+
+/* ORIGINAL CODE - DISABLED FOR NOW
+
 // =============================================================================
 // TYPES & INTERFACES
 // =============================================================================
@@ -468,15 +484,11 @@ const TourManagement: React.FC = () => {
                             ) : (
                               <button
                                 onClick={() => handleStart(tour.id)}
-                                disabled={
-                                  startTourMutation.isPending ||
-                                  activeTourId !== null
-                                }
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all shadow-lg ${
-                                  activeTourId !== null
-                                    ? "bg-gray-700 text-gray-500 cursor-not-allowed"
-                                    : "bg-green-600 hover:bg-green-700 text-white shadow-green-900/20"
-                                }`}
+                                disabled={startTourMutation.isPending || activeTourId !== null}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all shadow-lg ${activeTourId !== null
+                                  ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                  : 'bg-green-600 hover:bg-green-700 text-white shadow-green-900/20'
+                                  }`}
                               >
                                 {startTourMutation.isPending &&
                                 activeTourId === null ? (
@@ -676,30 +688,25 @@ const TourManagement: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Active Tour Warning */}
-      {activeTourId && (
-        <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-3 flex items-start gap-3">
-          <svg
-            className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <div className="text-sm text-yellow-200">
-            <strong>Note :</strong> L'utilisation manuelle du PTZ
-            (Pan/Tilt/Zoom) arrêtera automatiquement le tour en cours.
-          </div>
-        </div>
-      )}
     </div>
+  );
+};
+
+export default TourManagement;
+* /      {/ * Active Tour Warning */}
+{
+  activeTourId && (
+    <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-3 flex items-start gap-3">
+      <svg className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <div className="text-sm text-yellow-200">
+        <strong>Note :</strong> L'utilisation manuelle du PTZ (Pan/Tilt/Zoom) arrêtera automatiquement le tour en cours.
+      </div>
+    </div>
+  )
+}
+    </div >
   );
 };
 
