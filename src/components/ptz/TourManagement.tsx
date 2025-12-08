@@ -29,7 +29,7 @@ const apiToUI = (data: any): Tour[] => {
   const config = data.tours;
   const tours: Tour[] = [];
   const MAX_TOURS = 31; // Typically 8 tours supported
-
+ console.log("API Tour Data:", config);
   for (let i = 0; i < MAX_TOURS; i++) {
     const prefix = `table.PtzTour[0][${i}].`;
     
