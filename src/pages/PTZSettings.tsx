@@ -9,7 +9,7 @@ import PTZRestart from '../components/ptz/PTZRestart';
 import RestoreDefault from '../components/ptz/RestoreDefault';
 
 const PTZSettings: React.FC = () => {
-  const [selectedCamera, setSelectedCamera] = useState<'cam1' | 'cam2'>('cam1');
+  const [selectedCamera, setSelectedCamera] = useState<'cam1' | 'cam2'>('cam2');
   const [presets, setPresets] = useState<Preset[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
   const [scheduledTasks, setScheduledTasks] = useState<ScheduledTask[]>([]);
@@ -220,8 +220,8 @@ const PTZSettings: React.FC = () => {
                       onChange={(e) => setSelectedCamera(e.target.value as 'cam1' | 'cam2')}
                       className="bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all"
                     >
-                      <option value="cam1">Camera 1</option>
-                      <option value="cam2">Camera 2</option>
+                      <option value="cam1">Camera Thermique</option>
+                      <option value="cam2">Camera Optique</option>
                     </select>
                   </div>
                 </div>
@@ -252,7 +252,7 @@ const PTZSettings: React.FC = () => {
                   </div>
                   <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-700">
                     <span className="text-white text-sm font-medium">
-                      {selectedCamera === 'cam1' ? 'camera 1' : 'camera 2'}
+                      {selectedCamera === 'cam2' ? 'camera Thermique' : 'camera Optique'}
                     </span>
                   </div>
                 </div>
