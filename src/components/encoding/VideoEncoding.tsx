@@ -68,11 +68,22 @@ const apiToUI = (data: any, camId: string): VideoEncodingData => {
 
   // Codec
   let codec = getVal(mainPrefix + "Compression", "H.264");
+   const codecpROFILE = getVal(mainPrefix + "Profile", "");
+   console.log("Codec Profile:", codecpROFILE);
   // Map specific H.264 profiles if needed, otherwise pass through
   if (!['H.264', 'H.264H', 'H.264B', 'H.265', 'MJPEG'].includes(codec)) {
     if (codec === 'MJPG') codec = 'MJPEG'; // Handle potential API variance
   }
-
+if (codec === 'H.264') {
+    if (codecpROFILE === 'High') {
+      codec = 'H.264H';
+    } else if (codecpROFILE === 'Baseline') {
+      codec = 'H.264B';
+    } 
+    else {
+      codec = 'H.264'; // Default to standard H.264
+    }
+  }
   // BitRate Control
   const brControl = getVal(mainPrefix + "BitRateControl", "CBR");
 
