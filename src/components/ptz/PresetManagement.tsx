@@ -381,31 +381,7 @@ const PresetManagement: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Position Details (Read-only if available) */}
-                {(preset.position.pan !== 0 ||
-                  preset.position.tilt !== 0 ||
-                  preset.position.zoom !== 0) && (
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                    <div className="bg-gray-700/50 rounded px-2 py-1">
-                      <p className="text-gray-400">Pan</p>
-                      <p className="text-white font-mono">
-                        {preset.position.pan.toFixed(1)}
-                      </p>
-                    </div>
-                    <div className="bg-gray-700/50 rounded px-2 py-1">
-                      <p className="text-gray-400">Tilt</p>
-                      <p className="text-white font-mono">
-                        {preset.position.tilt.toFixed(1)}
-                      </p>
-                    </div>
-                    <div className="bg-gray-700/50 rounded px-2 py-1">
-                      <p className="text-gray-400">Zoom</p>
-                      <p className="text-white font-mono">
-                        {preset.position.zoom}
-                      </p>
-                    </div>
-                  </div>
-                )}
+               
               </div>
             ))}
           </div>
