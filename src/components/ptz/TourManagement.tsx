@@ -200,8 +200,8 @@ const TourManagement: React.FC = () => {
 
     let payloads ={
       id : tourId -1,
-      name : editingTour.name,
-      enable : true,
+      // name : editingTour.name,
+      // enable : true,
       presets : editingTour.presets.map(p => ({presetId : p.presetId, duration : p.duration}))
     }
     // Build API payload
