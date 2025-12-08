@@ -60,7 +60,7 @@ const apiToUI = (data: any): Tour[] => {
 // =============================================================================
 
 const TourManagement: React.FC = () => {
-  const camId = useCamId();
+  const camId = 'cam2';
   
   // 1. Data Fetching
   const { data: apiData, isLoading, error, refetch } = usePtzTour(camId);
