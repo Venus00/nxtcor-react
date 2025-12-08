@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useRef, useState } from "react"
+import { useCameraContext } from "../contexts/CameraContext"
 import ProfileManagement, { type ProfileManagementData } from "../components/camera/ProfileManagement"
 import PictureSettings, { type PictureSettingsData } from "../components/camera/PictureSettings"
 import ExposureSettings, { type ExposureSettingsData } from "../components/camera/ExposureSettings"
@@ -14,8 +15,11 @@ import PictureStream, { type PictureStreamData } from "../components/encoding/Pi
 import VideoOverlay, { type VideoOverlayData } from "../components/encoding/VideoOverlay"
 import ROI, { type ROIData } from "../components/encoding/ROI"
 import Audio, { type AudioData } from "../components/encoding/Audio"
+import RecordSchedule, { type RecordScheduleData } from "../components/storage/RecordSchedule"
 
 const CameraSettingsPage: React.FC = () => {
+  const { camId, setCamId } = useCameraContext();
+
   // Profile Management State
   const [profileSettings, setProfileSettings] = useState<ProfileManagementData>({
     type: 'normal',
@@ -161,14 +165,25 @@ const CameraSettingsPage: React.FC = () => {
     speakerVolume: 50,
   });
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'picture' | 'exposure' | 'white-balance' | 'day-night' | 'zoom-focus' | 'defog' | 'video-encoding' | 'picture-stream' | 'video-overlay' | 'roi' | 'audio'>('profile');
-  const [activeCategory, setActiveCategory] = useState<'profile' | 'conditions' | 'encoding'>('profile');
- const videoRef = useRef<HTMLVideoElement | null>(null)
+  const [recordScheduleSettings, setRecordScheduleSettings] = useState<RecordScheduleData>({
+    monday: { day: 'Monday', enabled: false, timeSlots: [] },
+    tuesday: { day: 'Tuesday', enabled: false, timeSlots: [] },
+    wednesday: { day: 'Wednesday', enabled: false, timeSlots: [] },
+    thursday: { day: 'Thursday', enabled: false, timeSlots: [] },
+    friday: { day: 'Friday', enabled: false, timeSlots: [] },
+    saturday: { day: 'Saturday', enabled: false, timeSlots: [] },
+    sunday: { day: 'Sunday', enabled: false, timeSlots: [] },
+  });
+
+  const [activeTab, setActiveTab] = useState<'profile' | 'picture' | 'exposure' | 'white-balance' | 'day-night' | 'zoom-focus' | 'defog' | 'video-encoding' | 'picture-stream' | 'video-overlay' | 'roi' | 'audio' | 'record-schedule'>('profile');
+  const [activeCategory, setActiveCategory] = useState<'profile' | 'conditions' | 'encoding' | 'settings'>('profile');
+  const videoRef = useRef<HTMLVideoElement | null>(null)
 
   const [scale] = useState(1)
   const [position] = useState({ x: 0, y: 0 })
   const handleSave = () => {
     // TODO: Implement actual save functionality to camera API
+    console.log('Saving settings for camera:', camId);
     console.log('Saving profile settings:', profileSettings);
     console.log('Saving picture settings:', pictureSettings);
     console.log('Saving exposure settings:', exposureSettings);
@@ -181,6 +196,7 @@ const CameraSettingsPage: React.FC = () => {
     console.log('Saving video overlay settings:', videoOverlaySettings);
     console.log('Saving ROI settings:', roiSettings);
     console.log('Saving audio settings:', audioSettings);
+    console.log('Saving record schedule settings:', recordScheduleSettings);
     alert('Paramètres enregistrés avec succès!');
   };
 
@@ -315,6 +331,15 @@ const CameraSettingsPage: React.FC = () => {
       microphoneVolume: 50,
       speakerVolume: 50,
     });
+    setRecordScheduleSettings({
+      monday: { day: 'Monday', enabled: false, timeSlots: [] },
+      tuesday: { day: 'Tuesday', enabled: false, timeSlots: [] },
+      wednesday: { day: 'Wednesday', enabled: false, timeSlots: [] },
+      thursday: { day: 'Thursday', enabled: false, timeSlots: [] },
+      friday: { day: 'Friday', enabled: false, timeSlots: [] },
+      saturday: { day: 'Saturday', enabled: false, timeSlots: [] },
+      sunday: { day: 'Sunday', enabled: false, timeSlots: [] },
+    });
   };
 
   return (
@@ -322,8 +347,37 @@ const CameraSettingsPage: React.FC = () => {
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">Paramètres de la Caméra Optique</h1>
-          <p className="text-gray-400">Configurez les réglages et l'encodage de votre caméra optique</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2">Paramètres de la Caméra</h1>
+              <p className="text-gray-400">Configurez les réglages et l'encodage de votre caméra optique</p>
+            </div>
+
+            {/* Camera Selector */}
+            <div className="flex items-center gap-3">
+              <span className="text-gray-400 text-sm font-medium">Camera sélectionnée:</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCamId('cam1')}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all ${camId === 'cam1'
+                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/25'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                >
+                  Caméra 1
+                </button>
+                <button
+                  onClick={() => setCamId('cam2')}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all ${camId === 'cam2'
+                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/25'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                >
+                  Caméra 2
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Main Layout: Sidebar + Content */}
@@ -335,24 +389,18 @@ const CameraSettingsPage: React.FC = () => {
               <div className="p-4 border-b border-gray-700">
                 <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">Aperçu en Direct</h3>
                 <div className="aspect-video bg-gray-900 rounded-lg border border-gray-600 flex items-center justify-center overflow-hidden">
-                      <div className="relative w-full h-full overflow-hidden bg-black">
-                    <video
-                      ref={videoRef}
+                  <div className="relative w-full h-full overflow-hidden bg-black">
+                    <iframe
+                      src={`http://${window.location.hostname}:8889/${camId}`}
                       className="object-fill"
-                      poster="/mjpeg"
                       style={{
-                        transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
                         transformOrigin: "center",
                         transition: "transform 0.3s ease",
                         width: "100%",
                         height: "100%",
                       }}
-                      autoPlay
-                      muted
-                      playsInline
-                    >
-                      Your browser does not support the video tag.
-                    </video>
+                      allow="autoplay; fullscreen"
+                    />
                   </div>
                 </div>
               </div>
@@ -360,18 +408,17 @@ const CameraSettingsPage: React.FC = () => {
               {/* Main Categories */}
               <div className="p-3">
                 <h3 className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">Catégories</h3>
-                
+
                 {/* Profile Management */}
                 <button
                   onClick={() => {
                     setActiveCategory('profile');
                     setActiveTab('profile');
                   }}
-                  className={`w-full text-left px-3 py-3 rounded-lg mb-2 transition-all ${
-                    activeCategory === 'profile'
-                      ? 'bg-red-600 text-white shadow-lg'
-                      : 'text-gray-300 hover:bg-gray-700/50'
-                  }`}
+                  className={`w-full text-left px-3 py-3 rounded-lg mb-2 transition-all ${activeCategory === 'profile'
+                    ? 'bg-red-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-gray-700/50'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -387,11 +434,10 @@ const CameraSettingsPage: React.FC = () => {
                     setActiveCategory('conditions');
                     setActiveTab('picture');
                   }}
-                  className={`w-full text-left px-3 py-3 rounded-lg mb-3 transition-all ${
-                    activeCategory === 'conditions'
-                      ? 'bg-red-600 text-white shadow-lg'
-                      : 'text-gray-300 hover:bg-gray-700/50'
-                  }`}
+                  className={`w-full text-left px-3 py-3 rounded-lg mb-3 transition-all ${activeCategory === 'conditions'
+                    ? 'bg-red-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-gray-700/50'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,61 +452,55 @@ const CameraSettingsPage: React.FC = () => {
                   <div className="ml-4 space-y-1 border-l-2 border-gray-700 pl-3">
                     <button
                       onClick={() => setActiveTab('picture')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                        activeTab === 'picture'
-                          ? 'bg-red-600/20 text-red-400 font-medium'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'picture'
+                        ? 'bg-red-600/20 text-red-400 font-medium'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                        }`}
                     >
                       Image
                     </button>
                     <button
                       onClick={() => setActiveTab('exposure')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                        activeTab === 'exposure'
-                          ? 'bg-red-600/20 text-red-400 font-medium'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'exposure'
+                        ? 'bg-red-600/20 text-red-400 font-medium'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                        }`}
                     >
                       Exposition
                     </button>
                     <button
                       onClick={() => setActiveTab('white-balance')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                        activeTab === 'white-balance'
-                          ? 'bg-red-600/20 text-red-400 font-medium'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'white-balance'
+                        ? 'bg-red-600/20 text-red-400 font-medium'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                        }`}
                     >
                       Balance des Blancs
                     </button>
                     <button
                       onClick={() => setActiveTab('day-night')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                        activeTab === 'day-night'
-                          ? 'bg-red-600/20 text-red-400 font-medium'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'day-night'
+                        ? 'bg-red-600/20 text-red-400 font-medium'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                        }`}
                     >
                       Jour/Nuit
                     </button>
                     <button
                       onClick={() => setActiveTab('zoom-focus')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                        activeTab === 'zoom-focus'
-                          ? 'bg-red-600/20 text-red-400 font-medium'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'zoom-focus'
+                        ? 'bg-red-600/20 text-red-400 font-medium'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                        }`}
                     >
                       Zoom/Focus
                     </button>
                     <button
                       onClick={() => setActiveTab('defog')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                        activeTab === 'defog'
-                          ? 'bg-red-600/20 text-red-400 font-medium'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'defog'
+                        ? 'bg-red-600/20 text-red-400 font-medium'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                        }`}
                     >
                       Débrouillage
                     </button>
@@ -469,17 +509,16 @@ const CameraSettingsPage: React.FC = () => {
               </div>
 
               {/* Encoding Section */}
-              <div className="mb-4">
+              <div className="mb-3">
                 <button
                   onClick={() => {
                     setActiveCategory('encoding');
                     setActiveTab('video-encoding');
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                    activeCategory === 'encoding'
-                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeCategory === 'encoding'
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
+                    }`}
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
@@ -492,53 +531,83 @@ const CameraSettingsPage: React.FC = () => {
                   <div className="ml-4 space-y-1 border-l-2 border-gray-700 pl-3 mt-2">
                     <button
                       onClick={() => setActiveTab('video-encoding')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                        activeTab === 'video-encoding'
-                          ? 'bg-red-600/20 text-red-400 font-medium'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'video-encoding'
+                        ? 'bg-red-600/20 text-red-400 font-medium'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                        }`}
                     >
                       Encodage Vidéo
                     </button>
                     <button
                       onClick={() => setActiveTab('picture-stream')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                        activeTab === 'picture-stream'
-                          ? 'bg-red-600/20 text-red-400 font-medium'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'picture-stream'
+                        ? 'bg-red-600/20 text-red-400 font-medium'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                        }`}
                     >
                       Flux d'Images
                     </button>
                     <button
                       onClick={() => setActiveTab('video-overlay')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                        activeTab === 'video-overlay'
-                          ? 'bg-red-600/20 text-red-400 font-medium'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'video-overlay'
+                        ? 'bg-red-600/20 text-red-400 font-medium'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                        }`}
                     >
                       Superposition Vidéo
                     </button>
                     <button
                       onClick={() => setActiveTab('roi')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                        activeTab === 'roi'
-                          ? 'bg-red-600/20 text-red-400 font-medium'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'roi'
+                        ? 'bg-red-600/20 text-red-400 font-medium'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                        }`}
                     >
                       ROI
                     </button>
                     <button
                       onClick={() => setActiveTab('audio')}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                        activeTab === 'audio'
-                          ? 'bg-red-600/20 text-red-400 font-medium'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'audio'
+                        ? 'bg-red-600/20 text-red-400 font-medium'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                        }`}
                     >
                       Audio
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Settings Section */}
+              <div className="mb-4">
+                <button
+                  onClick={() => {
+                    setActiveCategory('settings');
+                    setActiveTab('record-schedule');
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeCategory === 'settings'
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
+                    }`}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="font-medium">Settings</span>
+                </button>
+
+                {/* Settings Sub-navigation */}
+                {activeCategory === 'settings' && (
+                  <div className="ml-4 space-y-1 border-l-2 border-gray-700 pl-3 mt-2">
+                    <button
+                      onClick={() => setActiveTab('record-schedule')}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${activeTab === 'record-schedule'
+                        ? 'bg-red-600/20 text-red-400 font-medium'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
+                        }`}
+                    >
+                      Record Schedule
                     </button>
                   </div>
                 )}
@@ -549,11 +618,11 @@ const CameraSettingsPage: React.FC = () => {
           {/* Right Content Area */}
           <div className="flex-1 min-w-0">
             <div className="bg-gray-800/30 rounded-lg border border-gray-700 p-6">
-              
+
               {/* Profile Management Section */}
               {activeCategory === 'profile' && (
-                <ProfileManagement 
-                  settings={profileSettings} 
+                <ProfileManagement
+                  settings={profileSettings}
                   onSettingsChange={setProfileSettings}
                 />
               )}
@@ -563,51 +632,51 @@ const CameraSettingsPage: React.FC = () => {
                 <>
                   {/* Picture Settings Tab */}
                   {activeTab === 'picture' && (
-                    <PictureSettings 
-                      settings={pictureSettings} 
+                    <PictureSettings
+                      settings={pictureSettings}
                       onSettingsChange={setPictureSettings}
                     />
                   )}
 
-          {/* Exposure Settings Tab */}
-          {activeTab === 'exposure' && (
-            <ExposureSettings 
-              settings={exposureSettings} 
-              onSettingsChange={setExposureSettings}
-            />
-          )}
+                  {/* Exposure Settings Tab */}
+                  {activeTab === 'exposure' && (
+                    <ExposureSettings
+                      settings={exposureSettings}
+                      onSettingsChange={setExposureSettings}
+                    />
+                  )}
 
-          {/* White Balance Settings Tab */}
-          {activeTab === 'white-balance' && (
-            <WhiteBalanceSettings 
-              settings={whiteBalanceSettings} 
-              onSettingsChange={setWhiteBalanceSettings}
-            />
-          )}
+                  {/* White Balance Settings Tab */}
+                  {activeTab === 'white-balance' && (
+                    <WhiteBalanceSettings
+                      settings={whiteBalanceSettings}
+                      onSettingsChange={setWhiteBalanceSettings}
+                    />
+                  )}
 
-          {/* Day/Night Settings Tab */}
-          {activeTab === 'day-night' && (
-            <DayNightSettings 
-              settings={dayNightSettings} 
-              onSettingsChange={setDayNightSettings}
-            />
-          )}
+                  {/* Day/Night Settings Tab */}
+                  {activeTab === 'day-night' && (
+                    <DayNightSettings
+                      settings={dayNightSettings}
+                      onSettingsChange={setDayNightSettings}
+                    />
+                  )}
 
-          {/* Zoom/Focus Settings Tab */}
-          {activeTab === 'zoom-focus' && (
-            <ZoomFocusSettings 
-              settings={zoomFocusSettings} 
-              onSettingsChange={setZoomFocusSettings}
-            />
-          )}
+                  {/* Zoom/Focus Settings Tab */}
+                  {activeTab === 'zoom-focus' && (
+                    <ZoomFocusSettings
+                      settings={zoomFocusSettings}
+                      onSettingsChange={setZoomFocusSettings}
+                    />
+                  )}
 
-          {/* Defog Settings Tab */}
-          {activeTab === 'defog' && (
-            <DefogSettings 
-              settings={defogSettings} 
-              onSettingsChange={setDefogSettings}
-            />
-          )}
+                  {/* Defog Settings Tab */}
+                  {activeTab === 'defog' && (
+                    <DefogSettings
+                      settings={defogSettings}
+                      onSettingsChange={setDefogSettings}
+                    />
+                  )}
                 </>
               )}
 
@@ -616,41 +685,54 @@ const CameraSettingsPage: React.FC = () => {
                 <>
                   {/* Video Encoding Tab */}
                   {activeTab === 'video-encoding' && (
-                    <VideoEncoding 
-                      settings={videoSettings} 
+                    <VideoEncoding
+                      settings={videoSettings}
                       onSettingsChange={setVideoSettings}
                     />
                   )}
 
                   {/* Picture Stream Tab */}
                   {activeTab === 'picture-stream' && (
-                    <PictureStream 
-                      settings={pictureStreamSettings} 
+                    <PictureStream
+                      settings={pictureStreamSettings}
                       onSettingsChange={setPictureStreamSettings}
                     />
                   )}
 
                   {/* Video Overlay Tab */}
                   {activeTab === 'video-overlay' && (
-                    <VideoOverlay 
-                      settings={videoOverlaySettings} 
+                    <VideoOverlay
+                      settings={videoOverlaySettings}
                       onSettingsChange={setVideoOverlaySettings}
                     />
                   )}
 
                   {/* ROI Tab */}
                   {activeTab === 'roi' && (
-                    <ROI 
-                      settings={roiSettings} 
+                    <ROI
+                      settings={roiSettings}
                       onSettingsChange={setRoiSettings}
                     />
                   )}
 
                   {/* Audio Tab */}
                   {activeTab === 'audio' && (
-                    <Audio 
-                      settings={audioSettings} 
+                    <Audio
+                      settings={audioSettings}
                       onSettingsChange={setAudioSettings}
+                    />
+                  )}
+                </>
+              )}
+
+              {/* Settings Section */}
+              {activeCategory === 'settings' && (
+                <>
+                  {/* Record Schedule Tab */}
+                  {activeTab === 'record-schedule' && (
+                    <RecordSchedule
+                      settings={recordScheduleSettings}
+                      onSettingsChange={setRecordScheduleSettings}
                     />
                   )}
                 </>

@@ -1,0 +1,305 @@
+"use client"
+
+import React, { useState } from 'react';
+
+export interface TimeSlot {
+    start: string;
+    end: string;
+    type: 'general';
+}
+
+export interface DaySchedule {
+    day: string;
+    enabled: boolean;
+    timeSlots: TimeSlot[];
+}
+
+export interface RecordScheduleData {
+    monday: DaySchedule;
+    tuesday: DaySchedule;
+    wednesday: DaySchedule;
+    thursday: DaySchedule;
+    friday: DaySchedule;
+    saturday: DaySchedule;
+    sunday: DaySchedule;
+}
+
+interface RecordScheduleProps {
+    settings: RecordScheduleData;
+    onSettingsChange: (settings: RecordScheduleData) => void;
+}
+
+const RecordSchedule: React.FC<RecordScheduleProps> = ({ settings, onSettingsChange }) => {
+    const [selectedDay, setSelectedDay] = useState<keyof RecordScheduleData>('monday');
+    const [showSetupModal, setShowSetupModal] = useState(false);
+    const [editingSlots, setEditingSlots] = useState<TimeSlot[]>([]);
+
+    const days: { key: keyof RecordScheduleData; label: string }[] = [
+        { key: 'monday', label: 'Monday' },
+        { key: 'tuesday', label: 'Tuesday' },
+        { key: 'wednesday', label: 'Wednesday' },
+        { key: 'thursday', label: 'Thursday' },
+        { key: 'friday', label: 'Friday' },
+        { key: 'saturday', label: 'Saturday' },
+        { key: 'sunday', label: 'Sunday' },
+    ];
+
+    const handleSetupDay = (day: keyof RecordScheduleData) => {
+        setSelectedDay(day);
+        setEditingSlots([...settings[day].timeSlots]);
+        setShowSetupModal(true);
+    };
+
+    const handleAddTimeSlot = () => {
+        if (editingSlots.length < 6) {
+            setEditingSlots([...editingSlots, { start: '00:00', end: '23:59', type: 'general' }]);
+        }
+    };
+
+    const handleRemoveTimeSlot = (index: number) => {
+        setEditingSlots(editingSlots.filter((_, i) => i !== index));
+    };
+
+    const handleTimeSlotChange = (index: number, field: 'start' | 'end', value: string) => {
+        const newSlots = [...editingSlots];
+        newSlots[index][field] = value;
+        setEditingSlots(newSlots);
+    };
+
+    const handleSaveSchedule = () => {
+        onSettingsChange({
+            ...settings,
+            [selectedDay]: {
+                ...settings[selectedDay],
+                timeSlots: editingSlots,
+                enabled: editingSlots.length > 0,
+            },
+        });
+        setShowSetupModal(false);
+    };
+
+    const handleCopyToAll = () => {
+        const newSettings = { ...settings };
+        days.forEach(({ key }) => {
+            newSettings[key] = {
+                ...newSettings[key],
+                timeSlots: [...editingSlots],
+                enabled: editingSlots.length > 0,
+            };
+        });
+        onSettingsChange(newSettings);
+    };
+
+    const timeToPixels = (time: string): number => {
+        const [hours, minutes] = time.split(':').map(Number);
+        return ((hours * 60 + minutes) / (24 * 60)) * 100;
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div>
+                <h2 className="text-2xl font-bold text-white mb-2">Record Schedule</h2>
+                <p className="text-gray-400">
+                    Set up recording schedules for each day of the week with up to 6 time periods per day
+                </p>
+            </div>
+
+            {/* Schedule Grid */}
+            <div className="space-y-3">
+                {days.map(({ key, label }) => {
+                    const daySchedule = settings[key];
+                    return (
+                        <div key={key} className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                            <div className="flex items-center gap-4">
+                                {/* Day Label */}
+                                <div className="w-32">
+                                    <span className="text-white font-medium">{label}</span>
+                                </div>
+
+                                {/* Timeline Visual */}
+                                <div className="flex-1 relative h-8 bg-gray-900 rounded border border-gray-600">
+                                    {/* Hour Markers */}
+                                    {[0, 6, 12, 18, 24].map((hour) => (
+                                        <div
+                                            key={hour}
+                                            className="absolute top-0 bottom-0 border-l border-gray-700"
+                                            style={{ left: `${(hour / 24) * 100}%` }}
+                                        >
+                                            <span className="absolute -bottom-5 -translate-x-1/2 text-xs text-gray-500">
+                                                {hour}:00
+                                            </span>
+                                        </div>
+                                    ))}
+
+                                    {/* Time Slots */}
+                                    {daySchedule.timeSlots.map((slot, idx) => {
+                                        const startPos = timeToPixels(slot.start);
+                                        const endPos = timeToPixels(slot.end);
+                                        const width = endPos - startPos;
+
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className="absolute top-1 bottom-1 bg-green-500 rounded opacity-80 hover:opacity-100 transition-opacity"
+                                                style={{
+                                                    left: `${startPos}%`,
+                                                    width: `${width}%`,
+                                                }}
+                                                title={`${slot.start} - ${slot.end}`}
+                                            />
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Setup Button */}
+                                <button
+                                    onClick={() => handleSetupDay(key)}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                                >
+                                    Setup
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Legend */}
+            <div className="bg-gray-800/30 rounded-lg border border-gray-700 p-4">
+                <h3 className="text-white font-medium mb-3">Legend</h3>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-4 bg-green-500 rounded"></div>
+                        <span className="text-gray-300 text-sm">General Recording</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Setup Modal */}
+            {showSetupModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-800 rounded-lg border border-gray-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        {/* Modal Header */}
+                        <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-6">
+                            <h3 className="text-xl font-bold text-white">
+                                Schedule Settings - {days.find((d) => d.key === selectedDay)?.label}
+                            </h3>
+                            <p className="text-gray-400 text-sm mt-1">
+                                Configure up to 6 time periods for recording (General type only)
+                            </p>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6 space-y-4">
+                            {/* Time Slots */}
+                            {editingSlots.map((slot, index) => (
+                                <div key={index} className="bg-gray-900/50 rounded-lg border border-gray-700 p-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex-1 grid grid-cols-2 gap-4">
+                                            {/* Start Time */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                    Start Time
+                                                </label>
+                                                <input
+                                                    type="time"
+                                                    value={slot.start}
+                                                    onChange={(e) => handleTimeSlotChange(index, 'start', e.target.value)}
+                                                    className="w-full bg-gray-800 border border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                                                />
+                                            </div>
+
+                                            {/* End Time */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                    End Time
+                                                </label>
+                                                <input
+                                                    type="time"
+                                                    value={slot.end}
+                                                    onChange={(e) => handleTimeSlotChange(index, 'end', e.target.value)}
+                                                    className="w-full bg-gray-800 border border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Type Badge */}
+                                        <div className="flex items-center gap-2">
+                                            <div className="px-3 py-1 bg-green-500/20 text-green-400 rounded-lg text-sm font-medium border border-green-500/30">
+                                                General
+                                            </div>
+                                        </div>
+
+                                        {/* Remove Button */}
+                                        <button
+                                            onClick={() => handleRemoveTimeSlot(index)}
+                                            className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                            title="Remove time slot"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Add Time Slot Button */}
+                            {editingSlots.length < 6 && (
+                                <button
+                                    onClick={handleAddTimeSlot}
+                                    className="w-full py-3 border-2 border-dashed border-gray-600 text-gray-400 rounded-lg hover:border-red-500 hover:text-red-400 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Add Time Period ({editingSlots.length}/6)
+                                </button>
+                            )}
+
+                            {/* Info Note */}
+                            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                                <div className="flex gap-3">
+                                    <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div className="text-sm text-blue-300">
+                                        <p className="font-medium mb-1">Note:</p>
+                                        <p>You can also set time periods by clicking and dragging directly on the timeline in the main schedule view.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="sticky bottom-0 bg-gray-800 border-t border-gray-700 p-6 flex gap-3 justify-between">
+                            <button
+                                onClick={handleCopyToAll}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                            >
+                                Copy to All Days
+                            </button>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowSetupModal(false)}
+                                    className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSaveSchedule}
+                                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium shadow-lg hover:shadow-red-500/25"
+                                >
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default RecordSchedule;

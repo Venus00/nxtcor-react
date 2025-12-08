@@ -4,11 +4,6 @@ import React, { useState } from 'react';
 import PTZControl from '../components/ptz/PTZControl';
 import PresetManagement, { type Preset } from '../components/ptz/PresetManagement';
 import TourManagement, { type Tour } from '../components/ptz/TourManagement';
-import AutoScanManagement, { type AutoScan } from '../components/ptz/AutoScanManagement';
-import PatternManagement, { type Pattern } from '../components/ptz/PatternManagement';
-import AutoPanManagement, { type AutoPan } from '../components/ptz/AutoPanManagement';
-import IdleActionManagement, { type IdleAction } from '../components/ptz/IdleActionManagement';
-import PTZLimitManagement, { type PTZLimit } from '../components/ptz/PTZLimitManagement';
 import ScheduledTaskManagement, { type ScheduledTask } from '../components/ptz/ScheduledTaskManagement';
 import PTZRestart from '../components/ptz/PTZRestart';
 import RestoreDefault from '../components/ptz/RestoreDefault';
@@ -17,41 +12,9 @@ const PTZSettings: React.FC = () => {
   const [selectedCamera, setSelectedCamera] = useState<'cam1' | 'cam2'>('cam1');
   const [presets, setPresets] = useState<Preset[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
-  const [autoScans, setAutoScans] = useState<AutoScan[]>([]);
-  const [patterns, setPatterns] = useState<Pattern[]>([]);
-  const [autoPan, setAutoPan] = useState<AutoPan>({
-    speed: 50,
-    direction: 'clockwise',
-    isActive: false,
-  });
-  const [idleAction, setIdleAction] = useState<IdleAction>({
-    enabled: false,
-    actionType: 'preset',
-    actionNumber: 0,
-    idleTime: 60,
-  });
-  const [ptzLimit, setPTZLimit] = useState<PTZLimit>({
-    verticalLimit: {
-      enabled: false,
-      upLimit: null,
-      downLimit: null,
-    },
-    horizontalLimit: {
-      enabled: false,
-      leftLimit: null,
-      rightLimit: null,
-    },
-    zeroPointCalibration: 'off',
-  });
   const [scheduledTasks, setScheduledTasks] = useState<ScheduledTask[]>([]);
   const [activeTourId, setActiveTourId] = useState<number | null>(null);
-  const [activeScanId, setActiveScanId] = useState<number | null>(null);
-  const [activePatternId, setActivePatternId] = useState<number | null>(null);
-  const [isRecording, setIsRecording] = useState<boolean>(false);
-  const [recordingPatternNo, setRecordingPatternNo] = useState<number | null>(null);
-  const [recordingStartTime, setRecordingStartTime] = useState<Date | null>(null);
-  const [recordedMovements, setRecordedMovements] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'preset' | 'tour' | 'scan' | 'pattern' | 'autopan' | 'idle' | 'limit' | 'scheduled' | 'restart' | 'default'>('preset');
+  const [activeTab, setActiveTab] = useState<'preset' | 'tour' | 'scheduled' | 'restart' | 'default'>('preset');
   const [currentPosition, setCurrentPosition] = useState({
     pan: 0,
     tilt: 0,
@@ -62,11 +25,6 @@ const PTZSettings: React.FC = () => {
 
   const handleDirectionControl = async (direction: 'up' | 'down' | 'left' | 'right' | 'center') => {
     console.log('Direction control:', direction);
-
-    // Record movement if recording is active
-    if (isRecording) {
-      setRecordedMovements(prev => [...prev, `Direction: ${direction}`]);
-    }
 
     // Send API request for PTZ control
     if (direction !== 'center') {
@@ -112,11 +70,6 @@ const PTZSettings: React.FC = () => {
   const handleZoomControl = async (action: 'in' | 'out') => {
     console.log('Zoom control:', action);
 
-    // Record movement if recording is active
-    if (isRecording) {
-      setRecordedMovements(prev => [...prev, `Zoom: ${action}`]);
-    }
-
     // Send API request for zoom control
     try {
       const response = await fetch(`http://${window.location.hostname}:3000/camera/${selectedCamera}/ptz/zoom/${action}`, {
@@ -140,11 +93,6 @@ const PTZSettings: React.FC = () => {
 
   const handleFocusControl = async (action: 'near' | 'far') => {
     console.log('Focus control:', action);
-
-    // Record movement if recording is active
-    if (isRecording) {
-      setRecordedMovements(prev => [...prev, `Focus: ${action}`]);
-    }
 
     // Send API request for focus control
     try {
@@ -170,11 +118,6 @@ const PTZSettings: React.FC = () => {
   const handleApertureControl = (action: 'open' | 'close') => {
     console.log('Aperture control:', action);
 
-    // Record movement if recording is active
-    if (isRecording) {
-      setRecordedMovements(prev => [...prev, `Aperture: ${action}`]);
-    }
-
     setCurrentPosition(prev => ({
       ...prev,
       aperture: action === 'open'
@@ -185,11 +128,6 @@ const PTZSettings: React.FC = () => {
 
   const handleGotoPreset = (preset: Preset) => {
     console.log('Going to preset:', preset);
-
-    // Record movement if recording is active
-    if (isRecording) {
-      setRecordedMovements(prev => [...prev, `Goto Preset: ${preset.title}`]);
-    }
 
     setCurrentPosition(preset.position);
     alert(`Moving to preset: ${preset.title}`);
@@ -210,113 +148,6 @@ const PTZSettings: React.FC = () => {
     alert('Tour stopped');
   };
 
-  const handleStartScan = (scan: AutoScan) => {
-    console.log('Starting auto scan:', scan);
-    setActiveScanId(scan.id);
-    alert(`Starting Auto Scan ${scan.scanNo}\nScanning from ${scan.leftBoundary}° to ${scan.rightBoundary}° at speed ${scan.speed}`);
-
-    // Simulate scan execution (in real implementation, this would control the camera)
-  };
-
-  const handleStopScan = () => {
-    console.log('Stopping auto scan');
-    setActiveScanId(null);
-    alert('Auto scan stopped');
-  };
-
-  const handleSetPosition = () => {
-    console.log('Setting position at Pan:', currentPosition.pan);
-    // This is called when setting boundaries to ensure the camera is at the current position
-  };
-
-  const handleStartRecording = (patternNo: number) => {
-    console.log('Starting pattern recording:', patternNo);
-    setIsRecording(true);
-    setRecordingPatternNo(patternNo);
-    setRecordingStartTime(new Date());
-    setRecordedMovements([]);
-    alert(`Started recording Pattern ${patternNo}\nAll camera movements will be recorded.`);
-  };
-
-  const handleStopRecording = () => {
-    if (!isRecording || recordingPatternNo === null || !recordingStartTime) {
-      return;
-    }
-
-    const duration = Math.floor((new Date().getTime() - recordingStartTime.getTime()) / 1000);
-
-    const newPattern: Pattern = {
-      id: Date.now(),
-      patternNo: recordingPatternNo,
-      isRecorded: true,
-      recordingStartTime: recordingStartTime,
-      recordingDuration: duration,
-      movements: [...recordedMovements],
-      isActive: false,
-    };
-
-    // Remove existing pattern with same patternNo if exists
-    setPatterns(prev => {
-      const filtered = prev.filter(p => p.patternNo !== recordingPatternNo);
-      return [...filtered, newPattern];
-    });
-
-    console.log('Pattern recorded:', newPattern);
-    alert(`Pattern ${recordingPatternNo} recorded successfully!\nDuration: ${duration}s, Movements: ${recordedMovements.length}`);
-
-    setIsRecording(false);
-    setRecordingPatternNo(null);
-    setRecordingStartTime(null);
-    setRecordedMovements([]);
-  };
-
-  const handleStartPattern = (pattern: Pattern) => {
-    console.log('Starting pattern playback:', pattern);
-    setActivePatternId(pattern.id);
-    alert(`Playing Pattern ${pattern.patternNo}\nExecuting ${pattern.movements.length} recorded movements over ${pattern.recordingDuration}s`);
-
-    // Simulate pattern execution (in real implementation, this would control the camera)
-  };
-
-  const handleStopPattern = () => {
-    console.log('Stopping pattern playback');
-    setActivePatternId(null);
-    alert('Pattern playback stopped');
-  };
-
-  const handleStartAutoPan = () => {
-    console.log('Starting auto pan:', autoPan);
-    setAutoPan(prev => ({ ...prev, isActive: true }));
-    alert(`Starting Auto Pan\nRotating ${autoPan.direction} at speed ${autoPan.speed}`);
-
-    // Simulate auto pan execution (in real implementation, this would control the camera)
-  };
-
-  const handleStopAutoPan = () => {
-    console.log('Stopping auto pan');
-    setAutoPan(prev => ({ ...prev, isActive: false }));
-    alert('Auto Pan stopped');
-  };
-
-  const handleSaveIdleAction = () => {
-    console.log('Saving idle action configuration:', idleAction);
-
-    if (idleAction.enabled && idleAction.actionNumber === 0) {
-      alert('Please select an action before saving!');
-      return;
-    }
-
-    const actionTypeLabel = idleAction.actionType === 'autoscan' ? 'Auto Scan' :
-      idleAction.actionType === 'preset' ? 'Preset Point' :
-        idleAction.actionType.charAt(0).toUpperCase() + idleAction.actionType.slice(1);
-
-    if (idleAction.enabled) {
-      alert(`Idle Action Saved!\nAction Type: ${actionTypeLabel}\nIdle Time: ${idleAction.idleTime}s\n\nCamera will automatically execute the selected action after ${idleAction.idleTime}s of inactivity.`);
-    } else {
-      alert('Idle Action Disabled and Saved!');
-    }
-  };
-
   const handleSaveScheduledTask = () => {
     console.log('Saving scheduled tasks:', scheduledTasks);
 
@@ -334,9 +165,6 @@ const PTZSettings: React.FC = () => {
 
     // Stop all active operations
     if (activeTourId) setActiveTourId(null);
-    if (activeScanId) setActiveScanId(null);
-    if (activePatternId) setActivePatternId(null);
-    if (autoPan.isActive) setAutoPan({ ...autoPan, isActive: false });
 
     // In a real implementation, this would call the API to restart the PTZ
     // For now, we just log it
@@ -349,42 +177,10 @@ const PTZSettings: React.FC = () => {
     // Reset all PTZ configurations to default
     setPresets([]);
     setTours([]);
-    setAutoScans([]);
-    setPatterns([]);
-    setAutoPan({
-      speed: 50,
-      direction: 'clockwise',
-      isActive: false,
-    });
-    setIdleAction({
-      enabled: false,
-      actionType: 'preset',
-      actionNumber: 0,
-      idleTime: 60,
-    });
-    setPTZLimit({
-      verticalLimit: {
-        enabled: false,
-        upLimit: null,
-        downLimit: null,
-      },
-      horizontalLimit: {
-        enabled: false,
-        leftLimit: null,
-        rightLimit: null,
-      },
-      zeroPointCalibration: 'off',
-    });
     setScheduledTasks([]);
 
     // Stop all active operations
     setActiveTourId(null);
-    setActiveScanId(null);
-    setActivePatternId(null);
-    setIsRecording(false);
-    setRecordingPatternNo(null);
-    setRecordingStartTime(null);
-    setRecordedMovements([]);
 
     // In a real implementation, this would call the API to restore defaults
     console.log('PTZ default settings restored');
@@ -510,76 +306,6 @@ const PTZSettings: React.FC = () => {
                     </div>
                   </button>
                   <button
-                    onClick={() => setActiveTab('scan')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'scan'
-                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
-                  >
-                    <div className="flex items-center justify-center gap-1.5">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                      </svg>
-                      Scan
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('pattern')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'pattern'
-                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
-                  >
-                    <div className="flex items-center justify-center gap-1.5">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                      </svg>
-                      Pattern
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('autopan')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'autopan'
-                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
-                  >
-                    <div className="flex items-center justify-center gap-1">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      Pan
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('idle')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'idle'
-                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
-                  >
-                    <div className="flex items-center justify-center gap-1.5">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Idle
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('limit')}
-                    className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'limit'
-                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700/30'
-                      }`}
-                  >
-                    <div className="flex items-center justify-center gap-1.5">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Limit
-                    </div>
-                  </button>
-                  <button
                     onClick={() => setActiveTab('scheduled')}
                     className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'scheduled'
                       ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
@@ -642,55 +368,6 @@ const PTZSettings: React.FC = () => {
                     onStopTour={handleStopTour}
                     activeTourId={activeTourId}
                   />
-                ) : activeTab === 'scan' ? (
-                  <AutoScanManagement
-                    autoScans={autoScans}
-                    onAutoScansChange={setAutoScans}
-                    onStartScan={handleStartScan}
-                    onStopScan={handleStopScan}
-                    activeScanId={activeScanId}
-                    currentPanPosition={currentPosition.pan}
-                    onSetPosition={handleSetPosition}
-                  />
-                ) : activeTab === 'pattern' ? (
-                  <PatternManagement
-                    patterns={patterns}
-                    onPatternsChange={setPatterns}
-                    onStartPattern={handleStartPattern}
-                    onStopPattern={handleStopPattern}
-                    activePatternId={activePatternId}
-                    isRecording={isRecording}
-                    onStartRecording={handleStartRecording}
-                    onStopRecording={handleStopRecording}
-                    recordingPatternNo={recordingPatternNo}
-                  />
-                ) : activeTab === 'autopan' ? (
-                  <AutoPanManagement
-                    autoPan={autoPan}
-                    onAutoPanChange={setAutoPan}
-                    onStartAutoPan={handleStartAutoPan}
-                    onStopAutoPan={handleStopAutoPan}
-                  />
-                ) : activeTab === 'idle' ? (
-                  <IdleActionManagement
-                    idleAction={idleAction}
-                    onIdleActionChange={setIdleAction}
-                    onSave={handleSaveIdleAction}
-                    availablePresets={presets}
-                    availableTours={tours}
-                    availableAutoScans={autoScans}
-                    availablePatterns={patterns}
-                  />
-                ) : activeTab === 'limit' ? (
-                  <PTZLimitManagement
-                    ptzLimit={ptzLimit}
-                    onPTZLimitChange={setPTZLimit}
-                    currentPosition={{
-                      pan: currentPosition.pan,
-                      tilt: currentPosition.tilt,
-                    }}
-                    onSetPosition={handleSetPosition}
-                  />
                 ) : activeTab === 'scheduled' ? (
                   <ScheduledTaskManagement
                     scheduledTasks={scheduledTasks}
@@ -698,8 +375,8 @@ const PTZSettings: React.FC = () => {
                     onSave={handleSaveScheduledTask}
                     availablePresets={presets}
                     availableTours={tours}
-                    availableAutoScans={autoScans}
-                    availablePatterns={patterns}
+                    availableAutoScans={[]}
+                    availablePatterns={[]}
                   />
                 ) : activeTab === 'restart' ? (
                   <PTZRestart onRestart={handlePTZRestart} />
