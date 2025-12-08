@@ -305,7 +305,7 @@ const PTZSettings: React.FC = () => {
                       Tour
                     </div>
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => setActiveTab('scheduled')}
                     className={`flex-1 py-2 px-1.5 rounded-lg font-medium text-xs transition-all ${activeTab === 'scheduled'
                       ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg'
@@ -346,7 +346,7 @@ const PTZSettings: React.FC = () => {
                       </svg>
                       Default
                     </div>
-                  </button>
+                  </button> */}
                 </div>
               </div>
 
