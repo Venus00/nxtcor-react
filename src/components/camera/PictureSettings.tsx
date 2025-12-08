@@ -416,24 +416,24 @@ const PictureSettings: React.FC = () => {
               >
                 <option value="Purple">Purple</option>
                 <option value="Orange">Orange</option>
-                <option value="Black Hot">Black Hot</option>
-                <option value="Iron Red">Iron Red</option>
-                <option value="Rainbow 1">Rainbow 1</option>
+                <option value="BlackHot">Black Hot</option>
+                <option value="IronRed">Iron Red</option>
+                <option value="Rainbow1">Rainbow 1</option>
                 <option value="Fulgurite">Fulgurite</option>
-                <option value="Rainbow 2">Rainbow 2</option>
+                <option value="Rainbow2">Rainbow 2</option>
                 <option value="Sky">Sky</option>
-                <option value="Mid Gray">Mid Gray</option>
-                <option value="Gray Red">Gray Red</option>
-                <option value="Purple Orange">Purple Orange</option>
-                <option value="Special Warning Red">Special Warning Red</option>
-                <option value="Ice Fire">Ice Fire</option>
-                <option value="Cyan Red">Cyan Red</option>
+                <option value="MidGray">Mid Gray</option>
+                <option value="GrayRed">Gray Red</option>
+                <option value="PurpleOrange">Purple Orange</option>
+                <option value="SpecialWarning Red">Special Warning Red</option>
+                <option value="IceFire">Ice Fire</option>
+                <option value="CyanRed">Cyan Red</option>
                 <option value="Special2">Special2</option>
-                <option value="Gradient Red">Gradient Red</option>
-                <option value="Gradient Green">Gradient Green</option>
-                <option value="Gradient Blue">Gradient Blue</option>
+                <option value="GradientRed">Gradient Red</option>
+                <option value="GradientGreen">Gradient Green</option>
+                <option value="GradientBlue">Gradient Blue</option>
                 <option value="Green">Green</option>
-                <option value="Warning Blue">Warning Blue</option>
+                <option value="WarningBlue">Warning Blue</option>
               </select>
             </div>
 
