@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useCamId } from "../../contexts/CameraContext";
 import { useRecordSettings as useRecordSchedule } from "../../hooks/useCameraQueries";
-import {useSetRecordSettings as  useSetRecordSchedule } from "../../hooks/useCameraMutations";
+import { useSetRecordSettings as useSetRecordSchedule } from "../../hooks/useCameraMutations";
 
 // =============================================================================
 // TYPES & INTERFACES
@@ -126,7 +126,7 @@ const apiToUI = (data: any): RecordScheduleData => {
  *
  */
 const uiToApi = (ui: RecordScheduleData) => {
-    console.log("uiToApi called with:", ui);
+  console.log("uiToApi called with:", ui);
   const prefix = "Record[0].TimeSection";
   const payload: any = {};
 
@@ -135,7 +135,7 @@ const uiToApi = (ui: RecordScheduleData) => {
     const dayKey = DAY_KEYS[d];
     const dayData = ui[dayKey];
     const slots = dayData?.timeSlots || [];
-
+    console.log(`Processing day ${dayKey} with slots:`, slots);
     // Fill up to 6 slots
     for (let p = 0; p < 6; p++) {
       const key = `${prefix}[${d}][${p}]`;
