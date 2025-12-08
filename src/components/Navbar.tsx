@@ -46,28 +46,28 @@ const Navbar = () => {
           <ul className="flex items-center space-x-6">
             <li>
               <Link
-                to="/live/cam1"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/live/cam1")
-                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                  }`}
-              >
-                <Thermometer className="h-4 w-4" />
-                Optique
-              </Link>
-            </li>
-
-            {/* Caméra Normale */}
-            <li>
-              <Link
                 to="/live/cam2"
                 className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/live/cam2")
                   ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
                   }`}
               >
-                <Camera className="h-4 w-4" />
+                <Thermometer className="h-4 w-4" />
                 Thermique
+              </Link>
+            </li>
+
+            {/* Caméra Normale */}
+            <li>
+              <Link
+                to="/live/cam1"
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg fo  nt-medium text-sm transition-all duration-200 ${isActive("/live/cam1")
+                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                  }`}
+              >
+                <Camera className="h-4 w-4" />
+                Optique
               </Link>
             </li>
 
