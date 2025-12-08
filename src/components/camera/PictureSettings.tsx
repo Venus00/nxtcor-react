@@ -120,7 +120,7 @@ const apiToUI = (
  * Splits UI state into specific API payloads
  */
 const uiToApi = (ui: PictureSettingsData) => {
-  const profileIdx = ui.profile === "daytime" ? 0 : ui.profile === "nighttime" ? 1 : 2;
+  // const profileIdx = ui.profile === "daytime" ? 0 : ui.profile === "nighttime" ? 1 : 2;
 
   return {
     color: {
@@ -405,107 +405,108 @@ const PictureSettings: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
       )}
 
-          {/* Thermal Camera Specific Settings */}
-          {camId === 'cam2' && (
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-xl font-semibold text-white mb-6">Paramètres Caméra Thermique</h2>
+      {/* Thermal Camera Specific Settings */}
+      {camId === 'cam2' && (
+        <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+          <h2 className="text-xl font-semibold text-white mb-6">Paramètres Caméra Thermique</h2>
 
-              <div className="space-y-6">
-                {/* Pseudo Color */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Pseudo Color
-                  </label>
-                  <p className="text-xs text-gray-400 mb-3">
-                    Sélectionnez la palette de couleurs pour la visualisation thermique.
-                  </p>
-                  <select
-                    value={settings.pseudoColor}
-                    onChange={(e) => updateSetting("pseudoColor", e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
-                  >
-                    <option value="Purple">Purple</option>
-                    <option value="Orange">Orange</option>
-                    <option value="Black Hot">Black Hot</option>
-                    <option value="Iron Red">Iron Red</option>
-                    <option value="Rainbow 1">Rainbow 1</option>
-                    <option value="Fulgurite">Fulgurite</option>
-                    <option value="Rainbow 2">Rainbow 2</option>
-                    <option value="Sky">Sky</option>
-                    <option value="Mid Gray">Mid Gray</option>
-                    <option value="Gray Red">Gray Red</option>
-                    <option value="Purple Orange">Purple Orange</option>
-                    <option value="Special Warning Red">Special Warning Red</option>
-                    <option value="Ice Fire">Ice Fire</option>
-                    <option value="Cyan Red">Cyan Red</option>
-                    <option value="Special2">Special2</option>
-                    <option value="Gradient Red">Gradient Red</option>
-                    <option value="Gradient Green">Gradient Green</option>
-                    <option value="Gradient Blue">Gradient Blue</option>
-                    <option value="Green">Green</option>
-                    <option value="Warning Blue">Warning Blue</option>
-                  </select>
-                </div>
+          <div className="space-y-6">
+            {/* Pseudo Color */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Pseudo Color
+              </label>
+              <p className="text-xs text-gray-400 mb-3">
+                Sélectionnez la palette de couleurs pour la visualisation thermique.
+              </p>
+              <select
+                value={settings.pseudoColor}
+                onChange={(e) => updateSetting("pseudoColor", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
+              >
+                <option value="Purple">Purple</option>
+                <option value="Orange">Orange</option>
+                <option value="Black Hot">Black Hot</option>
+                <option value="Iron Red">Iron Red</option>
+                <option value="Rainbow 1">Rainbow 1</option>
+                <option value="Fulgurite">Fulgurite</option>
+                <option value="Rainbow 2">Rainbow 2</option>
+                <option value="Sky">Sky</option>
+                <option value="Mid Gray">Mid Gray</option>
+                <option value="Gray Red">Gray Red</option>
+                <option value="Purple Orange">Purple Orange</option>
+                <option value="Special Warning Red">Special Warning Red</option>
+                <option value="Ice Fire">Ice Fire</option>
+                <option value="Cyan Red">Cyan Red</option>
+                <option value="Special2">Special2</option>
+                <option value="Gradient Red">Gradient Red</option>
+                <option value="Gradient Green">Gradient Green</option>
+                <option value="Gradient Blue">Gradient Blue</option>
+                <option value="Green">Green</option>
+                <option value="Warning Blue">Warning Blue</option>
+              </select>
+            </div>
 
-                {/* DirectZoom */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    DirectZoom
-                  </label>
-                  <p className="text-xs text-gray-400 mb-3">
-                    Niveau de zoom numérique (10-80).
-                  </p>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="range"
-                      min="10"
-                      max="80"
-                      value={settings.directZoom}
-                      onChange={(e) => updateSetting("directZoom", Number(e.target.value))}
-                      className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
-                    />
-                    <span className="text-white font-medium w-12 text-center">
-                      {settings.directZoom}
-                    </span>
-                  </div>
-                </div>
-
-                {/* FFC Mode */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    FFC Mode (Flat Field Correction)
-                  </label>
-                  <p className="text-xs text-gray-400 mb-3">
-                    Mode de correction automatique ou manuelle.
-                  </p>
-                  <div className="flex bg-gray-900/50 p-1 rounded-lg">
-                    <button
-                      onClick={() => updateSetting("ffcMode", "auto")}
-                      className={`flex-1 py-2 rounded text-sm font-medium transition-all ${settings.ffcMode === "auto"
-                        ? "bg-blue-600 text-white shadow-lg"
-                        : "text-gray-400 hover:text-white hover:bg-gray-700/50"
-                        }`}
-                    >
-                      Auto
-                    </button>
-                    <button
-                      onClick={() => updateSetting("ffcMode", "manual")}
-                      className={`flex-1 py-2 rounded text-sm font-medium transition-all ${settings.ffcMode === "manual"
-                        ? "bg-blue-600 text-white shadow-lg"
-                        : "text-gray-400 hover:text-white hover:bg-gray-700/50"
-                        }`}
-                    >
-                      Manual
-                    </button>
-                  </div>
-                </div>
+            {/* DirectZoom */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                DirectZoom
+              </label>
+              <p className="text-xs text-gray-400 mb-3">
+                Niveau de zoom numérique (10-80).
+              </p>
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="10"
+                  max="80"
+                  value={settings.directZoom}
+                  onChange={(e) => updateSetting("directZoom", Number(e.target.value))}
+                  className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
+                />
+                <span className="text-white font-medium w-12 text-center">
+                  {settings.directZoom}
+                </span>
               </div>
             </div>
-          )}
+
+            {/* FFC Mode */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                FFC Mode (Flat Field Correction)
+              </label>
+              <p className="text-xs text-gray-400 mb-3">
+                Mode de correction automatique ou manuelle.
+              </p>
+              <div className="flex bg-gray-900/50 p-1 rounded-lg">
+                <button
+                  onClick={() => updateSetting("ffcMode", "auto")}
+                  className={`flex-1 py-2 rounded text-sm font-medium transition-all ${settings.ffcMode === "auto"
+                    ? "bg-blue-600 text-white shadow-lg"
+                    : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+                    }`}
+                >
+                  Auto
+                </button>
+                <button
+                  onClick={() => updateSetting("ffcMode", "manual")}
+                  className={`flex-1 py-2 rounded text-sm font-medium transition-all ${settings.ffcMode === "manual"
+                    ? "bg-blue-600 text-white shadow-lg"
+                    : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+                    }`}
+                >
+                  Manual
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      );
+      )}
+    </div>
+  );
 };
 
-      export default PictureSettings;
+export default PictureSettings;
