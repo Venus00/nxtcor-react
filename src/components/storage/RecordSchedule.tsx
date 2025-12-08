@@ -126,6 +126,7 @@ const apiToUI = (data: any): RecordScheduleData => {
  *
  */
 const uiToApi = (ui: RecordScheduleData) => {
+    console.log("uiToApi called with:", ui);
   const prefix = "Record[0].TimeSection";
   const payload: any = {};
 
@@ -144,7 +145,7 @@ const uiToApi = (ui: RecordScheduleData) => {
         payload[key] = `1 ${s.start}:00-${s.end}:00`;
       } else {
         // Disable unused slots
-        payload[key] = "0 00:00:00-23:59:59";
+        // payload[key] = "0 00:00:00-23:59:59";
       }
     }
   }
