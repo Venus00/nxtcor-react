@@ -110,6 +110,7 @@ const TourManagement: React.FC = () => {
   useEffect(() => {
     if (presetsData) {
       // Parse presets from API
+      console.log("API Presets Data:", presetsData);
       const presets: Preset[] = [];
       // Assuming presetsData has similar structure
       for (let i = 0; i < 300; i++) {
