@@ -108,16 +108,33 @@ const PresetManagement: React.FC = () => {
       return;
     }
 
-    // const newTitle = `Preset${newId}`;
+    const newTitle = `Preset${newId}`;
     const apiIndex = newId; // 0-based index for API
+    const optimisticPreset: Preset = {
+      id: newId,
+      title: newTitle,
+      enabled: true,
+      position: {
+        pan: 0,
+        tilt: 0,
+        zoom: 0,
+      },
+    };
 
+    setPresets((prev) => [...prev, optimisticPreset]);
     setPresetMutation.mutate(
       {
         id: apiIndex,
       },
       {
-        onSuccess: async () => await refetch(), // Refresh list to get new coordinates if API updates them
-      }
+        onSuccess: async () => await refetch(),
+        
+        onError: () => {
+          // Rollback on error
+          setPresets((prev) => prev.filter((p) => p.id !== newId));
+        },
+      },
+      
     );
   };
 
