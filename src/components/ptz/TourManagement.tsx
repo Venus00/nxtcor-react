@@ -197,27 +197,34 @@ const TourManagement: React.FC = () => {
   const handleSaveTour = (tourId: number) => {
     if (!editingTour || editingTour.id !== tourId) return;
 
-    // Build API payload
-    const tourIndex = tourId - 1;
-    const prefix = `table.PtzTour[0][${tourIndex}].`;
-    const payload: any = {
-      [prefix + 'Name']: editingTour.name,
-      [prefix + 'Enable']: 'true'
-    };
 
-    // Add presets
-    editingTour.presets.forEach((preset, idx) => {
-      payload[`${prefix}Presets[${idx}][0]`] = preset.presetId;
-      payload[`${prefix}Presets[${idx}][1]`] = preset.duration;
-    });
-
-    // Clear remaining preset slots
-    for (let i = editingTour.presets.length; i < 32; i++) {
-      payload[`${prefix}Presets[${i}][0]`] = 0;
-      payload[`${prefix}Presets[${i}][1]`] = 0;
+    let payloads ={
+      id : tourId -1,
+      name : editingTour.name,
+      enable : true,
+      presets : editingTour.presets.map(p => ({presetId : p.presetId, duration : p.duration}))
     }
+    // Build API payload
+    // const tourIndex = tourId - 1;
+    // const prefix = `table.PtzTour[0][${tourIndex}].`;
+    // const payload: any = {
+    //   [prefix + 'Name']: editingTour.name,
+    //   [prefix + 'Enable']: 'true'
+    // };
 
-    updateTourMutation.mutate(payload, {
+    // // Add presets
+    // editingTour.presets.forEach((preset, idx) => {
+    //   payload[`${prefix}Presets[${idx}][0]`] = preset.presetId;
+    //   payload[`${prefix}Presets[${idx}][1]`] = preset.duration;
+    // });
+
+    // // Clear remaining preset slots
+    // for (let i = editingTour.presets.length; i < 32; i++) {
+    //   payload[`${prefix}Presets[${i}][0]`] = 0;
+    //   payload[`${prefix}Presets[${i}][1]`] = 0;
+    // }
+
+    updateTourMutation.mutate(payloads, {
       onSuccess: () => {
         refetch();
         setEditingTour(null);
