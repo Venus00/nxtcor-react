@@ -19,7 +19,7 @@ interface PTZControlProps {
 
 const PTZControl: React.FC<PTZControlProps> = () => {
   const camId = useCamId();
-
+  console.log(camId)
   // 1. Initialize specific mutations
   const moveMutation = usePtzMove(camId);
   const stopMoveMutation = usePtzStop(camId);
