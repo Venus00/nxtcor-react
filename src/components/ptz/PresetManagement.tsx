@@ -38,7 +38,7 @@ const apiToUI = (data: any): Preset[] => {
   const presets: Preset[] = [];
   const MAX_PRESETS = 128; // 0-127 based on JSON
 
-  for (let i = 1; i < MAX_PRESETS; i++) {
+  for (let i = 0; i < MAX_PRESETS; i++) {
     const prefix = `table.PtzPreset[0][${i}].`;
 
     // Check if the preset exists in config
@@ -50,7 +50,7 @@ const apiToUI = (data: any): Preset[] => {
       // Only include if explicitly enabled
       if (enabled) {
         presets.push({
-          id: i, // Use 0-based index to match API (important for gotoPreset calls)
+          id: i+1, // Use 0-based index to match API (important for gotoPreset calls)
           title: name || `Preset ${i + 1}`,
           enabled: enabled,
           position: {
@@ -102,7 +102,7 @@ const PresetManagement: React.FC = () => {
     console.log("Used IDs:", usedIds);
     let newId = 1;
     while (usedIds.includes(newId) && newId <= 128) newId++;
-    if (usedIds.length === 0) newId = 1;
+    // if (usedIds.length === 0) newId = 1;
     if (newId > 128) {
       alert("Maximum presets reached (128)");
       return;
