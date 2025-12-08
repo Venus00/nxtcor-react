@@ -287,7 +287,7 @@ const Analytics: React.FC = () => {
         <div className="mb-6">
           <div className="bg-slate-800/60 border border-slate-600/50 rounded-lg p-4">
             <div className="flex items-center gap-4">
-              <label className="text-sm font-medium text-white">Camera: Caméra Optique (cam1)</label>
+              <label className="text-sm font-medium text-white">Camera: Caméra Optique (cam2)</label>
 
               <div className="flex gap-2">
                 {detectionEnabled ? (

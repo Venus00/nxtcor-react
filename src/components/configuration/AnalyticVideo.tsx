@@ -59,7 +59,7 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
                 {/* Live view - much larger */}
                 <div className="flex-1 min-w-[400px] max-w-4xl aspect-video flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
                     <iframe
-                        src={`http://${window.location.hostname}:8889/${stream === "stream1" ? "cam2" : "cam1"}`}
+                        src={`http://${window.location.hostname}:8889/${stream === "stream1" ? "cam1" : "cam2"}`}
                         width="1000"
                         height="562"
                         className="object-fill w-full h-full rounded-lg border-2 border-blue-700 shadow-xl"
