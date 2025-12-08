@@ -3,6 +3,7 @@
 import type React from "react"
 import { useRef, useState, useEffect } from "react"
 import { Camera, Target, Circle, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Minus, Plus } from "lucide-react"
+import { useCameraContext } from "../../contexts/CameraContext";
 
 interface TrackedObject {
   classification: number;
@@ -43,7 +44,8 @@ const Analytics: React.FC = () => {
   const wsRef = useRef<WebSocket | null>(null)
   const objectMapRef = useRef<Map<number, TrackedObjectWithTimestamp>>(new Map())
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
+  const { camId, setCamId } = useCameraContext();
+  setCamId('cam2')
   // PTZ control refs
   const upIntervalRef = useRef<number | null>(null)
   const downIntervalRef = useRef<number | null>(null)
@@ -479,10 +481,12 @@ const Analytics: React.FC = () => {
                     src={getCameraUrl()}
                     className="w-full h-full object-contain"
                     allow="autoplay; fullscreen"
+                    sandbox="allow-same-origin allow-scripts"
                     style={{
                       transformOrigin: "center",
                       transition: "transform 0.3s ease",
-                      border: "none"
+                      border: "none",
+                      pointerEvents: "none"
                     }}
                   />
                   <canvas
