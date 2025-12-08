@@ -115,7 +115,8 @@ const TourManagement: React.FC = () => {
       // Assuming presetsData has similar structure
       for (let i = 0; i < 300; i++) {
         const name = presetsData.presets?.[`table.PtzPreset[0][${i}].Name`];
-        if (name && name !== "None") {
+         const enable = presetsData.presets?.[`table.PtzPreset[0][${i}].Enable`] ?? "false";
+        if (name && name !== "None" && enable === "true") {
           presets.push({ id: i + 1, title: name });
         }
       }
