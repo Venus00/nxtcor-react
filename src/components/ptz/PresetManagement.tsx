@@ -126,7 +126,7 @@ const PresetManagement: React.FC = () => {
   // GOTO: Moves camera to preset
   const handleGotoPreset = (id: number) => {
     setSelectedPresetId(id);
-    id = id + 1;
+  
     ptzActionMutation.mutate({
       id,
     });
@@ -146,7 +146,9 @@ const PresetManagement: React.FC = () => {
       const apiIndex = editingId - 1;
       setPresetMutation.mutate(
         {
-          [`table.PtzPreset[0][${apiIndex}].Name`]: editingTitle,
+          Name :editingTitle,
+          id : apiIndex,
+          // [`table.PtzPreset[0][${apiIndex}].Name`]: editingTitle,
         },
         {
           onSuccess: () => {
