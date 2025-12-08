@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useRef, useState, useEffect } from "react"
-import { Camera, Target, Circle } from "lucide-react"
+import { Camera, Target, Circle, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Minus, Plus } from "lucide-react"
 
 interface TrackedObject {
   classification: number;
@@ -37,11 +37,22 @@ const Analytics: React.FC = () => {
   const [trackingId, setTrackingId] = useState<number | null>(null)
   const [wsConnected, setWsConnected] = useState(false)
   const [detectionEnabled, setDetectionEnabled] = useState(false)
+  const [speed, setSpeed] = useState(5)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
   const objectMapRef = useRef<Map<number, TrackedObjectWithTimestamp>>(new Map())
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // PTZ control refs
+  const upIntervalRef = useRef<number | null>(null)
+  const downIntervalRef = useRef<number | null>(null)
+  const leftIntervalRef = useRef<number | null>(null)
+  const rightIntervalRef = useRef<number | null>(null)
+  const zoomInIntervalRef = useRef<number | null>(null)
+  const zoomOutIntervalRef = useRef<number | null>(null)
+  const focusInIntervalRef = useRef<number | null>(null)
+  const focusOutIntervalRef = useRef<number | null>(null)
 
   // WebSocket connection with auto-reconnect
   useEffect(() => {
@@ -266,6 +277,118 @@ const Analytics: React.FC = () => {
       : `http://${hostname}:8889/cam2`
   }
 
+  // PTZ Movement Functions
+  const move = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
+    try {
+      let endpoint = '';
+      const camId = 'cam1'; // Fixed to cam1 (optical camera)
+
+      switch (direction) {
+        case 'up':
+          endpoint = `/camera/${camId}/ptz/move/up`;
+          break;
+        case 'down':
+          endpoint = `/camera/${camId}/ptz/move/down`;
+          break;
+        case 'left':
+          endpoint = `/camera/${camId}/ptz/move/left`;
+          break;
+        case 'right':
+          endpoint = `/camera/${camId}/ptz/move/right`;
+          break;
+        case 'zoom_in':
+          endpoint = `/camera/${camId}/ptz/zoom/in`;
+          break;
+        case 'zoom_out':
+          endpoint = `/camera/${camId}/ptz/zoom/out`;
+          break;
+        case 'focus_in':
+          endpoint = `/camera/${camId}/ptz/focus/near`;
+          break;
+        case 'focus_out':
+          endpoint = `/camera/${camId}/ptz/focus/far`;
+          break;
+      }
+
+      await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: 0, speed }),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const stop = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
+    try {
+      let endpoint = '';
+      const camId = 'cam1';
+
+      switch (direction) {
+        case 'up':
+        case 'down':
+        case 'left':
+        case 'right':
+          endpoint = `/camera/${camId}/ptz/move/stop`;
+          break;
+        case 'zoom_in':
+        case 'zoom_out':
+          endpoint = `/camera/${camId}/ptz/zoom/stop`;
+          break;
+        case 'focus_in':
+        case 'focus_out':
+          endpoint = `/camera/${camId}/ptz/focus/stop`;
+          break;
+      }
+
+      await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: 0 }),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const createHoldHandlers = (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out', intervalRef: React.MutableRefObject<number | null>) => {
+    const handleStart = () => {
+      move(direction);
+      intervalRef.current = window.setInterval(() => move(direction), 200);
+    };
+
+    const handleStop = () => {
+      stop(direction);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+
+    return { handleStart, handleStop };
+  };
+
+  const upHandlers = createHoldHandlers('up', upIntervalRef);
+  const downHandlers = createHoldHandlers('down', downIntervalRef);
+  const leftHandlers = createHoldHandlers('left', leftIntervalRef);
+  const rightHandlers = createHoldHandlers('right', rightIntervalRef);
+  const zoomInHandlers = createHoldHandlers('zoom_in', zoomInIntervalRef);
+  const zoomOutHandlers = createHoldHandlers('zoom_out', zoomOutIntervalRef);
+  const focusInHandlers = createHoldHandlers('focus_in', focusInIntervalRef);
+  const focusOutHandlers = createHoldHandlers('focus_out', focusOutIntervalRef);
+
+  // Cleanup PTZ intervals on unmount
+  useEffect(() => {
+    return () => {
+      [upIntervalRef, downIntervalRef, leftIntervalRef, rightIntervalRef, zoomInIntervalRef, zoomOutIntervalRef, focusInIntervalRef, focusOutIntervalRef].forEach(ref => {
+        if (ref.current) {
+          clearInterval(ref.current);
+        }
+      });
+    };
+  }, []);
+
   return (
     <div className="h-full bg-black p-6">
       <div className="max-w-full mx-auto h-full flex flex-col">
@@ -366,6 +489,175 @@ const Analytics: React.FC = () => {
                     ref={canvasRef}
                     className="absolute top-0 left-0 w-full h-full pointer-events-none"
                   />
+                </div>
+
+                {/* PTZ Controls Overlay */}
+                <div className="absolute bottom-4 right-4 z-20">
+                  <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 min-w-[160px]">
+                    <div className="flex items-center justify-between mb-5 pb-3 border-b border-white/10">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
+                        <span className="text-white/90 text-xs font-medium tracking-wide">PTZ CONTROL</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center space-y-2 mb-6">
+                      <button
+                        onMouseDown={upHandlers.handleStart}
+                        onMouseUp={upHandlers.handleStop}
+                        onMouseLeave={upHandlers.handleStop}
+                        onTouchStart={upHandlers.handleStart}
+                        onTouchEnd={upHandlers.handleStop}
+                        className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                        aria-label="Tilt Up"
+                      >
+                        <ChevronUp size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                      </button>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onMouseDown={leftHandlers.handleStart}
+                          onMouseUp={leftHandlers.handleStop}
+                          onMouseLeave={leftHandlers.handleStop}
+                          onTouchStart={leftHandlers.handleStart}
+                          onTouchEnd={leftHandlers.handleStop}
+                          className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                          aria-label="Pan Left"
+                        >
+                          <ChevronLeft size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                        </button>
+
+                        <div className="w-12 h-12 bg-white/5 border border-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                          <div className="w-2 h-2 bg-white/60 rounded-full shadow-lg"></div>
+                        </div>
+
+                        <button
+                          onMouseDown={rightHandlers.handleStart}
+                          onMouseUp={rightHandlers.handleStop}
+                          onMouseLeave={rightHandlers.handleStop}
+                          onTouchStart={rightHandlers.handleStart}
+                          onTouchEnd={rightHandlers.handleStop}
+                          className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                          aria-label="Pan Right"
+                        >
+                          <ChevronRight size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                        </button>
+                      </div>
+
+                      <button
+                        onMouseDown={downHandlers.handleStart}
+                        onMouseUp={downHandlers.handleStop}
+                        onMouseLeave={downHandlers.handleStop}
+                        onTouchStart={downHandlers.handleStart}
+                        onTouchEnd={downHandlers.handleStop}
+                        className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                        aria-label="Tilt Down"
+                      >
+                        <ChevronDown size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                      </button>
+                    </div>
+
+                    {/* ZOOM */}
+                    <div className="relative mb-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-white/10"></div>
+                      </div>
+                      <div className="relative flex justify-center">
+                        <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">ZOOM</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center space-x-3 mb-6">
+                      <button
+                        onMouseDown={zoomOutHandlers.handleStart}
+                        onMouseUp={zoomOutHandlers.handleStop}
+                        onMouseLeave={zoomOutHandlers.handleStop}
+                        onTouchStart={zoomOutHandlers.handleStart}
+                        onTouchEnd={zoomOutHandlers.handleStop}
+                        className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                        aria-label="Zoom Out"
+                      >
+                        <ZoomOut size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                      </button>
+
+                      <button
+                        onMouseDown={zoomInHandlers.handleStart}
+                        onMouseUp={zoomInHandlers.handleStop}
+                        onMouseLeave={zoomInHandlers.handleStop}
+                        onTouchStart={zoomInHandlers.handleStart}
+                        onTouchEnd={zoomInHandlers.handleStop}
+                        className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                        aria-label="Zoom In"
+                      >
+                        <ZoomIn size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                      </button>
+                    </div>
+
+                    {/* FOCUS */}
+                    <div className="relative mb-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-white/10"></div>
+                      </div>
+                      <div className="relative flex justify-center">
+                        <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">FOCUS</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center space-x-3 mb-6">
+                      <button
+                        onMouseDown={focusInHandlers.handleStart}
+                        onMouseUp={focusInHandlers.handleStop}
+                        onMouseLeave={focusInHandlers.handleStop}
+                        onTouchStart={focusInHandlers.handleStart}
+                        onTouchEnd={focusInHandlers.handleStop}
+                        className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                        aria-label="Focus Near"
+                      >
+                        <Minus size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                      </button>
+
+                      <button
+                        onMouseDown={focusOutHandlers.handleStart}
+                        onMouseUp={focusOutHandlers.handleStop}
+                        onMouseLeave={focusOutHandlers.handleStop}
+                        onTouchStart={focusOutHandlers.handleStart}
+                        onTouchEnd={focusOutHandlers.handleStop}
+                        className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                        aria-label="Focus Far"
+                      >
+                        <Plus size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                      </button>
+                    </div>
+
+                    {/* SPEED */}
+                    <div className="relative mb-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-white/10"></div>
+                      </div>
+                      <div className="relative flex justify-center">
+                        <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">SPEED</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center">
+                      <input
+                        type="range"
+                        min="1"
+                        max="8"
+                        step="1"
+                        value={speed}
+                        onChange={(e) => setSpeed(Number(e.target.value))}
+                        className="w-32 accent-blue-500 cursor-pointer"
+                        aria-label="Speed Control"
+                      />
+                      <div className="flex justify-between w-32 mt-2 text-white/60 text-xs font-medium">
+                        <span>1</span>
+                        <span>3</span>
+                        <span>5</span>
+                        <span>8</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Status Overlay */}

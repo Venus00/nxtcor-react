@@ -26,7 +26,7 @@ const PTZSettings: React.FC = () => {
   });
 
   useEffect(() => {
-    setCamId('cam1')
+    setCamId('cam2')
   }, [])
 
   const handleDirectionControl = async (direction: 'up' | 'down' | 'left' | 'right' | 'center') => {
