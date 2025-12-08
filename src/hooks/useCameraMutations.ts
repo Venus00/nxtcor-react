@@ -331,3 +331,14 @@ export function useSetVideoInMode(camId: string) {
     },
   });
 }
+
+// storage/record mutation
+export function useSetRecordSettings(camId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: any) => apiFetch(`/camera/${camId}/storage/record`, 'POST', params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cameraKeys.record(camId) });
+    },
+  });
+}

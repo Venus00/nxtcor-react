@@ -52,6 +52,7 @@ export const cameraKeys = {
 
   // Storage
   storage: (camId: string) => ["camera", camId, "storage"] as const,
+  record : (camId: string) => ["camera", camId, "storage", "record"] as const,
   storageDevice: (camId: string) =>
     ["camera", camId, "storage", "device"] as const,
 
@@ -418,6 +419,14 @@ export function useStorageDevice(camId: string, enabled = true) {
   });
 }
 
+
+export function useRecordSettings(camId: string, enabled = true) {
+  return useQuery({
+    queryKey: cameraKeys.record(camId),
+    queryFn: () => apiFetch(`/camera/${camId}/storage/record`),
+    enabled,
+  });
+}
 // =============================================================================
 // LIVE QUERIES
 // =============================================================================
