@@ -116,7 +116,7 @@ const PresetManagement: React.FC = () => {
         id: apiIndex,
       },
       {
-        onSuccess: () => refetch(), // Refresh list to get new coordinates if API updates them
+        onSuccess: async () => await refetch(), // Refresh list to get new coordinates if API updates them
       }
     );
   };
@@ -127,7 +127,7 @@ const PresetManagement: React.FC = () => {
 
     ptzActionMutation.mutate(
       {
-        id
+        id,
       },
       {
         onSuccess: () => refetch(),
@@ -138,9 +138,17 @@ const PresetManagement: React.FC = () => {
   // DELETE: Clears preset
   const handleDeletePreset = (id: number) => {
     // 1. Clear via PTZ command
-    clearPreset.mutate({
-      id,
-    });
+    clearPreset.mutate(
+      {
+        id,
+      },
+      {
+        onSuccess: async () => {
+          setPresets((prev) => prev.filter((p) => p.id !== id));
+          await refetch();
+        },
+      }
+    );
   };
 
   // RENAME
@@ -380,8 +388,6 @@ const PresetManagement: React.FC = () => {
                     </button>
                   </div>
                 </div>
-
-               
               </div>
             ))}
           </div>
