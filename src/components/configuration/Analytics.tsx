@@ -437,8 +437,8 @@ const Analytics: React.FC = () => {
                   <button
                     onClick={() => setSelectedCamera('cam2')}
                     className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === 'cam2'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                       }`}
                   >
                     <Camera className="w-4 h-4" />
@@ -447,8 +447,8 @@ const Analytics: React.FC = () => {
                   <button
                     onClick={() => setSelectedCamera('cam1')}
                     className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === 'cam1'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                       }`}
                   >
                     <Thermometer className="w-4 h-4" />
