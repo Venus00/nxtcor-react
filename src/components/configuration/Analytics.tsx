@@ -33,7 +33,7 @@ interface TrackingData {
 type CameraType = "cam1" | "cam2"
 
 const Analytics: React.FC = () => {
-  const [selectedCamera, setSelectedCamera] = useState<CameraType>("cam2") // cam1 = optique, cam2 = thermique
+  const [selectedCamera, setSelectedCamera] = useState<CameraType>("cam1") // cam1 = optique (API), cam2 = thermique (API)
   const [objects, setObjects] = useState<TrackedObjectWithTimestamp[]>([])
   const [trackingId, setTrackingId] = useState<number | null>(null)
   const [wsConnected, setWsConnected] = useState(false)
@@ -294,9 +294,11 @@ const Analytics: React.FC = () => {
 
   const getCameraUrl = () => {
     const hostname = window.location.hostname;
-    return selectedCamera === "cam2"
-      ? `http://${hostname}:8889/cam1`
-      : `http://${hostname}:8889/cam2`
+    // API uses cam1=optique, cam2=thermique
+    // But live stream uses cam1=thermique, cam2=optique
+    return selectedCamera === "cam1"
+      ? `http://${hostname}:8889/cam2`
+      : `http://${hostname}:8889/cam1`
   }
 
   // PTZ Movement Functions
@@ -435,8 +437,8 @@ const Analytics: React.FC = () => {
                 <label className="text-sm font-medium text-white">Camera:</label>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setSelectedCamera('cam2')}
-                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === 'cam2'
+                    onClick={() => setSelectedCamera('cam1')}
+                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === 'cam1'
                       ? 'bg-blue-600 text-white'
                       : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                       }`}
@@ -445,8 +447,8 @@ const Analytics: React.FC = () => {
                     Optique
                   </button>
                   <button
-                    onClick={() => setSelectedCamera('cam1')}
-                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === 'cam1'
+                    onClick={() => setSelectedCamera('cam2')}
+                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === 'cam2'
                       ? 'bg-blue-600 text-white'
                       : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                       }`}
@@ -501,7 +503,7 @@ const Analytics: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Camera className="h-5 w-5 text-slate-400" />
                   <h3 className="text-base font-medium text-white">
-                    {selectedCamera === 'cam2' ? 'Caméra Optique' : 'Caméra Thermique'} Feed
+                    {selectedCamera === 'cam1' ? 'Caméra Optique' : 'Caméra Thermique'} Feed
                   </h3>
                 </div>
                 <div className="flex items-center gap-4">
@@ -708,7 +710,7 @@ const Analytics: React.FC = () => {
                 {/* Status Overlay */}
                 <div className="absolute top-3 left-3 bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-md border border-slate-600/50">
                   <div className="text-xs text-slate-200 font-mono space-y-1">
-                    <div>Camera: {selectedCamera === 'cam2' ? 'Caméra Optique' : 'Caméra Thermique'}</div>
+                    <div>Camera: {selectedCamera === 'cam1' ? 'Caméra Optique' : 'Caméra Thermique'}</div>
                     <div>Detection: {detectionEnabled ? 'Active' : 'Inactive'}</div>
                     <div>Objects: {objects.length}</div>
                     {trackingId !== null && (
