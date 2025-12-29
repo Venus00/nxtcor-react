@@ -231,6 +231,33 @@ const VideoListSidebar = () => {
                     Playback Controls
                 </h2>
 
+                {/* Camera Selector */}
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Select Camera</label>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={() => setSelectedCamera('cam1')}
+                            className={`px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${selectedCamera === 'cam1'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                }`}
+                        >
+                            <Camera className="w-4 h-4" />
+                            Optique
+                        </button>
+                        <button
+                            onClick={() => setSelectedCamera('cam2')}
+                            className={`px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${selectedCamera === 'cam2'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                }`}
+                        >
+                            <Thermometer className="w-4 h-4" />
+                            Thermique
+                        </button>
+                    </div>
+                </div>
+
                 {/* Date Selector */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-300 mb-2">Select Date</label>

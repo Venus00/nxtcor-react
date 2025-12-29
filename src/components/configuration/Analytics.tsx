@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useRef, useState, useEffect } from "react"
-import { Camera, Target, Circle, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Minus, Plus } from "lucide-react"
+import { Camera, Target, Circle, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Minus, Plus, Thermometer } from "lucide-react"
 import { useCameraContext } from "../../contexts/CameraContext";
 
 interface TrackedObject {
@@ -33,7 +33,7 @@ interface TrackingData {
 type CameraType = "cam1" | "cam2"
 
 const Analytics: React.FC = () => {
-  const selectedCamera = "cam2" // Fixed to optical camera only
+  const [selectedCamera, setSelectedCamera] = useState<CameraType>("cam1") // cam1 = optique, cam2 = thermique
   const [objects, setObjects] = useState<TrackedObjectWithTimestamp[]>([])
   const [trackingId, setTrackingId] = useState<number | null>(null)
   const [wsConnected, setWsConnected] = useState(false)
@@ -45,7 +45,11 @@ const Analytics: React.FC = () => {
   const objectMapRef = useRef<Map<number, TrackedObjectWithTimestamp>>(new Map())
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const { camId, setCamId } = useCameraContext();
-  setCamId('cam2')
+
+  // Update camera context when selectedCamera changes
+  useEffect(() => {
+    setCamId(selectedCamera);
+  }, [selectedCamera, setCamId]);
   // PTZ control refs
   const upIntervalRef = useRef<number | null>(null)
   const downIntervalRef = useRef<number | null>(null)
@@ -228,6 +232,10 @@ const Analytics: React.FC = () => {
     try {
       await fetch(`http://${window.location.hostname}:3000/detection/start`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cameraId: selectedCamera }),
       })
       setDetectionEnabled(true)
     } catch (error) {
@@ -239,6 +247,10 @@ const Analytics: React.FC = () => {
     try {
       await fetch(`http://${window.location.hostname}:3000/detection/stop`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cameraId: selectedCamera }),
       })
       setDetectionEnabled(false)
       // Clear tracking when detection is disabled
@@ -254,6 +266,10 @@ const Analytics: React.FC = () => {
     try {
       await fetch(`http://${window.location.hostname}:3000/track/object/${id}`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cameraId: selectedCamera }),
       })
       setTrackingId(id)
     } catch (error) {
@@ -265,6 +281,10 @@ const Analytics: React.FC = () => {
     try {
       await fetch(`http://${window.location.hostname}:3000/track/stop`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cameraId: selectedCamera }),
       })
       setTrackingId(null)
     } catch (error) {
@@ -283,32 +303,31 @@ const Analytics: React.FC = () => {
   const move = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
     try {
       let endpoint = '';
-      const camId = 'cam1'; // Fixed to cam1 (optical camera)
 
       switch (direction) {
         case 'up':
-          endpoint = `/camera/${camId}/ptz/move/up`;
+          endpoint = `/camera/${selectedCamera}/ptz/move/up`;
           break;
         case 'down':
-          endpoint = `/camera/${camId}/ptz/move/down`;
+          endpoint = `/camera/${selectedCamera}/ptz/move/down`;
           break;
         case 'left':
-          endpoint = `/camera/${camId}/ptz/move/left`;
+          endpoint = `/camera/${selectedCamera}/ptz/move/left`;
           break;
         case 'right':
-          endpoint = `/camera/${camId}/ptz/move/right`;
+          endpoint = `/camera/${selectedCamera}/ptz/move/right`;
           break;
         case 'zoom_in':
-          endpoint = `/camera/${camId}/ptz/zoom/in`;
+          endpoint = `/camera/${selectedCamera}/ptz/zoom/in`;
           break;
         case 'zoom_out':
-          endpoint = `/camera/${camId}/ptz/zoom/out`;
+          endpoint = `/camera/${selectedCamera}/ptz/zoom/out`;
           break;
         case 'focus_in':
-          endpoint = `/camera/${camId}/ptz/focus/near`;
+          endpoint = `/camera/${selectedCamera}/ptz/focus/near`;
           break;
         case 'focus_out':
-          endpoint = `/camera/${camId}/ptz/focus/far`;
+          endpoint = `/camera/${selectedCamera}/ptz/focus/far`;
           break;
       }
 
@@ -325,22 +344,21 @@ const Analytics: React.FC = () => {
   const stop = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
     try {
       let endpoint = '';
-      const camId = 'cam1';
 
       switch (direction) {
         case 'up':
         case 'down':
         case 'left':
         case 'right':
-          endpoint = `/camera/${camId}/ptz/move/stop`;
+          endpoint = `/camera/${selectedCamera}/ptz/move/stop`;
           break;
         case 'zoom_in':
         case 'zoom_out':
-          endpoint = `/camera/${camId}/ptz/zoom/stop`;
+          endpoint = `/camera/${selectedCamera}/ptz/zoom/stop`;
           break;
         case 'focus_in':
         case 'focus_out':
-          endpoint = `/camera/${camId}/ptz/focus/stop`;
+          endpoint = `/camera/${selectedCamera}/ptz/focus/stop`;
           break;
       }
 
@@ -412,7 +430,32 @@ const Analytics: React.FC = () => {
         <div className="mb-6">
           <div className="bg-slate-800/60 border border-slate-600/50 rounded-lg p-4">
             <div className="flex items-center gap-4">
-              <label className="text-sm font-medium text-white">Camera: Caméra Optique (cam1)</label>
+              {/* Camera Selector */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-white">Camera:</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSelectedCamera('cam1')}
+                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === 'cam1'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                  >
+                    <Camera className="w-4 h-4" />
+                    Optique
+                  </button>
+                  <button
+                    onClick={() => setSelectedCamera('cam2')}
+                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === 'cam2'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                  >
+                    <Thermometer className="w-4 h-4" />
+                    Thermique
+                  </button>
+                </div>
+              </div>
 
               <div className="flex gap-2">
                 {detectionEnabled ? (
@@ -460,7 +503,7 @@ const Analytics: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Camera className="h-5 w-5 text-slate-400" />
                   <h3 className="text-base font-medium text-white">
-                    Caméra Optique Feed
+                    {selectedCamera === 'cam1' ? 'Caméra Optique' : 'Caméra Thermique'} Feed
                   </h3>
                 </div>
                 <div className="flex items-center gap-4">
@@ -667,7 +710,7 @@ const Analytics: React.FC = () => {
                 {/* Status Overlay */}
                 <div className="absolute top-3 left-3 bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-md border border-slate-600/50">
                   <div className="text-xs text-slate-200 font-mono space-y-1">
-                    <div>Camera: Caméra Optique</div>
+                    <div>Camera: {selectedCamera === 'cam1' ? 'Caméra Optique' : 'Caméra Thermique'}</div>
                     <div>Detection: {detectionEnabled ? 'Active' : 'Inactive'}</div>
                     <div>Objects: {objects.length}</div>
                     {trackingId !== null && (
