@@ -183,11 +183,13 @@ const VideoStream: React.FC = () => {
     setRecordingFileName(fileName);
 
     // Start recording on backend
+    // Reverse camera ID for recording (cam1 -> cam2, cam2 -> cam1)
+    const recordingCameraId = camId === 'cam1' ? 'cam2' : 'cam1';
     try {
       const res = await fetch(`http://${window.location.hostname}:3000/recording/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cameraId: camId, fileName })
+        body: JSON.stringify({ cameraId: recordingCameraId, fileName })
       });
       const data = await res.json();
       console.log('Recording started:', data);
@@ -213,11 +215,13 @@ const VideoStream: React.FC = () => {
     setRecordingCompleted(true);
 
     // Stop recording on backend
+    // Reverse camera ID for recording (cam1 -> cam2, cam2 -> cam1)
+    const recordingCameraId = camId === 'cam1' ? 'cam2' : 'cam1';
     try {
       const res = await fetch(`http://${window.location.hostname}:3000/recording/stop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cameraId: camId })
+        body: JSON.stringify({ cameraId: recordingCameraId })
       });
       const data = await res.json();
       console.log('Recording stopped:', data);
