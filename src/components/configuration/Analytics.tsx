@@ -35,9 +35,15 @@ type CameraType = "cam1" | "cam2"
 const Analytics: React.FC = () => {
   const [selectedCamera, setSelectedCamera] = useState<CameraType>("cam1") // cam1 = optique (API), cam2 = thermique (API)
   const [objects, setObjects] = useState<TrackedObjectWithTimestamp[]>([])
-  const [trackingId, setTrackingId] = useState<number | null>(null)
+  const [trackingId, setTrackingId] = useState<number | null>(() => {
+    const saved = localStorage.getItem('analytics_tracking_id')
+    return saved ? JSON.parse(saved) : null
+  })
   const [wsConnected, setWsConnected] = useState(false)
-  const [detectionEnabled, setDetectionEnabled] = useState(false)
+  const [detectionEnabled, setDetectionEnabled] = useState(() => {
+    const saved = localStorage.getItem('analytics_detection_enabled')
+    return saved ? JSON.parse(saved) : false
+  })
   const [speed, setSpeed] = useState(5)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -50,6 +56,31 @@ const Analytics: React.FC = () => {
   useEffect(() => {
     setCamId(selectedCamera);
   }, [selectedCamera, setCamId]);
+
+  // Restore detection state on mount
+  useEffect(() => {
+    const savedDetection = localStorage.getItem('analytics_detection_enabled')
+    const savedTracking = localStorage.getItem('analytics_tracking_id')
+
+    if (savedDetection && JSON.parse(savedDetection)) {
+      // Re-enable detection
+      fetch(`http://${window.location.hostname}:3000/detection/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cameraId: selectedCamera }),
+      }).catch(err => console.error('Error restoring detection:', err))
+    }
+
+    if (savedTracking && JSON.parse(savedTracking) !== null) {
+      const trackId = JSON.parse(savedTracking)
+      // Re-enable tracking
+      fetch(`http://${window.location.hostname}:3000/track/object/${trackId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cameraId: selectedCamera }),
+      }).catch(err => console.error('Error restoring tracking:', err))
+    }
+  }, [])
   // PTZ control refs
   const upIntervalRef = useRef<number | null>(null)
   const downIntervalRef = useRef<number | null>(null)
@@ -238,6 +269,7 @@ const Analytics: React.FC = () => {
         body: JSON.stringify({ cameraId: selectedCamera }),
       })
       setDetectionEnabled(true)
+      localStorage.setItem('analytics_detection_enabled', JSON.stringify(true))
     } catch (error) {
       console.error('Error enabling detection:', error)
     }
@@ -253,8 +285,10 @@ const Analytics: React.FC = () => {
         body: JSON.stringify({ cameraId: selectedCamera }),
       })
       setDetectionEnabled(false)
+      localStorage.setItem('analytics_detection_enabled', JSON.stringify(false))
       // Clear tracking when detection is disabled
       setTrackingId(null)
+      localStorage.setItem('analytics_tracking_id', JSON.stringify(null))
       setObjects([])
       objectMapRef.current.clear()
     } catch (error) {
@@ -272,6 +306,7 @@ const Analytics: React.FC = () => {
         body: JSON.stringify({ cameraId: selectedCamera }),
       })
       setTrackingId(id)
+      localStorage.setItem('analytics_tracking_id', JSON.stringify(id))
     } catch (error) {
       console.error('Error enabling tracking:', error)
     }
@@ -287,6 +322,7 @@ const Analytics: React.FC = () => {
         body: JSON.stringify({ cameraId: selectedCamera }),
       })
       setTrackingId(null)
+      localStorage.setItem('analytics_tracking_id', JSON.stringify(null))
     } catch (error) {
       console.error('Error disabling tracking:', error)
     }

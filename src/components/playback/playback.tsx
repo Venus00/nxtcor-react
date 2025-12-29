@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { Calendar, Search, Trash2, Clock, Video, Camera, Thermometer } from 'lucide-react';
+import { Calendar, Search, Trash2, Clock, Video, Camera, Thermometer, ChevronDown, ChevronRight, Folder } from 'lucide-react';
 
 interface VideoFile {
     name: string;
@@ -28,6 +28,8 @@ const VideoListSidebar = () => {
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
+    const [expandedHours, setExpandedHours] = useState<Set<string>>(new Set());
 
     // Fetch all files on mount or when camera changes
     useEffect(() => {
@@ -197,6 +199,26 @@ const VideoListSidebar = () => {
         setSelectedVideo(video);
     };
 
+    const toggleDate = (date: string) => {
+        const newExpanded = new Set(expandedDates);
+        if (newExpanded.has(date)) {
+            newExpanded.delete(date);
+        } else {
+            newExpanded.add(date);
+        }
+        setExpandedDates(newExpanded);
+    };
+
+    const toggleHour = (dateHour: string) => {
+        const newExpanded = new Set(expandedHours);
+        if (newExpanded.has(dateHour)) {
+            newExpanded.delete(dateHour);
+        } else {
+            newExpanded.add(dateHour);
+        }
+        setExpandedHours(newExpanded);
+    };
+
     const getVideoUrl = (video: VideoFile) => {
         // Use downloadUrl from API response if available, otherwise construct URL
         // if (video.downloadUrl) {
@@ -210,7 +232,35 @@ const VideoListSidebar = () => {
     // Get unique dates for date selector
     const availableDates = Object.keys(allVideos).sort().reverse();
 
-    // Group videos by hour for the current filtered list
+    // Group all videos by date and hour for hierarchical view
+    const videosByDateAndHour: { [date: string]: { [hour: string]: VideoFile[] } } = {};
+    if (!selectedDate) {
+        // Show all videos grouped by date and hour
+        Object.entries(allVideos).forEach(([date, videos]) => {
+            if (!videosByDateAndHour[date]) {
+                videosByDateAndHour[date] = {};
+            }
+            videos.forEach(video => {
+                const hour = video.hour || '00';
+                if (!videosByDateAndHour[date][hour]) {
+                    videosByDateAndHour[date][hour] = [];
+                }
+                videosByDateAndHour[date][hour].push(video);
+            });
+        });
+    } else {
+        // Show filtered videos grouped by hour for selected date
+        videosByDateAndHour[selectedDate] = {};
+        filteredVideos.forEach(video => {
+            const hour = video.hour || '00';
+            if (!videosByDateAndHour[selectedDate][hour]) {
+                videosByDateAndHour[selectedDate][hour] = [];
+            }
+            videosByDateAndHour[selectedDate][hour].push(video);
+        });
+    }
+
+    // Group videos by hour for the current filtered list (legacy, kept for compatibility)
     const videosByHour: { [hour: string]: VideoFile[] } = {};
     if (Array.isArray(filteredVideos)) {
         filteredVideos.forEach(video => {
@@ -238,8 +288,8 @@ const VideoListSidebar = () => {
                         <button
                             onClick={() => setSelectedCamera('cam1')}
                             className={`px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${selectedCamera === 'cam1'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 }`}
                         >
                             <Camera className="w-4 h-4" />
@@ -248,8 +298,8 @@ const VideoListSidebar = () => {
                         <button
                             onClick={() => setSelectedCamera('cam2')}
                             className={`px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${selectedCamera === 'cam2'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 }`}
                         >
                             <Thermometer className="w-4 h-4" />
@@ -321,52 +371,107 @@ const VideoListSidebar = () => {
 
                     {loading ? (
                         <div className="text-center text-gray-400">Loading...</div>
-                    ) : Object.keys(videosByHour).length > 0 ? (
-                        <div className="space-y-4">
-                            {Object.entries(videosByHour).sort().reverse().map(([hour, videos]) => (
-                                <div key={hour} className="border-b border-gray-700 pb-3">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h3 className="font-semibold text-gray-200 flex items-center gap-2">
-                                            <Clock className="w-4 h-4" />
-                                            Hour {hour}:00
-                                        </h3>
-                                        {selectedDate && (
-                                            <button
-                                                onClick={() => deleteByHour(selectedDate, hour)}
-                                                className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
-                                            >
-                                                <Trash2 className="w-3 h-3" />
-                                                Delete Hour
-                                            </button>
-                                        )}
+                    ) : Object.keys(videosByDateAndHour).length > 0 ? (
+                        <div className="space-y-2">
+                            {Object.entries(videosByDateAndHour).sort().reverse().map(([date, hourGroups]) => (
+                                <div key={date} className="border border-gray-700 rounded-lg overflow-hidden">
+                                    {/* Date Folder Header */}
+                                    <div
+                                        className="flex items-center justify-between p-3 bg-gray-700/50 hover:bg-gray-700 cursor-pointer transition-colors"
+                                        onClick={() => toggleDate(date)}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            {expandedDates.has(date) ?
+                                                <ChevronDown className="w-4 h-4 text-gray-400" /> :
+                                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                                            }
+                                            <Folder className="w-4 h-4 text-yellow-400" />
+                                            <span className="font-semibold text-gray-200">{date}</span>
+                                            <span className="text-xs text-gray-400">
+                                                ({Object.values(hourGroups).reduce((sum, vids) => sum + vids.length, 0)} videos)
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                deleteByDate(date);
+                                            }}
+                                            className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-900/20"
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                            Delete Day
+                                        </button>
                                     </div>
-                                    <ul className="space-y-1">
-                                        {videos.map((video, index) => (
-                                            <li
-                                                key={`${video.date}-${video.name}-${index}`}
-                                                className={`flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-700 transition-colors ${selectedVideo?.name === video.name && selectedVideo?.date === video.date
-                                                    ? 'bg-blue-900/50 border border-blue-500'
-                                                    : 'bg-gray-900/50 border border-transparent'
-                                                    }`}
-                                                onClick={() => handleSelectVideo(video)}
-                                            >
-                                                <div className="flex-1 min-w-0">
-                                                    <span className="text-sm block truncate font-medium text-white">{video.name}</span>
-                                                    <span className="text-xs text-gray-400">{video.date}</span>
+
+                                    {/* Hour Folders */}
+                                    {expandedDates.has(date) && (
+                                        <div className="bg-gray-800/50 pl-4">
+                                            {Object.entries(hourGroups).sort().reverse().map(([hour, videos]) => (
+                                                <div key={`${date}-${hour}`} className="border-b border-gray-700/50 last:border-b-0">
+                                                    {/* Hour Folder Header */}
+                                                    <div
+                                                        className="flex items-center justify-between p-2 hover:bg-gray-700/30 cursor-pointer transition-colors"
+                                                        onClick={() => toggleHour(`${date}-${hour}`)}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            {expandedHours.has(`${date}-${hour}`) ?
+                                                                <ChevronDown className="w-3 h-3 text-gray-400" /> :
+                                                                <ChevronRight className="w-3 h-3 text-gray-400" />
+                                                            }
+                                                            <Clock className="w-3 h-3 text-blue-400" />
+                                                            <span className="text-sm font-medium text-gray-300">
+                                                                {hour}:00
+                                                            </span>
+                                                            <span className="text-xs text-gray-500">
+                                                                ({videos.length} videos)
+                                                            </span>
+                                                        </div>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteByHour(date, hour);
+                                                            }}
+                                                            className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-red-900/20"
+                                                        >
+                                                            <Trash2 className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Video Files */}
+                                                    {expandedHours.has(`${date}-${hour}`) && (
+                                                        <ul className="pl-6 py-1 space-y-1">
+                                                            {videos.map((video, index) => (
+                                                                <li
+                                                                    key={`${video.date}-${video.name}-${index}`}
+                                                                    className={`flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-700 transition-colors ${selectedVideo?.name === video.name && selectedVideo?.date === video.date
+                                                                            ? 'bg-blue-900/50 border border-blue-500'
+                                                                            : 'bg-gray-900/30 border border-transparent'
+                                                                        }`}
+                                                                    onClick={() => handleSelectVideo(video)}
+                                                                >
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <span className="text-xs block truncate font-medium text-white">
+                                                                            {video.name}
+                                                                        </span>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            deleteVideo(video);
+                                                                        }}
+                                                                        className="ml-2 text-red-400 hover:text-red-300 flex-shrink-0"
+                                                                        aria-label="Delete Video"
+                                                                    >
+                                                                        <Trash2 className="w-3 h-3" />
+                                                                    </button>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    )}
                                                 </div>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        deleteVideo(video);
-                                                    }}
-                                                    className="ml-2 text-red-400 hover:text-red-300 flex-shrink-0"
-                                                    aria-label="Delete Video"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

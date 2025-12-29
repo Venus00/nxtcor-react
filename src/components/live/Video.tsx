@@ -182,6 +182,19 @@ const VideoStream: React.FC = () => {
     const fileName = `recording_${camId}_${timestamp}.mp4`;
     setRecordingFileName(fileName);
 
+    // Start recording on backend
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3000/recording/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cameraId: camId, fileName })
+      });
+      const data = await res.json();
+      console.log('Recording started:', data);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+    }
+
     // Start timer
     recordingTimerRef.current = window.setInterval(() => {
       setRecordingDuration(prev => {
@@ -198,6 +211,19 @@ const VideoStream: React.FC = () => {
   const stopRecording = async () => {
     setIsRecording(false);
     setRecordingCompleted(true);
+
+    // Stop recording on backend
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3000/recording/stop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cameraId: camId })
+      });
+      const data = await res.json();
+      console.log('Recording stopped:', data);
+    } catch (error) {
+      console.error('Error stopping recording:', error);
+    }
 
     // Clear timer
     if (recordingTimerRef.current) {
@@ -232,54 +258,54 @@ const VideoStream: React.FC = () => {
       <div className="flex-grow flex justify-center items-center relative bg-black">
         <div className="relative w-full h-full overflow-hidden bg-black">
           <div className="absolute bottom-4 right-10 z-20">
-            <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 min-w-[160px]">
-              <div className="flex items-center justify-between mb-5 pb-3 border-b border-white/10">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
-                  <span className="text-white/90 text-xs font-medium tracking-wide">PTZ CONTROL</span>
+            <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 min-w-[140px]">
+              <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                <div className="flex items-center space-x-1.5">
+                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
+                  <span className="text-white/90 text-[10px] font-medium tracking-wide">PTZ CONTROL</span>
                 </div>
               </div>
 
               {/* MANUAL RECORD */}
-              <div className="flex flex-col items-center mb-6">
+              <div className="flex flex-col items-center mb-4">
                 <button
                   onClick={isRecording ? stopRecording : startRecording}
                   disabled={recordingCompleted}
-                  className={`group w-full h-12 ${isRecording
+                  className={`group w-full h-10 ${isRecording
                     ? 'bg-red-500/30 hover:bg-red-500/40 active:bg-red-500/50 border-red-400/50 hover:border-red-400/70 text-red-100 hover:shadow-red-500/20'
                     : recordingCompleted
                       ? 'bg-gray-500/20 border-gray-400/30 text-gray-400 cursor-not-allowed'
                       : 'bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border-green-400/30 hover:border-green-400/50 text-green-100 hover:shadow-green-500/20'
-                    } border hover:text-white rounded-xl flex items-center justify-center space-x-2 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg disabled:hover:scale-100`}
+                    } border hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg disabled:hover:scale-100`}
                   aria-label={isRecording ? "Stop Recording" : "Start Recording"}
                 >
                   {isRecording ? (
                     <>
-                      <Square size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200 fill-current" />
-                      <span className="text-sm font-medium tracking-wide">STOP</span>
+                      <Square size={12} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200 fill-current" />
+                      <span className="text-xs font-medium tracking-wide">STOP</span>
                     </>
                   ) : (
                     <>
-                      <VideoIcon size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
-                      <span className="text-sm font-medium tracking-wide">RECORD</span>
+                      <VideoIcon size={12} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                      <span className="text-xs font-medium tracking-wide">RECORD</span>
                     </>
                   )}
                 </button>
 
                 {isRecording && (
-                  <div className="mt-3 flex flex-col items-center space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
-                      <span className="text-red-400 text-sm font-mono font-bold tracking-wider">
+                  <div className="mt-2 flex flex-col items-center space-y-1">
+                    <div className="flex items-center space-x-1.5">
+                      <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
+                      <span className="text-red-400 text-xs font-mono font-bold tracking-wider">
                         {formatDuration(recordingDuration)}
                       </span>
                     </div>
-                    <div className="text-white/40 text-xs">
+                    <div className="text-white/40 text-[10px]">
                       Max: {formatDuration(maxRecordingDuration)}
                     </div>
-                    <div className="w-full bg-white/10 rounded-full h-1 mt-2">
+                    <div className="w-full bg-white/10 rounded-full h-0.5 mt-1.5">
                       <div
-                        className="bg-red-500 h-1 rounded-full transition-all duration-1000"
+                        className="bg-red-500 h-0.5 rounded-full transition-all duration-1000"
                         style={{ width: `${(recordingDuration / maxRecordingDuration) * 100}%` }}
                       ></div>
                     </div>
@@ -287,64 +313,64 @@ const VideoStream: React.FC = () => {
                 )}
 
                 {recordingCompleted && (
-                  <div className="mt-3 flex flex-col items-center space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
-                      <span className="text-green-400 text-xs font-medium tracking-wide">
-                        Recording completed: {formatDuration(recordingDuration)}
+                  <div className="mt-2 flex flex-col items-center space-y-1.5">
+                    <div className="flex items-center space-x-1.5">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
+                      <span className="text-green-400 text-[10px] font-medium tracking-wide">
+                        Completed: {formatDuration(recordingDuration)}
                       </span>
                     </div>
                     <a
-                      href={`http://${window.location.hostname}:3000/recordings/${recordingFileName}`}
+                      href={`http://${window.location.hostname}:3000/recording/download/${recordingFileName}`}
                       download={recordingFileName}
-                      className="group w-full h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center space-x-2 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                      className="group w-full h-8 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
-                      <span className="text-sm font-medium tracking-wide">DOWNLOAD</span>
+                      <span className="text-xs font-medium tracking-wide">DOWNLOAD</span>
                     </a>
                   </div>
                 )}
               </div>
 
-              <div className="relative mb-6">
+              <div className="relative mb-4">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">PTZ</span>
+                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">PTZ</span>
                 </div>
               </div>
 
-              <div className="flex flex-col items-center space-y-2 mb-6">
+              <div className="flex flex-col items-center space-y-1.5 mb-4">
                 <button
                   onMouseDown={upHandlers.handleStart}
                   onMouseUp={upHandlers.handleStop}
                   onMouseLeave={upHandlers.handleStop}
                   onTouchStart={upHandlers.handleStart}
                   onTouchEnd={upHandlers.handleStop}
-                  className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                  className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                   aria-label="Tilt Up"
                 >
-                  <ChevronUp size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <ChevronUp size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1.5">
                   <button
                     onMouseDown={leftHandlers.handleStart}
                     onMouseUp={leftHandlers.handleStop}
                     onMouseLeave={leftHandlers.handleStop}
                     onTouchStart={leftHandlers.handleStart}
                     onTouchEnd={leftHandlers.handleStop}
-                    className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                    className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                     aria-label="Pan Left"
                   >
-                    <ChevronLeft size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                    <ChevronLeft size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                   </button>
 
-                  <div className="w-12 h-12 bg-white/5 border border-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                    <div className="w-2 h-2 bg-white/60 rounded-full shadow-lg"></div>
+                  <div className="w-10 h-10 bg-white/5 border border-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                    <div className="w-1.5 h-1.5 bg-white/60 rounded-full shadow-lg"></div>
                   </div>
 
                   <button
@@ -353,10 +379,10 @@ const VideoStream: React.FC = () => {
                     onMouseLeave={rightHandlers.handleStop}
                     onTouchStart={rightHandlers.handleStart}
                     onTouchEnd={rightHandlers.handleStop}
-                    className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                    className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                     aria-label="Pan Right"
                   >
-                    <ChevronRight size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                    <ChevronRight size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                   </button>
                 </div>
 
@@ -366,34 +392,34 @@ const VideoStream: React.FC = () => {
                   onMouseLeave={downHandlers.handleStop}
                   onTouchStart={downHandlers.handleStart}
                   onTouchEnd={downHandlers.handleStop}
-                  className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                  className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                   aria-label="Tilt Down"
                 >
-                  <ChevronDown size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <ChevronDown size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
               </div>
 
               {/* ZOOM */}
-              <div className="relative mb-6">
+              <div className="relative mb-4">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">ZOOM</span>
+                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">ZOOM</span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-center space-x-3 mb-6">
+              <div className="flex items-center justify-center space-x-2 mb-4">
                 <button
                   onMouseDown={zoomOutHandlers.handleStart}
                   onMouseUp={zoomOutHandlers.handleStop}
                   onMouseLeave={zoomOutHandlers.handleStop}
                   onTouchStart={zoomOutHandlers.handleStart}
                   onTouchEnd={zoomOutHandlers.handleStop}
-                  className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                  className="group w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   aria-label="Zoom Out"
                 >
-                  <ZoomOut size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <ZoomOut size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
 
                 <button
@@ -402,34 +428,34 @@ const VideoStream: React.FC = () => {
                   onMouseLeave={zoomInHandlers.handleStop}
                   onTouchStart={zoomInHandlers.handleStart}
                   onTouchEnd={zoomInHandlers.handleStop}
-                  className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                  className="group w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   aria-label="Zoom In"
                 >
-                  <ZoomIn size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <ZoomIn size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
               </div>
 
               {/* FOCUS */}
-              <div className="relative mb-6">
+              <div className="relative mb-4">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">FOCUS</span>
+                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">FOCUS</span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-center space-x-3 mb-6">
+              <div className="flex items-center justify-center space-x-2 mb-4">
                 <button
                   onMouseDown={focusInHandlers.handleStart}
                   onMouseUp={focusInHandlers.handleStop}
                   onMouseLeave={focusInHandlers.handleStop}
                   onTouchStart={focusInHandlers.handleStart}
                   onTouchEnd={focusInHandlers.handleStop}
-                  className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                  className="group w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   aria-label="Focus Near"
                 >
-                  <Minus size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <Minus size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
 
                 <button
@@ -438,45 +464,45 @@ const VideoStream: React.FC = () => {
                   onMouseLeave={focusOutHandlers.handleStop}
                   onTouchStart={focusOutHandlers.handleStart}
                   onTouchEnd={focusOutHandlers.handleStop}
-                  className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                  className="group w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   aria-label="Focus Far"
                 >
-                  <Plus size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <Plus size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
                 </button>
               </div>
 
               {/* WIPER */}
-              <div className="relative mb-6">
+              <div className="relative mb-4">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">WIPER</span>
+                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">WIPER</span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-center mb-6">
+              <div className="flex items-center justify-center mb-4">
                 <button
                   onClick={handleWiperOn}
-                  className="group w-full h-12 bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 border border-purple-400/30 hover:border-purple-400/50 text-purple-100 hover:text-white rounded-xl flex items-center justify-center space-x-2 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20"
+                  className="group w-full h-10 bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 border border-purple-400/30 hover:border-purple-400/50 text-purple-100 hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20"
                   aria-label="Activate Wiper"
                 >
-                  <Circle size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-sm font-medium tracking-wide">WIPER ON</span>
+                  <Circle size={12} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <span className="text-xs font-medium tracking-wide">WIPER ON</span>
                 </button>
               </div>
 
               {/* SPEED */}
-              <div className="relative mb-6">
+              <div className="relative mb-4">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-black/20 px-3 text-white/50 text-xs font-medium tracking-wider">SPEED</span>
+                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">SPEED</span>
                 </div>
               </div>
 
-              <div className="flex flex-col items-center mb-6">
+              <div className="flex flex-col items-center mb-4">
                 <input
                   type="range"
                   min="1"
@@ -484,10 +510,10 @@ const VideoStream: React.FC = () => {
                   step="1"
                   value={speed}
                   onChange={(e) => setSpeed(Number(e.target.value))}
-                  className="w-32 accent-blue-500 cursor-pointer"
+                  className="w-28 accent-blue-500 cursor-pointer"
                   aria-label="Speed Control"
                 />
-                <div className="flex justify-between w-32 mt-2 text-white/60 text-xs font-medium">
+                <div className="flex justify-between w-28 mt-1.5 text-white/60 text-[10px] font-medium">
                   <span>1</span>
                   <span>3</span>
                   <span>5</span>
@@ -495,9 +521,9 @@ const VideoStream: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-center pt-3 border-t border-white/10">
-                <div className="flex items-center space-x-2 text-xs text-white/60">
-                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
+              <div className="flex items-center justify-center pt-2 border-t border-white/10">
+                <div className="flex items-center space-x-1.5 text-[10px] text-white/60">
+                  <div className="w-1 h-1 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
                   <span className="font-medium tracking-wide">CONNECTED</span>
                 </div>
               </div>
