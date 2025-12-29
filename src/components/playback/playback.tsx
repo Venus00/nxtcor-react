@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { Calendar, Search, Trash2, Clock, Video } from 'lucide-react';
+import { Calendar, Search, Trash2, Clock, Video, Camera, Thermometer } from 'lucide-react';
 
 interface VideoFile {
     name: string;
@@ -15,9 +15,12 @@ interface VideosByDate {
     [date: string]: VideoFile[];
 }
 
+type CameraType = 'cam1' | 'cam2';
+
 const API_BASE_URL = `http://${window.location.hostname}:3001`;
 
 const VideoListSidebar = () => {
+    const [selectedCamera, setSelectedCamera] = useState<CameraType>('cam1');
     const [allVideos, setAllVideos] = useState<VideosByDate>({});
     const [filteredVideos, setFilteredVideos] = useState<VideoFile[]>([]);
     const [selectedVideo, setSelectedVideo] = useState<VideoFile | null>(null);
@@ -26,10 +29,12 @@ const VideoListSidebar = () => {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
 
-    // Fetch all files on mount
+    // Fetch all files on mount or when camera changes
     useEffect(() => {
         fetchAllFiles();
-    }, []);
+        setSelectedVideo(null);
+        setSelectedDate('');
+    }, [selectedCamera]);
 
     // Filter videos when date or search changes
     useEffect(() => {
@@ -49,7 +54,9 @@ const VideoListSidebar = () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await axios.get(`${API_BASE_URL}/files`);
+            const response = await axios.get(`${API_BASE_URL}/files`, {
+                params: { camera: selectedCamera }
+            });
             const videos: VideoFile[] = response.data.videos || [];
 
             // Group videos by date and extract hour from filename or date
@@ -80,7 +87,7 @@ const VideoListSidebar = () => {
         setError(null);
         try {
             const response = await axios.get(`${API_BASE_URL}/files/videos-by-date`, {
-                params: { date }
+                params: { date, camera: selectedCamera }
             });
             setFilteredVideos(response.data.videos.map((v: VideoFile) => ({ ...v, date })));
         } catch (err: any) {
@@ -103,7 +110,8 @@ const VideoListSidebar = () => {
             const response = await axios.get(`${API_BASE_URL}/files/search-video`, {
                 params: {
                     name: searchQuery,
-                    date: selectedDate
+                    date: selectedDate,
+                    camera: selectedCamera
                 }
             });
 
@@ -128,7 +136,8 @@ const VideoListSidebar = () => {
             await axios.delete(`${API_BASE_URL}/files/delete-video`, {
                 params: {
                     name: video.name,
-                    date: video.date
+                    date: video.date,
+                    camera: selectedCamera
                 }
             });
 
@@ -151,7 +160,7 @@ const VideoListSidebar = () => {
 
         try {
             await axios.delete(`${API_BASE_URL}/files/delete-by-hour`, {
-                params: { date, hour }
+                params: { date, hour, camera: selectedCamera }
             });
 
             // Refresh
@@ -170,7 +179,7 @@ const VideoListSidebar = () => {
 
         try {
             await axios.delete(`${API_BASE_URL}/files/delete-by-date`, {
-                params: { date }
+                params: { date, camera: selectedCamera }
             });
 
             // Refresh
@@ -195,7 +204,7 @@ const VideoListSidebar = () => {
         //         ? video.downloadUrl
         //         : `${API_BASE_URL}${video.downloadUrl}`;
         // }
-        return `${API_BASE_URL}/files/search-video?date=${video.date}&name=${video.name}`;
+        return `${API_BASE_URL}/files/search-video?date=${video.date}&name=${video.name}&camera=${selectedCamera}`;
     };
 
     // Get unique dates for date selector
