@@ -219,12 +219,22 @@ const Analytics: React.FC = () => {
             setObjects(activeObjects)
 
             // Set timeout to clear all boxes after 1 second if no new data arrives
-            clearTimeoutRef.current = setTimeout(() => {
+            clearTimeoutRef.current = setTimeout(async () => {
               console.log('[Analytics] No data received for 1 second, clearing boxes')
               objectMapRef.current.clear()
               setObjects([])
-              // Clear tracking if active
+              // Clear tracking if active - call backend to persist state
               if (trackingId !== null) {
+                try {
+                  await fetch(`http://${window.location.hostname}:3000/track/stop`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cameraId: selectedCamera }),
+                  })
+                  console.log('[Analytics] Tracking cleared on backend due to timeout')
+                } catch (error) {
+                  console.error('[Analytics] Error clearing tracking on backend:', error)
+                }
                 setTrackingId(null)
                 localStorage.setItem('analytics_tracking_id', JSON.stringify(null))
               }
@@ -303,8 +313,8 @@ const Analytics: React.FC = () => {
         // Apply -5px offset to Y coordinates to compensate for display deviation
         const boxX = obj.x
         const boxX1 = obj.x1
-        const boxY = obj.y - 45
-        const boxY1 = obj.y1 - 45
+        const boxY = obj.y - 40
+        const boxY1 = obj.y1 - 40
 
         // Calculate box dimensions from diagonal coordinates
         const boxWidth = boxX1 - boxX
@@ -371,7 +381,18 @@ const Analytics: React.FC = () => {
       })
       setDetectionEnabled(false)
       localStorage.setItem('analytics_detection_enabled', JSON.stringify(false))
-      // Clear tracking when detection is disabled
+
+      // Clear tracking when detection is disabled - call backend to persist state
+      if (trackingId !== null) {
+        await fetch(`http://${window.location.hostname}:3000/track/stop`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ cameraId: selectedCamera }),
+        }).catch(err => console.error('Error clearing tracking on backend:', err))
+      }
+
       setTrackingId(null)
       localStorage.setItem('analytics_tracking_id', JSON.stringify(null))
       setObjects([])
