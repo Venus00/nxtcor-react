@@ -215,10 +215,11 @@ const Analytics: React.FC = () => {
         }
 
         // Use coordinates directly from Python server (already in 640x480)
+        // Apply -5px offset to Y coordinates to compensate for display deviation
         const boxX = obj.x
         const boxX1 = obj.x1
-        const boxY = obj.y
-        const boxY1 = obj.y1
+        const boxY = obj.y - 5
+        const boxY1 = obj.y1 - 5
 
         // Calculate box dimensions from diagonal coordinates
         const boxWidth = boxX1 - boxX
