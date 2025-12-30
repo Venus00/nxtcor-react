@@ -201,14 +201,11 @@ const Analytics: React.FC = () => {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    // Set fixed canvas size to match camera resolution
+    canvas.width = 640
+    canvas.height = 480
+
     const drawBoxes = () => {
-      // Get the actual rendered size of the iframe
-      const iframeRect = iframe.getBoundingClientRect()
-
-      // Update canvas to match iframe actual size
-      canvas.width = iframeRect.width
-      canvas.height = iframeRect.height
-
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       objects.forEach((obj) => {
@@ -217,15 +214,11 @@ const Analytics: React.FC = () => {
           return; // Skip drawing this object
         }
 
-        // Camera resolution (source coordinates from Python server)
-        const cameraWidth = 640
-        const cameraHeight = 480
-
-        // Scale coordinates from camera resolution (640x480) to actual canvas size
-        const boxX = (obj.x / cameraWidth) * canvas.width
-        const boxX1 = (obj.x1 / cameraWidth) * canvas.width
-        const boxY = (obj.y / cameraHeight) * canvas.height
-        const boxY1 = (obj.y1 / cameraHeight) * canvas.height
+        // Use coordinates directly from Python server (already in 640x480)
+        const boxX = obj.x
+        const boxX1 = obj.x1
+        const boxY = obj.y
+        const boxY1 = obj.y1
 
         // Calculate box dimensions from diagonal coordinates
         const boxWidth = boxX1 - boxX
@@ -560,24 +553,26 @@ const Analytics: React.FC = () => {
 
             <div className="relative h-full p-4">
               <div className="w-full h-full bg-black rounded-md overflow-hidden border border-slate-700/50 relative">
-                <div className="relative w-full h-full">
-                  <iframe
-                    ref={iframeRef}
-                    src={getCameraUrl()}
-                    className="w-full h-full object-contain"
-                    allow="autoplay; fullscreen"
-                    sandbox="allow-same-origin allow-scripts"
-                    style={{
-                      transformOrigin: "center",
-                      transition: "transform 0.3s ease",
-                      border: "none",
-                      pointerEvents: "none"
-                    }}
-                  />
-                  <canvas
-                    ref={canvasRef}
-                    className="absolute top-0 left-0 w-full h-full pointer-events-none"
-                  />
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <div className="relative" style={{ width: '640px', height: '480px' }}>
+                    <iframe
+                      ref={iframeRef}
+                      src={getCameraUrl()}
+                      width="640"
+                      height="480"
+                      allow="autoplay; fullscreen"
+                      sandbox="allow-same-origin allow-scripts"
+                      style={{
+                        border: "none",
+                        pointerEvents: "none"
+                      }}
+                    />
+                    <canvas
+                      ref={canvasRef}
+                      className="absolute top-0 left-0 pointer-events-none"
+                      style={{ width: '640px', height: '480px' }}
+                    />
+                  </div>
                 </div>
 
                 {/* PTZ Controls Overlay */}
