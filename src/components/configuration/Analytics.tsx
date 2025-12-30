@@ -218,8 +218,8 @@ const Analytics: React.FC = () => {
         // Apply -5px offset to Y coordinates to compensate for display deviation
         const boxX = obj.x
         const boxX1 = obj.x1
-        const boxY = obj.y + 15
-        const boxY1 = obj.y1 + 15
+        const boxY = obj.y - 30
+        const boxY1 = obj.y1 - 30
 
         // Calculate box dimensions from diagonal coordinates
         const boxWidth = boxX1 - boxX
