@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Minus, Plus, ZoomIn, ZoomOut, Video as VideoIcon, Square } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Minus, Plus, ZoomIn, ZoomOut, Video as VideoIcon, Square, Focus } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -10,6 +10,10 @@ const VideoStream: React.FC = () => {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordingCompleted, setRecordingCompleted] = useState(false);
   const [recordingFileName, setRecordingFileName] = useState('');
+  const [autoFocusEnabled, setAutoFocusEnabled] = useState(() => {
+    const saved = localStorage.getItem('video_autofocus_enabled');
+    return saved ? JSON.parse(saved) : false;
+  });
   const recordingTimerRef = useRef<number | null>(null);
   const maxRecordingDuration = 600; // 10 minutes in seconds
 
@@ -154,6 +158,27 @@ const VideoStream: React.FC = () => {
       console.log('Wiper activated:', data);
     } catch (err) {
       console.error('Error activating wiper:', err);
+    }
+  };
+
+  const toggleAutoFocus = async () => {
+    try {
+      const newState = !autoFocusEnabled;
+      const endpoint = autoFocusEnabled
+        ? `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/focus/auto/disable`
+        : `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/focus/auto/enable`;
+
+      const res = await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: 0 }),
+      });
+      const data = await res.json();
+      console.log('Autofocus toggled:', data);
+      setAutoFocusEnabled(newState);
+      localStorage.setItem('video_autofocus_enabled', JSON.stringify(newState));
+    } catch (err) {
+      console.error('Error toggling autofocus:', err);
     }
   };
 
@@ -456,10 +481,20 @@ const VideoStream: React.FC = () => {
                   onMouseLeave={focusInHandlers.handleStop}
                   onTouchStart={focusInHandlers.handleStart}
                   onTouchEnd={focusInHandlers.handleStop}
-                  className="group w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                  disabled={autoFocusEnabled}
+                  className={`group w-10 h-10 ${autoFocusEnabled ? 'bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed' : 'bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white'} border rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
                   aria-label="Focus Near"
                 >
                   <Minus size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                </button>
+
+                <button
+                  onClick={toggleAutoFocus}
+                  className={`group w-10 h-10 ${autoFocusEnabled ? 'bg-green-500/30 border-green-400/50 text-green-100' : 'bg-gray-500/20 border-gray-400/30 text-gray-400'} border rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg ${autoFocusEnabled ? 'hover:shadow-green-500/20' : 'hover:shadow-gray-500/20'}`}
+                  aria-label="Toggle Autofocus"
+                  title={autoFocusEnabled ? "Autofocus: ON" : "Autofocus: OFF"}
+                >
+                  <Focus size={14} strokeWidth={2.5} className={`group-hover:scale-110 transition-transform duration-200 ${autoFocusEnabled ? 'animate-pulse' : ''}`} />
                 </button>
 
                 <button
@@ -468,7 +503,8 @@ const VideoStream: React.FC = () => {
                   onMouseLeave={focusOutHandlers.handleStop}
                   onTouchStart={focusOutHandlers.handleStart}
                   onTouchEnd={focusOutHandlers.handleStop}
-                  className="group w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                  disabled={autoFocusEnabled}
+                  className={`group w-10 h-10 ${autoFocusEnabled ? 'bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed' : 'bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white'} border rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
                   aria-label="Focus Far"
                 >
                   <Plus size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useRef, useState, useEffect } from "react"
-import { Camera, Target, Circle, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Minus, Plus, Thermometer } from "lucide-react"
+import { Camera, Target, Circle, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Minus, Plus, Thermometer, Focus } from "lucide-react"
 import { useCameraContext } from "../../contexts/CameraContext";
 
 interface TrackedObject {
@@ -45,6 +45,10 @@ const Analytics: React.FC = () => {
     return saved ? JSON.parse(saved) : false
   })
   const [speed, setSpeed] = useState(5)
+  const [autoFocusEnabled, setAutoFocusEnabled] = useState(() => {
+    const saved = localStorage.getItem('analytics_autofocus_enabled');
+    return saved ? JSON.parse(saved) : false;
+  })
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
@@ -436,6 +440,25 @@ const Analytics: React.FC = () => {
   const focusInHandlers = createHoldHandlers('focus_in', focusInIntervalRef);
   const focusOutHandlers = createHoldHandlers('focus_out', focusOutIntervalRef);
 
+  const toggleAutoFocus = async () => {
+    try {
+      const newState = !autoFocusEnabled;
+      const endpoint = autoFocusEnabled
+        ? `/camera/${selectedCamera}/ptz/focus/auto/disable`
+        : `/camera/${selectedCamera}/ptz/focus/auto/enable`;
+
+      await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: 0 }),
+      });
+      setAutoFocusEnabled(newState);
+      localStorage.setItem('analytics_autofocus_enabled', JSON.stringify(newState));
+    } catch (err) {
+      console.error('Error toggling autofocus:', err);
+    }
+  };
+
   // Cleanup PTZ intervals on unmount
   useEffect(() => {
     return () => {
@@ -695,10 +718,20 @@ const Analytics: React.FC = () => {
                         onMouseLeave={focusInHandlers.handleStop}
                         onTouchStart={focusInHandlers.handleStart}
                         onTouchEnd={focusInHandlers.handleStop}
-                        className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                        disabled={autoFocusEnabled}
+                        className={`group w-12 h-12 ${autoFocusEnabled ? 'bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed' : 'bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white'} border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
                         aria-label="Focus Near"
                       >
                         <Minus size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                      </button>
+
+                      <button
+                        onClick={toggleAutoFocus}
+                        className={`group w-12 h-12 ${autoFocusEnabled ? 'bg-green-500/30 border-green-400/50 text-green-100' : 'bg-gray-500/20 border-gray-400/30 text-gray-400'} border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg ${autoFocusEnabled ? 'hover:shadow-green-500/20' : 'hover:shadow-gray-500/20'}`}
+                        aria-label="Toggle Autofocus"
+                        title={autoFocusEnabled ? "Autofocus: ON" : "Autofocus: OFF"}
+                      >
+                        <Focus size={16} strokeWidth={2.5} className={`group-hover:scale-110 transition-transform duration-200 ${autoFocusEnabled ? 'animate-pulse' : ''}`} />
                       </button>
 
                       <button
@@ -707,7 +740,8 @@ const Analytics: React.FC = () => {
                         onMouseLeave={focusOutHandlers.handleStop}
                         onTouchStart={focusOutHandlers.handleStart}
                         onTouchEnd={focusOutHandlers.handleStop}
-                        className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                        disabled={autoFocusEnabled}
+                        className={`group w-12 h-12 ${autoFocusEnabled ? 'bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed' : 'bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white'} border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
                         aria-label="Focus Far"
                       >
                         <Plus size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
