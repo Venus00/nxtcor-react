@@ -118,6 +118,12 @@ const Analytics: React.FC = () => {
             const now = Date.now()
             const objectMap = objectMapRef.current
 
+            // If we receive tracking data with objects, detection is enabled
+            if (data.data.objects.length > 0 && !detectionEnabled) {
+              setDetectionEnabled(true)
+              localStorage.setItem('analytics_detection_enabled', JSON.stringify(true))
+            }
+
             // Update or add objects with current timestamp
             data.data.objects.forEach(obj => {
               objectMap.set(obj.trackId, {
