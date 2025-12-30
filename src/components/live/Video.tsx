@@ -28,8 +28,30 @@ const VideoStream: React.FC = () => {
 
   const camId = useParams().id;
 
+  // Load autofocus state from backend on mount
+  useEffect(() => {
+    const loadAutofocusState = async () => {
+      try {
+        const response = await fetch(`http://${window.location.hostname}:3000/detection/state`);
+        const data = await response.json();
 
+        if (data.success && data.state?.autofocus) {
+          const savedState = data.state.autofocus[camId === 'cam1' ? 'cam2' : 'cam1']; // Reverse for Video.tsx
+          if (savedState !== undefined) {
+            setAutoFocusEnabled(savedState);
+            localStorage.setItem('video_autofocus_enabled', JSON.stringify(savedState));
+            console.log(`[Video] Loaded autofocus state from backend: ${savedState}`);
+          }
+        }
+      } catch (error) {
+        console.error('[Video] Error loading autofocus state:', error);
+      }
+    };
 
+    if (camId) {
+      loadAutofocusState();
+    }
+  }, [camId]);
 
   const move = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
     console.log(direction, `speed: ${speed}`);

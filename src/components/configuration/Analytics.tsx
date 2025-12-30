@@ -54,6 +54,7 @@ const Analytics: React.FC = () => {
   const wsRef = useRef<WebSocket | null>(null)
   const objectMapRef = useRef<Map<number, TrackedObjectWithTimestamp>>(new Map())
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const clearTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const { camId, setCamId } = useCameraContext();
 
   // Update camera context when selectedCamera changes
@@ -61,30 +62,97 @@ const Analytics: React.FC = () => {
     setCamId(selectedCamera);
   }, [selectedCamera, setCamId]);
 
+  // Load autofocus state from backend
+  useEffect(() => {
+    const loadAutofocusState = async () => {
+      try {
+        const response = await fetch(`http://${window.location.hostname}:3000/detection/state`);
+        const data = await response.json();
+
+        if (data.success && data.state?.autofocus) {
+          const savedState = data.state.autofocus[selectedCamera];
+          if (savedState !== undefined) {
+            setAutoFocusEnabled(savedState);
+            localStorage.setItem('analytics_autofocus_enabled', JSON.stringify(savedState));
+            console.log(`[Analytics] Loaded autofocus state from backend: ${savedState}`);
+          }
+        }
+      } catch (error) {
+        console.error('[Analytics] Error loading autofocus state:', error);
+      }
+    };
+
+    loadAutofocusState();
+  }, [selectedCamera]);
+
   // Restore detection state on mount
   useEffect(() => {
-    const savedDetection = localStorage.getItem('analytics_detection_enabled')
-    const savedTracking = localStorage.getItem('analytics_tracking_id')
+    const restoreState = async () => {
+      try {
+        // Get state from backend
+        const response = await fetch(`http://${window.location.hostname}:3000/detection/state?cameraId=${selectedCamera}`)
+        const data = await response.json()
 
-    if (savedDetection && JSON.parse(savedDetection)) {
-      // Re-enable detection
-      fetch(`http://${window.location.hostname}:3000/detection/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cameraId: selectedCamera }),
-      }).catch(err => console.error('Error restoring detection:', err))
+        if (data.success && data.state) {
+          console.log('[Analytics] Loaded state from backend:', data.state)
+
+          // Restore detection state
+          if (data.state.detectionEnabled) {
+            setDetectionEnabled(true)
+            localStorage.setItem('analytics_detection_enabled', JSON.stringify(true))
+
+            // Re-enable detection on backend
+            fetch(`http://${window.location.hostname}:3000/detection/start`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ cameraId: selectedCamera }),
+            }).catch(err => console.error('Error restoring detection:', err))
+          }
+
+          // Restore tracking state
+          if (data.state.trackingEnabled && data.state.trackingObjectId !== null) {
+            const trackId = data.state.trackingObjectId
+            setTrackingId(trackId)
+            localStorage.setItem('analytics_tracking_id', JSON.stringify(trackId))
+
+            // Re-enable tracking on backend
+            fetch(`http://${window.location.hostname}:3000/track/object/${trackId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ cameraId: selectedCamera }),
+            }).catch(err => console.error('Error restoring tracking:', err))
+          }
+        }
+      } catch (error) {
+        console.error('[Analytics] Error loading state from backend:', error)
+
+        // Fallback to localStorage if backend fails
+        const savedDetection = localStorage.getItem('analytics_detection_enabled')
+        const savedTracking = localStorage.getItem('analytics_tracking_id')
+
+        if (savedDetection && JSON.parse(savedDetection)) {
+          setDetectionEnabled(true)
+          fetch(`http://${window.location.hostname}:3000/detection/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cameraId: selectedCamera }),
+          }).catch(err => console.error('Error restoring detection:', err))
+        }
+
+        if (savedTracking && JSON.parse(savedTracking) !== null) {
+          const trackId = JSON.parse(savedTracking)
+          setTrackingId(trackId)
+          fetch(`http://${window.location.hostname}:3000/track/object/${trackId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cameraId: selectedCamera }),
+          }).catch(err => console.error('Error restoring tracking:', err))
+        }
+      }
     }
 
-    if (savedTracking && JSON.parse(savedTracking) !== null) {
-      const trackId = JSON.parse(savedTracking)
-      // Re-enable tracking
-      fetch(`http://${window.location.hostname}:3000/track/object/${trackId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cameraId: selectedCamera }),
-      }).catch(err => console.error('Error restoring tracking:', err))
-    }
-  }, [])
+    restoreState()
+  }, [selectedCamera])
   // PTZ control refs
   const upIntervalRef = useRef<number | null>(null)
   const downIntervalRef = useRef<number | null>(null)
@@ -119,38 +187,48 @@ const Analytics: React.FC = () => {
           console.log(event)
           const data: TrackingData = JSON.parse(event.data)
           if (data.type === 'tracking_data') {
-            const now = Date.now()
-            const objectMap = objectMapRef.current
-
             // If we receive tracking data with objects, detection is enabled
             if (data.data.objects.length > 0 && !detectionEnabled) {
               setDetectionEnabled(true)
               localStorage.setItem('analytics_detection_enabled', JSON.stringify(true))
             }
 
-            // Update or add objects with current timestamp
+            // Clear any existing timeout
+            if (clearTimeoutRef.current) {
+              clearTimeout(clearTimeoutRef.current)
+              clearTimeoutRef.current = null
+            }
+
+            // Replace old objects with new ones (clear the map and add new data)
+            const objectMap = objectMapRef.current
+            objectMap.clear()
+
+            const now = Date.now()
+            const activeObjects: TrackedObjectWithTimestamp[] = []
+
+            // Add new objects with current timestamp
             data.data.objects.forEach(obj => {
-              objectMap.set(obj.trackId, {
+              const objWithTimestamp = {
                 ...obj,
                 lastSeen: now
-              })
-            })
-
-            // Remove objects not seen for more than 5 seconds
-            const activeObjects: TrackedObjectWithTimestamp[] = []
-            objectMap.forEach((obj, trackId) => {
-              if (now - obj.lastSeen < 5000) {
-                activeObjects.push(obj)
-              } else {
-                objectMap.delete(trackId)
-                // If the removed object was being tracked, clear tracking
-                if (trackingId === trackId) {
-                  setTrackingId(null)
-                }
               }
+              objectMap.set(obj.trackId, objWithTimestamp)
+              activeObjects.push(objWithTimestamp)
             })
 
             setObjects(activeObjects)
+
+            // Set timeout to clear all boxes after 1 second if no new data arrives
+            clearTimeoutRef.current = setTimeout(() => {
+              console.log('[Analytics] No data received for 1 second, clearing boxes')
+              objectMapRef.current.clear()
+              setObjects([])
+              // Clear tracking if active
+              if (trackingId !== null) {
+                setTrackingId(null)
+                localStorage.setItem('analytics_tracking_id', JSON.stringify(null))
+              }
+            }, 1000)
 
             if (!data.data.crcValid) {
               console.warn('Checksum validation failed, but displaying objects anyway')
@@ -189,6 +267,9 @@ const Analytics: React.FC = () => {
       isUnmounting = true
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current)
+      }
+      if (clearTimeoutRef.current) {
+        clearTimeout(clearTimeoutRef.current)
       }
       if (ws) {
         ws.close()
