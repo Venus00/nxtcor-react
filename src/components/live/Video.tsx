@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Minus, Plus, ZoomIn, ZoomOut, Video as VideoIcon, Square, Focus } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Minus, Plus, ZoomIn, ZoomOut, Video as VideoIcon, Square, Focus, Power } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -180,6 +180,25 @@ const VideoStream: React.FC = () => {
       console.log('Wiper activated:', data);
     } catch (err) {
       console.error('Error activating wiper:', err);
+    }
+  };
+
+  const handleRebootCamera = async () => {
+    if (!confirm('Are you sure you want to reboot the camera? This will temporarily interrupt the video stream.')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3000/camera/${camId}/system/reboot`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      console.log('Camera reboot initiated:', data);
+      alert('Camera reboot initiated. The camera will be offline for about 30-60 seconds.');
+    } catch (err) {
+      console.error('Error rebooting camera:', err);
+      alert('Failed to reboot camera. Please try again.');
     }
   };
 
@@ -581,6 +600,27 @@ const VideoStream: React.FC = () => {
                   <span>5</span>
                   <span>8</span>
                 </div>
+              </div>
+
+              {/* SYSTEM */}
+              <div className="relative mb-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">SYSTEM</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center mb-4">
+                <button
+                  onClick={handleRebootCamera}
+                  className="group w-full h-10 bg-red-500/20 hover:bg-red-500/30 active:bg-red-500/40 border border-red-400/30 hover:border-red-400/50 text-red-100 hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-red-500/20"
+                  aria-label="Reboot Camera"
+                >
+                  <Power size={12} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <span className="text-xs font-medium tracking-wide">REBOOT</span>
+                </button>
               </div>
 
               <div className="flex items-center justify-center pt-2 border-t border-white/10">
