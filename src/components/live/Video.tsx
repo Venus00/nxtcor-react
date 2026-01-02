@@ -202,6 +202,26 @@ const VideoStream: React.FC = () => {
     }
   };
 
+  const handleRebootSystem = async () => {
+    if (!confirm('⚠️ WARNING: This will reboot the ENTIRE SYSTEM (server and all cameras).\n\nThe system will be offline for 1-2 minutes.\n\nAre you sure you want to proceed?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3000/system/reboot`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: true }),
+      });
+      const data = await res.json();
+      console.log('System reboot initiated:', data);
+      alert('System reboot initiated. All services will be offline for 1-2 minutes.');
+    } catch (err) {
+      console.error('Error rebooting system:', err);
+      alert('Failed to reboot system. Please try again.');
+    }
+  };
+
   const toggleAutoFocus = async () => {
     try {
       const newState = !autoFocusEnabled;
@@ -619,7 +639,18 @@ const VideoStream: React.FC = () => {
                   aria-label="Reboot Camera"
                 >
                   <Power size={12} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-xs font-medium tracking-wide">REBOOT</span>
+                  <span className="text-xs font-medium tracking-wide">REBOOT CAM</span>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-center mb-4">
+                <button
+                  onClick={handleRebootSystem}
+                  className="group w-full h-10 bg-orange-500/20 hover:bg-orange-500/30 active:bg-orange-500/40 border border-orange-400/30 hover:border-orange-400/50 text-orange-100 hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-orange-500/20"
+                  aria-label="Reboot System"
+                >
+                  <Power size={12} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <span className="text-xs font-medium tracking-wide">REBOOT SYS</span>
                 </button>
               </div>
 
