@@ -825,7 +825,7 @@ const Analytics: React.FC = () => {
               </div>
             </div>
 
-            <div className="relative h-full ">
+            <div className="relative h-full bg-red-600 ">
               <div className="w-full h-full bg-black rounded-md overflow-hidden border border-slate-700/50 relative">
                 <div className="relative w-full h-full flex items-center justify-center">
                   <div
