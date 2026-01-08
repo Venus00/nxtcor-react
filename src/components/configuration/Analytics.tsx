@@ -801,7 +801,7 @@ const Analytics: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 min-h-0 flex gap-4">
           {/* Video Feed */}
-          <div className="flex-1 bg-red-500 border border-slate-600/50 rounded-lg overflow-hidden shadow-2xl shadow-black/40">
+          <div className="flex-1 bg-slate-800/60 border border-slate-600/50 rounded-lg overflow-hidden shadow-2xl shadow-black/40">
             <div className="bg-black border-b border-slate-600/50 px-4 py-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -825,7 +825,7 @@ const Analytics: React.FC = () => {
               </div>
             </div>
 
-            <div className="relative h-full p-4">
+            <div className="relative h-full ">
               <div className="w-full h-full bg-black rounded-md overflow-hidden border border-slate-700/50 relative">
                 <div className="relative w-full h-full flex items-center justify-center">
                   <div
