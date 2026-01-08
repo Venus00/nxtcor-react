@@ -846,7 +846,7 @@ const Analytics: React.FC = () => {
                     />
                     <canvas
                       ref={canvasRef}
-                      className="absolute top-0 left-0 pointer-events-none bg-neutral-50"
+                      className="absolute top-0 left-0 pointer-events-none object-fill"
                       style={{ width: "640px", height: "480px" }}
                     />
                   </div>
