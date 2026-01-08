@@ -825,8 +825,8 @@ const Analytics: React.FC = () => {
               </div>
             </div>
 
-            <div className="relative h-full bg-red-600 ">
-              <div className="w-full h-full bg-green-500 rounded-md overflow-hidden border border-slate-700/50 relative">
+            <div className="relative h-full ">
+              <div className="w-full h-full rounded-md overflow-hidden border border-slate-700/50 relative">
                 <div className="relative w-full h-full flex items-center justify-center">
                   <div
                     className="relative"
@@ -836,7 +836,7 @@ const Analytics: React.FC = () => {
                       ref={iframeRef}
                       src={getCameraUrl()}
                       width="640"
-                      height="480"
+                      height="600"
                       allow="autoplay; fullscreen"
                       sandbox="allow-same-origin allow-scripts"
                       style={{
