@@ -836,7 +836,7 @@ const Analytics: React.FC = () => {
                       ref={iframeRef}
                       src={getCameraUrl()}
                       width="640"
-                      height="600"
+                      height="480"
                       allow="autoplay; fullscreen"
                       sandbox="allow-same-origin allow-scripts"
                       style={{
@@ -847,7 +847,7 @@ const Analytics: React.FC = () => {
                     <canvas
                       ref={canvasRef}
                       className="absolute top-0 left-0 pointer-events-none object-fill"
-                      style={{ width: "640px", height: "480px" }}
+                      style={{ width: "640px", height: "600px" }}
                     />
                   </div>
                 </div>
