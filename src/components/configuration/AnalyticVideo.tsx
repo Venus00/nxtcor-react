@@ -57,7 +57,7 @@ function CameraPlayer({ cameraId, name, icon: Icon, rtspUrl, stream, color }: an
             {/* Image and live view side by side */}
             <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
                 {/* Live view - much larger */}
-                <div className="flex-1 min-w-[400px] max-w-4xl aspect-video flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
+                <div className="flex-1  bg-red-500 min-w-[400px] max-w-4xl aspect-video flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
                     <iframe
                         src={`http://${window.location.hostname}:8889/${stream === "stream1" ? "cam2" : "cam1"}`}
                         width="1000"
