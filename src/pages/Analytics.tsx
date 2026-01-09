@@ -86,42 +86,42 @@ const Analytics: React.FC = () => {
     };
   }, [selectedCamera]);
 
-  // WebSocket connection
-  useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8080')
+  // WebSocket connection - DISABLED (stream comes with detection data embedded)
+  // useEffect(() => {
+  //   const ws = new WebSocket('ws://localhost:8080')
 
-    ws.onopen = () => {
-      console.log('WebSocket connected')
-      setWsConnected(true)
-    }
+  //   ws.onopen = () => {
+  //     console.log('WebSocket connected')
+  //     setWsConnected(true)
+  //   }
 
-    ws.onmessage = (event) => {
-      try {
-        const data: TrackingData = JSON.parse(event.data)
-        if (data.type === 'tracking_data' && data.data.crcValid) {
-          setObjects(data.data.objects)
-        }
-      } catch (err) {
-        console.error('Error parsing WebSocket message:', err)
-      }
-    }
+  //   ws.onmessage = (event) => {
+  //     try {
+  //       const data: TrackingData = JSON.parse(event.data)
+  //       if (data.type === 'tracking_data' && data.data.crcValid) {
+  //         setObjects(data.data.objects)
+  //       }
+  //     } catch (err) {
+  //       console.error('Error parsing WebSocket message:', err)
+  //     }
+  //   }
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error)
-      setWsConnected(false)
-    }
+  //   ws.onerror = (error) => {
+  //     console.error('WebSocket error:', error)
+  //     setWsConnected(false)
+  //   }
 
-    ws.onclose = () => {
-      console.log('WebSocket disconnected')
-      setWsConnected(false)
-    }
+  //   ws.onclose = () => {
+  //     console.log('WebSocket disconnected')
+  //     setWsConnected(false)
+  //   }
 
-    wsRef.current = ws
+  //   wsRef.current = ws
 
-    return () => {
-      ws.close()
-    }
-  }, [])
+  //   return () => {
+  //     ws.close()
+  //   }
+  // }, [])
 
   // Draw bounding boxes on canvas
   useEffect(() => {
@@ -232,9 +232,9 @@ const Analytics: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 ml-auto">
-                <Circle className={`h-3 w-3 ${wsConnected ? 'text-green-500 fill-green-500' : 'text-red-500 fill-red-500'}`} />
+                <Circle className={`h-3 w-3 text-blue-500 fill-blue-500`} />
                 <span className="text-sm text-slate-300">
-                  {wsConnected ? 'WebSocket Connected' : 'WebSocket Disconnected'}
+                  WebRTC Stream
                 </span>
               </div>
             </div>
