@@ -63,9 +63,10 @@ const Analytics: React.FC = () => {
     const saved = localStorage.getItem("analytics_autofocus_enabled");
     return saved ? JSON.parse(saved) : false;
   });
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
   const objectMapRef = useRef<Map<number, TrackedObjectWithTimestamp>>(
     new Map()
   );
@@ -77,6 +78,56 @@ const Analytics: React.FC = () => {
   useEffect(() => {
     setCamId(selectedCamera);
   }, [selectedCamera, setCamId]);
+
+  // WebRTC connection for video feed
+  useEffect(() => {
+    let pc: RTCPeerConnection | null = null;
+
+    const startWebRTC = async () => {
+      try {
+        pc = new RTCPeerConnection();
+        pcRef.current = pc;
+
+        pc.ontrack = (event) => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = event.streams[0];
+          }
+        };
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        const streamPath = selectedCamera === "cam1" ? "cam2" : "cam1"; // Reversed for stream
+        const res = await fetch(`http://${window.location.hostname}:8889/${streamPath}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/sdp",
+          },
+          body: offer.sdp,
+        });
+
+        const answer = await res.text();
+
+        await pc.setRemoteDescription({
+          type: "answer",
+          sdp: answer,
+        });
+
+        console.log(`WebRTC connection established for ${selectedCamera}`);
+      } catch (error) {
+        console.error("WebRTC connection error:", error);
+      }
+    };
+
+    startWebRTC();
+
+    return () => {
+      if (pc) {
+        pc.close();
+        pcRef.current = null;
+      }
+    };
+  }, [selectedCamera]);
 
   // Load autofocus state from backend
   useEffect(() => {
@@ -353,76 +404,76 @@ const Analytics: React.FC = () => {
     };
   }, [trackingId]);
 
-  // Draw bounding boxes on canvas
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const iframe = iframeRef.current;
-    if (!canvas || !iframe) return;
+  // Drawing boxes disabled - keeping object data only
+  // useEffect(() => {
+  //   const canvas = canvasRef.current;
+  //   const iframe = iframeRef.current;
+  //   if (!canvas || !iframe) return;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  //   const ctx = canvas.getContext("2d");
+  //   if (!ctx) return;
 
-    // Set fixed canvas size to match camera resolution
-    canvas.width = 640;
-    canvas.height = 480;
+  //   // Set fixed canvas size to match camera resolution
+  //   canvas.width = 640;
+  //   canvas.height = 480;
 
-    const drawBoxes = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  //   const drawBoxes = () => {
+  //     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      objects.forEach((obj) => {
-        // If tracking is active, only show the tracked object
-        if (trackingId !== null && obj.trackId !== trackingId) {
-          return; // Skip drawing this object
-        }
+  //     objects.forEach((obj) => {
+  //       // If tracking is active, only show the tracked object
+  //       if (trackingId !== null && obj.trackId !== trackingId) {
+  //         return; // Skip drawing this object
+  //       }
 
-        // Use coordinates directly from Python server (already in 640x480)
-        // Apply -5px offset to Y coordinates to compensate for display deviation
-        const boxX = obj.x;
-        const boxX1 = obj.x1;
-        const boxY = obj.y - 55;
-        const boxY1 = obj.y1 - 55;
+  //       // Use coordinates directly from Python server (already in 640x480)
+  //       // Apply -5px offset to Y coordinates to compensate for display deviation
+  //       const boxX = obj.x;
+  //       const boxX1 = obj.x1;
+  //       const boxY = obj.y - 55;
+  //       const boxY1 = obj.y1 - 55;
 
-        // Calculate box dimensions from diagonal coordinates
-        const boxWidth = boxX1 - boxX;
-        const boxHeight = boxY1 - boxY;
+  //       // Calculate box dimensions from diagonal coordinates
+  //       const boxWidth = boxX1 - boxX;
+  //       const boxHeight = boxY1 - boxY;
 
-        // Determine color based on tracking status
-        const isTracking = trackingId === obj.trackId;
-        ctx.strokeStyle = isTracking ? "#ef4444" : "#22c55e";
-        ctx.lineWidth = isTracking ? 3 : 2;
-        ctx.fillStyle = isTracking
-          ? "rgba(239, 68, 68, 0.2)"
-          : "rgba(34, 197, 94, 0.2)";
+  //       // Determine color based on tracking status
+  //       const isTracking = trackingId === obj.trackId;
+  //       ctx.strokeStyle = isTracking ? "#ef4444" : "#22c55e";
+  //       ctx.lineWidth = isTracking ? 3 : 2;
+  //       ctx.fillStyle = isTracking
+  //         ? "rgba(239, 68, 68, 0.2)"
+  //         : "rgba(34, 197, 94, 0.2)";
 
-        // Draw rectangle
-        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+  //       // Draw rectangle
+  //       ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+  //       ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
 
-        // Draw label background
-        const labelText = `${obj.classificationName} #${obj.trackId}`;
-        ctx.font = "14px sans-serif";
-        const textWidth = ctx.measureText(labelText).width;
-        ctx.fillStyle = isTracking ? "#ef4444" : "#22c55e";
-        ctx.fillRect(boxX, boxY - 25, textWidth + 10, 20);
+  //       // Draw label background
+  //       const labelText = `${obj.classificationName} #${obj.trackId}`;
+  //       ctx.font = "14px sans-serif";
+  //       const textWidth = ctx.measureText(labelText).width;
+  //       ctx.fillStyle = isTracking ? "#ef4444" : "#22c55e";
+  //       ctx.fillRect(boxX, boxY - 25, textWidth + 10, 20);
 
-        // Draw label text
-        ctx.fillStyle = "#ffffff";
-        ctx.fillText(labelText, boxX + 5, boxY - 10);
+  //       // Draw label text
+  //       ctx.fillStyle = "#ffffff";
+  //       ctx.fillText(labelText, boxX + 5, boxY - 10);
 
-        // Draw position info
-        const posText = `(${obj.x.toFixed(0)}, ${obj.y.toFixed(
-          0
-        )}) - (${obj.x1.toFixed(0)}, ${obj.y1.toFixed(0)})`;
-        ctx.font = "11px sans-serif";
-        ctx.fillStyle = "#ffffff";
-        ctx.fillText(posText, boxX + 5, boxY + boxHeight + 15);
-      });
+  //       // Draw position info
+  //       const posText = `(${obj.x.toFixed(0)}, ${obj.y.toFixed(
+  //         0
+  //       )}) - (${obj.x1.toFixed(0)}, ${obj.y1.toFixed(0)})`;
+  //       ctx.font = "11px sans-serif";
+  //       ctx.fillStyle = "#ffffff";
+  //       ctx.fillText(posText, boxX + 5, boxY + boxHeight + 15);
+  //     });
 
-      requestAnimationFrame(drawBoxes);
-    };
+  //     requestAnimationFrame(drawBoxes);
+  //   };
 
-    drawBoxes();
-  }, [objects, trackingId]);
+  //   drawBoxes();
+  // }, [objects, trackingId]);
 
   const enableDetection = async () => {
     try {
@@ -510,15 +561,6 @@ const Analytics: React.FC = () => {
     } catch (error) {
       console.error("Error disabling tracking:", error);
     }
-  };
-
-  const getCameraUrl = () => {
-    const hostname = window.location.hostname;
-    // API uses cam1=optique, cam2=thermique
-    // But live stream uses cam1=thermique, cam2=optique
-    return selectedCamera === "cam1"
-      ? `http://${hostname}:8889/cam2`
-      : `http://${hostname}:8889/cam1`;
   };
 
   // PTZ Movement Functions
@@ -725,22 +767,20 @@ const Analytics: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setSelectedCamera("cam1")}
-                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${
-                      selectedCamera === "cam1"
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                    }`}
+                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === "cam1"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                      }`}
                   >
                     <Camera className="w-4 h-4" />
                     Optique
                   </button>
                   <button
                     onClick={() => setSelectedCamera("cam2")}
-                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${
-                      selectedCamera === "cam2"
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                    }`}
+                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === "cam2"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                      }`}
                   >
                     <Thermometer className="w-4 h-4" />
                     Thermique
@@ -767,11 +807,10 @@ const Analytics: React.FC = () => {
               <div className="flex items-center gap-4 ml-auto">
                 <div className="flex items-center gap-2">
                   <Circle
-                    className={`h-3 w-3 ${
-                      detectionEnabled
-                        ? "text-green-500 fill-green-500"
-                        : "text-gray-500 fill-gray-500"
-                    }`}
+                    className={`h-3 w-3 ${detectionEnabled
+                      ? "text-green-500 fill-green-500"
+                      : "text-gray-500 fill-gray-500"
+                      }`}
                   />
                   <span className="text-sm text-slate-300">
                     {detectionEnabled
@@ -781,11 +820,10 @@ const Analytics: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Circle
-                    className={`h-3 w-3 ${
-                      wsConnected
-                        ? "text-green-500 fill-green-500"
-                        : "text-red-500 fill-red-500"
-                    }`}
+                    className={`h-3 w-3 ${wsConnected
+                      ? "text-green-500 fill-green-500"
+                      : "text-red-500 fill-red-500"
+                      }`}
                   />
                   <span className="text-sm text-slate-300">
                     {wsConnected
@@ -832,22 +870,18 @@ const Analytics: React.FC = () => {
                     className="relative"
                     style={{ width: "640px", height: "480px" }}
                   >
-                    <iframe
-                      ref={iframeRef}
-                      src={getCameraUrl()}
+                    <video
+                      ref={videoRef}
                       width="640"
                       height="480"
-                      allow="autoplay; fullscreen"
-                      sandbox="allow-same-origin allow-scripts"
+                      autoPlay
+                      muted
+                      playsInline
+                      className="bg-black"
                       style={{
                         border: "none",
                         pointerEvents: "none",
                       }}
-                    />
-                    <canvas
-                      ref={canvasRef}
-                      className="absolute top-0 left-0 pointer-events-none object-fill"
-                      style={{ width: "640px", height: "600px" }}
                     />
                   </div>
                 </div>
@@ -1002,11 +1036,10 @@ const Analytics: React.FC = () => {
                         onTouchStart={focusInHandlers.handleStart}
                         onTouchEnd={focusInHandlers.handleStop}
                         disabled={autoFocusEnabled}
-                        className={`group w-12 h-12 ${
-                          autoFocusEnabled
-                            ? "bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed"
-                            : "bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white"
-                        } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
+                        className={`group w-12 h-12 ${autoFocusEnabled
+                          ? "bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed"
+                          : "bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white"
+                          } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
                         aria-label="Focus Near"
                       >
                         <Minus
@@ -1018,15 +1051,13 @@ const Analytics: React.FC = () => {
 
                       <button
                         onClick={toggleAutoFocus}
-                        className={`group w-12 h-12 ${
-                          autoFocusEnabled
-                            ? "bg-green-500/30 border-green-400/50 text-green-100"
-                            : "bg-gray-500/20 border-gray-400/30 text-gray-400"
-                        } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg ${
-                          autoFocusEnabled
+                        className={`group w-12 h-12 ${autoFocusEnabled
+                          ? "bg-green-500/30 border-green-400/50 text-green-100"
+                          : "bg-gray-500/20 border-gray-400/30 text-gray-400"
+                          } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg ${autoFocusEnabled
                             ? "hover:shadow-green-500/20"
                             : "hover:shadow-gray-500/20"
-                        }`}
+                          }`}
                         aria-label="Toggle Autofocus"
                         title={
                           autoFocusEnabled ? "Autofocus: ON" : "Autofocus: OFF"
@@ -1035,9 +1066,8 @@ const Analytics: React.FC = () => {
                         <Focus
                           size={16}
                           strokeWidth={2.5}
-                          className={`group-hover:scale-110 transition-transform duration-200 ${
-                            autoFocusEnabled ? "animate-pulse" : ""
-                          }`}
+                          className={`group-hover:scale-110 transition-transform duration-200 ${autoFocusEnabled ? "animate-pulse" : ""
+                            }`}
                         />
                       </button>
 
@@ -1048,11 +1078,10 @@ const Analytics: React.FC = () => {
                         onTouchStart={focusOutHandlers.handleStart}
                         onTouchEnd={focusOutHandlers.handleStop}
                         disabled={autoFocusEnabled}
-                        className={`group w-12 h-12 ${
-                          autoFocusEnabled
-                            ? "bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed"
-                            : "bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white"
-                        } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
+                        className={`group w-12 h-12 ${autoFocusEnabled
+                          ? "bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed"
+                          : "bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white"
+                          } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
                         aria-label="Focus Far"
                       >
                         <Plus
@@ -1141,11 +1170,10 @@ const Analytics: React.FC = () => {
                   return (
                     <div
                       key={obj.trackId}
-                      className={`p-3 rounded-lg border transition-all ${
-                        isTracking
-                          ? "bg-red-600/20 border-red-500/50"
-                          : "bg-slate-700/60 border-slate-600/50"
-                      }`}
+                      className={`p-3 rounded-lg border transition-all ${isTracking
+                        ? "bg-red-600/20 border-red-500/50"
+                        : "bg-slate-700/60 border-slate-600/50"
+                        }`}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div>
@@ -1157,11 +1185,10 @@ const Analytics: React.FC = () => {
                           </div>
                         </div>
                         <div
-                          className={`px-2 py-1 rounded text-xs ${
-                            isTracking
-                              ? "bg-red-500 text-white"
-                              : "bg-slate-600 text-slate-300"
-                          }`}
+                          className={`px-2 py-1 rounded text-xs ${isTracking
+                            ? "bg-red-500 text-white"
+                            : "bg-slate-600 text-slate-300"
+                            }`}
                         >
                           {isTracking ? "TRACKING" : "IDLE"}
                         </div>
@@ -1180,11 +1207,10 @@ const Analytics: React.FC = () => {
                         <button
                           onClick={disableTracking}
                           disabled={!detectionEnabled}
-                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${
-                            !detectionEnabled
-                              ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
-                              : "bg-slate-600 hover:bg-slate-500 text-white"
-                          }`}
+                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${!detectionEnabled
+                            ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
+                            : "bg-slate-600 hover:bg-slate-500 text-white"
+                            }`}
                         >
                           Stop Tracking
                         </button>
@@ -1192,11 +1218,10 @@ const Analytics: React.FC = () => {
                         <button
                           onClick={() => enableTracking(obj.trackId)}
                           disabled={!detectionEnabled || trackingId !== null}
-                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${
-                            !detectionEnabled || trackingId !== null
-                              ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
-                              : "bg-red-600 hover:bg-red-700 text-white"
-                          }`}
+                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${!detectionEnabled || trackingId !== null
+                            ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
+                            : "bg-red-600 hover:bg-red-700 text-white"
+                            }`}
                         >
                           Enable Tracking
                         </button>
