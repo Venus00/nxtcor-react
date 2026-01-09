@@ -31,13 +31,26 @@ const Analytics: React.FC = () => {
   const [objects, setObjects] = useState<TrackedObject[]>([])
   const [trackingId, setTrackingId] = useState<number | null>(null)
   const [wsConnected, setWsConnected] = useState(false)
+  const [detectionEnabled, setDetectionEnabled] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
   const pcRef = useRef<RTCPeerConnection | null>(null)
 
-  // WebRTC connection for video feed
+  // WebRTC connection for video feed - only starts when detection is enabled
   useEffect(() => {
+    if (!detectionEnabled) {
+      // Clean up existing connection if detection is disabled
+      if (pcRef.current) {
+        pcRef.current.close();
+        pcRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      return;
+    }
+
     let pc: RTCPeerConnection | null = null;
 
     const startWebRTC = async () => {
@@ -84,101 +97,136 @@ const Analytics: React.FC = () => {
         pcRef.current = null;
       }
     };
-  }, [selectedCamera]);
+  }, [selectedCamera, detectionEnabled]);
 
-  // WebSocket connection - DISABLED (stream comes with detection data embedded)
-  // useEffect(() => {
-  //   const ws = new WebSocket('ws://localhost:8080')
-
-  //   ws.onopen = () => {
-  //     console.log('WebSocket connected')
-  //     setWsConnected(true)
-  //   }
-
-  //   ws.onmessage = (event) => {
-  //     try {
-  //       const data: TrackingData = JSON.parse(event.data)
-  //       if (data.type === 'tracking_data' && data.data.crcValid) {
-  //         setObjects(data.data.objects)
-  //       }
-  //     } catch (err) {
-  //       console.error('Error parsing WebSocket message:', err)
-  //     }
-  //   }
-
-  //   ws.onerror = (error) => {
-  //     console.error('WebSocket error:', error)
-  //     setWsConnected(false)
-  //   }
-
-  //   ws.onclose = () => {
-  //     console.log('WebSocket disconnected')
-  //     setWsConnected(false)
-  //   }
-
-  //   wsRef.current = ws
-
-  //   return () => {
-  //     ws.close()
-  //   }
-  // }, [])
-
-  // Draw bounding boxes on canvas
+  // WebSocket connection for receiving detection data
   useEffect(() => {
-    const canvas = canvasRef.current
-    const video = videoRef.current
-    if (!canvas || !video) return
+    const ws = new WebSocket(`ws://${window.location.hostname}:8080`)
 
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const drawBoxes = () => {
-      // Match canvas size to video
-      canvas.width = video.videoWidth || video.clientWidth
-      canvas.height = video.videoHeight || video.clientHeight
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      objects.forEach((obj) => {
-        // Normalize coordinates (assuming x, y are in range 0-100)
-        const boxX = (obj.x / 100) * canvas.width
-        const boxY = (obj.y / 100) * canvas.height
-        const boxWidth = 80
-        const boxHeight = 120
-
-        // Determine color based on tracking status
-        const isTracking = trackingId === obj.trackId
-        ctx.strokeStyle = isTracking ? '#ef4444' : '#22c55e'
-        ctx.lineWidth = isTracking ? 3 : 2
-        ctx.fillStyle = isTracking ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'
-
-        // Draw rectangle
-        ctx.fillRect(boxX, boxY, boxWidth, boxHeight)
-        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight)
-
-        // Draw label background
-        const labelText = `${obj.classificationName} #${obj.trackId}`
-        ctx.font = '14px sans-serif'
-        const textWidth = ctx.measureText(labelText).width
-        ctx.fillStyle = isTracking ? '#ef4444' : '#22c55e'
-        ctx.fillRect(boxX, boxY - 25, textWidth + 10, 20)
-
-        // Draw label text
-        ctx.fillStyle = '#ffffff'
-        ctx.fillText(labelText, boxX + 5, boxY - 10)
-
-        // Draw position info
-        const posText = `(${obj.x.toFixed(1)}, ${obj.y.toFixed(1)}, ${obj.z.toFixed(1)})`
-        ctx.font = '11px sans-serif'
-        ctx.fillStyle = '#ffffff'
-        ctx.fillText(posText, boxX + 5, boxY + boxHeight + 15)
-      })
-
-      requestAnimationFrame(drawBoxes)
+    ws.onopen = () => {
+      console.log('WebSocket connected')
+      setWsConnected(true)
     }
 
-    drawBoxes()
-  }, [objects, trackingId])
+    ws.onmessage = (event) => {
+      try {
+        const data: TrackingData = JSON.parse(event.data)
+        if (data.type === 'tracking_data' && data.data.crcValid) {
+          //console.log('Received detection data via WebSocket:', data)
+          setObjects(data.data.objects)
+        }
+      } catch (err) {
+        console.error('Error parsing WebSocket message:', err)
+      }
+    }
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error)
+      setWsConnected(false)
+    }
+
+    ws.onclose = () => {
+      console.log('WebSocket disconnected')
+      setWsConnected(false)
+    }
+
+    wsRef.current = ws
+
+    return () => {
+      ws.close()
+    }
+  }, [])
+
+  // Drawing boxes disabled - keeping object data only
+  // useEffect(() => {
+  //   const canvas = canvasRef.current
+  //   const video = videoRef.current
+  //   if (!canvas || !video) return
+
+  //   const ctx = canvas.getContext('2d')
+  //   if (!ctx) return
+
+  //   const drawBoxes = () => {
+  //     // Match canvas size to video
+  //     canvas.width = video.videoWidth || video.clientWidth
+  //     canvas.height = video.videoHeight || video.clientHeight
+
+  //     ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  //     objects.forEach((obj) => {
+  //       // Normalize coordinates (assuming x, y are in range 0-100)
+  //       const boxX = (obj.x / 100) * canvas.width
+  //       const boxY = (obj.y / 100) * canvas.height
+  //       const boxWidth = 80
+  //       const boxHeight = 120
+
+  //       // Determine color based on tracking status
+  //       const isTracking = trackingId === obj.trackId
+  //       ctx.strokeStyle = isTracking ? '#ef4444' : '#22c55e'
+  //       ctx.lineWidth = isTracking ? 3 : 2
+  //       ctx.fillStyle = isTracking ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'
+
+  //       // Draw rectangle
+  //       ctx.fillRect(boxX, boxY, boxWidth, boxHeight)
+  //       ctx.strokeRect(boxX, boxY, boxWidth, boxHeight)
+
+  //       // Draw label background
+  //       const labelText = `${obj.classificationName} #${obj.trackId}`
+  //       ctx.font = '14px sans-serif'
+  //       const textWidth = ctx.measureText(labelText).width
+  //       ctx.fillStyle = isTracking ? '#ef4444' : '#22c55e'
+  //       ctx.fillRect(boxX, boxY - 25, textWidth + 10, 20)
+
+  //       // Draw label text
+  //       ctx.fillStyle = '#ffffff'
+  //       ctx.fillText(labelText, boxX + 5, boxY - 10)
+
+  //       // Draw position info
+  //       const posText = `(${obj.x.toFixed(1)}, ${obj.y.toFixed(1)}, ${obj.z.toFixed(1)})`
+  //       ctx.font = '11px sans-serif'
+  //       ctx.fillStyle = '#ffffff'
+  //       ctx.fillText(posText, boxX + 5, boxY + boxHeight + 15)
+  //     })
+
+  //     requestAnimationFrame(drawBoxes)
+  //   }
+
+  //   drawBoxes()
+  // }, [objects, trackingId])
+
+  const startDetection = async () => {
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3000/detection/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cameraId: selectedCamera }),
+      });
+      const data = await res.json();
+      console.log('Detection started:', data);
+      setDetectionEnabled(true);
+    } catch (error) {
+      console.error('Error starting detection:', error);
+      alert('Failed to start detection. Please try again.');
+    }
+  };
+
+  const stopDetection = async () => {
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3000/detection/stop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cameraId: selectedCamera }),
+      });
+      const data = await res.json();
+      console.log('Detection stopped:', data);
+      setDetectionEnabled(false);
+      setObjects([]);
+      setTrackingId(null);
+    } catch (error) {
+      console.error('Error stopping detection:', error);
+      alert('Failed to stop detection. Please try again.');
+    }
+  };
 
   const enableTracking = (id: number) => {
     setTrackingId(id)
@@ -232,11 +280,35 @@ const Analytics: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 ml-auto">
-                <Circle className={`h-3 w-3 text-blue-500 fill-blue-500`} />
+                <Circle className={`h-3 w-3 ${detectionEnabled ? 'text-green-500 fill-green-500' : 'text-gray-500 fill-gray-500'}`} />
                 <span className="text-sm text-slate-300">
-                  WebRTC Stream
+                  {detectionEnabled ? 'Detection Active' : 'Detection Inactive'}
                 </span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Detection Control */}
+        <div className="mb-6">
+          <div className="bg-slate-800/60 border border-slate-600/50 rounded-lg p-4">
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium text-white">Detection:</label>
+              {detectionEnabled ? (
+                <button
+                  onClick={stopDetection}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-all"
+                >
+                  Stop Detection
+                </button>
+              ) : (
+                <button
+                  onClick={startDetection}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-all"
+                >
+                  Start Detection
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -266,33 +338,41 @@ const Analytics: React.FC = () => {
 
             <div className="relative h-full p-4">
               <div className="w-full h-full bg-black rounded-md overflow-hidden border border-slate-700/50 relative">
-                <div className="relative w-full h-full">
-                  <video
-                    ref={videoRef}
-                    className="w-full h-full object-contain"
-                    autoPlay
-                    muted
-                    playsInline
-                  />
-                  <canvas
-                    ref={canvasRef}
-                    className="absolute top-0 left-0 w-full h-full pointer-events-none"
-                  />
-                </div>
+                {!detectionEnabled ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80">
+                    <div className="text-center">
+                      <Target className="h-16 w-16 mx-auto mb-4 text-slate-600" />
+                      <p className="text-slate-400 text-lg">Detection not started</p>
+                      <p className="text-slate-500 text-sm mt-2">Click "Start Detection" to begin streaming</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative w-full h-full">
+                    <video
+                      ref={videoRef}
+                      className="w-full h-full object-contain"
+                      autoPlay
+                      muted
+                      playsInline
+                    />
+                  </div>
+                )}
 
                 {/* Status Overlay */}
-                <div className="absolute top-3 left-3 bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-md border border-slate-600/50">
-                  <div className="text-xs text-slate-200 font-mono space-y-1">
-                    <div>Camera: {selectedCamera.toUpperCase()}</div>
-                    <div>Objects: {objects.length}</div>
-                    {trackingId !== null && (
-                      <div className="flex items-center gap-1 text-red-400">
-                        <Target className="w-3 h-3" />
-                        <span>Tracking: #{trackingId}</span>
-                      </div>
-                    )}
+                {detectionEnabled && (
+                  <div className="absolute top-3 left-3 bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-md border border-slate-600/50">
+                    <div className="text-xs text-slate-200 font-mono space-y-1">
+                      <div>Camera: {selectedCamera.toUpperCase()}</div>
+                      <div>Objects: {objects.length}</div>
+                      {trackingId !== null && (
+                        <div className="flex items-center gap-1 text-red-400">
+                          <Target className="w-3 h-3" />
+                          <span>Tracking: #{trackingId}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
