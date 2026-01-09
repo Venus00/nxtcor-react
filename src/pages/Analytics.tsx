@@ -34,6 +34,57 @@ const Analytics: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
+  const pcRef = useRef<RTCPeerConnection | null>(null)
+
+  // WebRTC connection for video feed
+  useEffect(() => {
+    let pc: RTCPeerConnection | null = null;
+
+    const startWebRTC = async () => {
+      try {
+        pc = new RTCPeerConnection();
+        pcRef.current = pc;
+
+        pc.ontrack = (event) => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = event.streams[0];
+          }
+        };
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        const streamPath = selectedCamera === "cam1" ? "cam1" : "cam2";
+        const res = await fetch(`http://${window.location.hostname}:8889/${streamPath}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/sdp",
+          },
+          body: offer.sdp,
+        });
+
+        const answer = await res.text();
+
+        await pc.setRemoteDescription({
+          type: "answer",
+          sdp: answer,
+        });
+
+        console.log(`WebRTC connection established for ${selectedCamera}`);
+      } catch (error) {
+        console.error("WebRTC connection error:", error);
+      }
+    };
+
+    startWebRTC();
+
+    return () => {
+      if (pc) {
+        pc.close();
+        pcRef.current = null;
+      }
+    };
+  }, [selectedCamera]);
 
   // WebSocket connection
   useEffect(() => {
@@ -137,12 +188,6 @@ const Analytics: React.FC = () => {
     setTrackingId(null)
   }
 
-  const getCameraUrl = () => {
-    return selectedCamera === "cam1"
-      ? "http://admin:admin123@192.168.1.108/cam/realmonitor?channel=1&subtype=0"
-      : "http://admin:admin123@192.168.1.108/cam/realmonitor?channel=1&subtype=0"
-  }
-
   return (
     <div className="h-full bg-black p-6">
       <div className="max-w-full mx-auto h-full flex flex-col">
@@ -225,7 +270,6 @@ const Analytics: React.FC = () => {
                   <video
                     ref={videoRef}
                     className="w-full h-full object-contain"
-                    src={getCameraUrl()}
                     autoPlay
                     muted
                     playsInline
