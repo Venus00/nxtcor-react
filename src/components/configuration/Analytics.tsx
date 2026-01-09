@@ -79,8 +79,20 @@ const Analytics: React.FC = () => {
     setCamId(selectedCamera);
   }, [selectedCamera, setCamId]);
 
-  // WebRTC connection for video feed
+  // WebRTC connection for video feed - only starts when detection is enabled
   useEffect(() => {
+    if (!detectionEnabled) {
+      // Clean up existing connection if detection is disabled
+      if (pcRef.current) {
+        pcRef.current.close();
+        pcRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      return;
+    }
+
     let pc: RTCPeerConnection | null = null;
 
     const startWebRTC = async () => {
@@ -127,7 +139,7 @@ const Analytics: React.FC = () => {
         pcRef.current = null;
       }
     };
-  }, [selectedCamera]);
+  }, [selectedCamera, detectionEnabled]);
 
   // Load autofocus state from backend
   useEffect(() => {
