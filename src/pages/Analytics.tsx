@@ -113,7 +113,7 @@ const Analytics: React.FC = () => {
         const data: TrackingData = JSON.parse(event.data)
         if (data.type === 'tracking_data' && data.data.crcValid) {
           //console.log('Received detection data via WebSocket:', data)
-          setObjects(data.data.objects)
+          //setObjects(data.data.objects)
         }
       } catch (err) {
         console.error('Error parsing WebSocket message:', err)
