@@ -101,15 +101,26 @@ const Analytics: React.FC = () => {
         pcRef.current = pc;
 
         pc.ontrack = (event) => {
-          if (videoRef.current) {
+          console.log("WebRTC ontrack event received:", event);
+          if (videoRef.current && event.streams[0]) {
             videoRef.current.srcObject = event.streams[0];
+            console.log("Video srcObject set to stream");
           }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+          console.log("ICE connection state:", pc?.iceConnectionState);
+        };
+
+        pc.onconnectionstatechange = () => {
+          console.log("Connection state:", pc?.connectionState);
         };
 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
 
         const streamPath = selectedCamera === "cam1" ? "cam2" : "cam1"; // Reversed for stream
+        console.log(`Sending WebRTC offer to port 8889/${streamPath}`);
         const res = await fetch(`http://${window.location.hostname}:9898/${streamPath}`, {
           method: "POST",
           headers: {
@@ -119,6 +130,7 @@ const Analytics: React.FC = () => {
         });
 
         const answer = await res.text();
+        console.log("Received WebRTC answer");
 
         await pc.setRemoteDescription({
           type: "answer",
