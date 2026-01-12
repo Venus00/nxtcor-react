@@ -301,7 +301,7 @@ const Analytics: React.FC = () => {
 
       ws.onmessage = (event) => {
         try {
-          console.log(event);
+          // console.log(event);
           const data: TrackingData = JSON.parse(event.data);
           if (data.type === "tracking_data") {
             // If we receive tracking data with objects, detection is enabled
