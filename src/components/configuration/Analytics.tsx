@@ -133,16 +133,27 @@ const Analytics: React.FC = () => {
           throw new Error(`Server returned ${res.status}: ${res.statusText}`);
         }
 
-        const answer = await res.text();
-        console.log("Received WebRTC answer:", answer.substring(0, 100));
+        const answerText = await res.text();
+        console.log("Received WebRTC answer:", answerText.substring(0, 100));
 
-        if (!answer || answer.trim().length === 0) {
+        // Check if the response is JSON (server wraps SDP in JSON)
+        let sdpAnswer: string;
+        try {
+          const jsonResponse = JSON.parse(answerText);
+          sdpAnswer = jsonResponse.sdp;
+          console.log("Extracted SDP from JSON response");
+        } catch {
+          // Not JSON, use as-is
+          sdpAnswer = answerText;
+        }
+
+        if (!sdpAnswer || sdpAnswer.trim().length === 0) {
           throw new Error("Received empty SDP answer from server");
         }
 
         await pc.setRemoteDescription({
           type: "answer",
-          sdp: answer,
+          sdp: sdpAnswer,
         });
 
         console.log(`WebRTC connection established for ${selectedCamera}`);
