@@ -121,7 +121,7 @@ const Analytics: React.FC = () => {
 
         const streamPath = selectedCamera === "cam1" ? "cam2" : "cam1"; // Reversed for stream
         console.log(`Sending WebRTC offer to port 8889/${streamPath}`);
-        const res = await fetch(`http://${window.location.hostname}:8889/${streamPath}`, {
+        const res = await fetch(`http://${window.location.hostname}:9898/${streamPath}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/sdp",
