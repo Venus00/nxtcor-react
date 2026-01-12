@@ -102,9 +102,28 @@ const Analytics: React.FC = () => {
 
         pc.ontrack = (event) => {
           console.log("WebRTC ontrack event received:", event);
+          console.log("Number of streams:", event.streams.length);
+          console.log("Track kind:", event.track.kind);
+          console.log("Track enabled:", event.track.enabled);
+          console.log("Track readyState:", event.track.readyState);
+
           if (videoRef.current && event.streams[0]) {
             videoRef.current.srcObject = event.streams[0];
             console.log("Video srcObject set to stream");
+            console.log("Video element readyState:", videoRef.current.readyState);
+
+            // Add event listeners to video element
+            videoRef.current.onloadedmetadata = () => {
+              console.log("Video metadata loaded");
+            };
+            videoRef.current.oncanplay = () => {
+              console.log("Video can play");
+            };
+            videoRef.current.onerror = (e) => {
+              console.error("Video element error:", e);
+            };
+          } else {
+            console.warn("Video ref or stream not available");
           }
         };
 
