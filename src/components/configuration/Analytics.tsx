@@ -121,7 +121,7 @@ const Analytics: React.FC = () => {
 
         const streamPath = selectedCamera === "cam1" ? "cam2" : "cam1"; // Reversed for stream
         console.log(`Sending WebRTC offer to port 8889/${streamPath}`);
-        const res = await fetch(`http://${window.location.hostname}:9898/${streamPath}`, {
+        const res = await fetch(`http://${window.location.hostname}:8889/${streamPath}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/sdp",
@@ -129,8 +129,16 @@ const Analytics: React.FC = () => {
           body: offer.sdp,
         });
 
+        if (!res.ok) {
+          throw new Error(`Server returned ${res.status}: ${res.statusText}`);
+        }
+
         const answer = await res.text();
-        console.log("Received WebRTC answer");
+        console.log("Received WebRTC answer:", answer.substring(0, 100));
+
+        if (!answer || answer.trim().length === 0) {
+          throw new Error("Received empty SDP answer from server");
+        }
 
         await pc.setRemoteDescription({
           type: "answer",
