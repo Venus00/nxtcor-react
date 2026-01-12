@@ -1212,7 +1212,7 @@ const Analytics: React.FC = () => {
                   const isTracking = trackingId === obj.trackId;
                   return (
                     <div
-                      key={obj.trackId + index}
+                      key={`${obj.trackId}-${index}-${obj.lastSeen}`}
                       className={`p-3 rounded-lg border transition-all ${isTracking
                         ? "bg-red-600/20 border-red-500/50"
                         : "bg-slate-700/60 border-slate-600/50"
