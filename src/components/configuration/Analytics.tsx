@@ -120,7 +120,7 @@ const Analytics: React.FC = () => {
         await pc.setLocalDescription(offer);
 
         const streamPath = selectedCamera === "cam1" ? "cam2" : "cam1"; // Reversed for stream
-        console.log(`Sending WebRTC offer to port 8889/${streamPath}`);
+        console.log(`Sending WebRTC offer to port 9898/${streamPath}`);
         const res = await fetch(`http://${window.location.hostname}:9898/${streamPath}`, {
           method: "POST",
           headers: {
@@ -1208,11 +1208,11 @@ const Analytics: React.FC = () => {
                   <p>No objects detected</p>
                 </div>
               ) : (
-                objects.map((obj) => {
+                objects.map((obj, index) => {
                   const isTracking = trackingId === obj.trackId;
                   return (
                     <div
-                      key={obj.trackId}
+                      key={obj.trackId + index}
                       className={`p-3 rounded-lg border transition-all ${isTracking
                         ? "bg-red-600/20 border-red-500/50"
                         : "bg-slate-700/60 border-slate-600/50"
