@@ -1,15 +1,15 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from "react";
 
 interface WebRTCMonitorProps {
-  selectedCamera: 'cam1' | 'cam2';
+  selectedCamera: "cam1" | "cam2";
   detectionEnabled: boolean;
   onVideoRef?: (ref: HTMLVideoElement | null) => void;
 }
 
-const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({ 
-  selectedCamera, 
+const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
+  selectedCamera,
   detectionEnabled,
-  onVideoRef 
+  onVideoRef,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -45,6 +45,8 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
           if (videoRef.current && event.streams[0]) {
             videoRef.current.srcObject = event.streams[0];
             console.log("Video srcObject set to stream");
+            console.log("Stream ID:", event.streams[0].id);
+            console.log("Tracks in stream:", event.streams[0].getTracks());
             console.log(
               "Video element readyState:",
               videoRef.current.readyState
@@ -74,7 +76,7 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
         };
 
         // Add transceiver for receiving video stream
-        pc.addTransceiver('video', { direction: 'recvonly' });
+        pc.addTransceiver("video", { direction: "recvonly" });
 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
@@ -141,13 +143,24 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
 
   return (
     <div className="w-full bg-black rounded-lg overflow-hidden border border-slate-600/50 shadow-2xl shadow-black/40">
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        playsInline
-        className="w-full h-auto"
-      />
+      <div
+        className="relative"
+        style={{ width: "100%", aspectRatio: "4/3", backgroundColor: "#000" }}
+      >
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            backgroundColor: "#000",
+            display: "block",
+          }}
+        />
+      </div>
     </div>
   );
 };
