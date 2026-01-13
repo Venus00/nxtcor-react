@@ -703,7 +703,6 @@ const Analytics: React.FC = () => {
     <div className="h-full bg-black p-6">
       <div className="max-w-full mx-auto h-full flex flex-col">
         {/* WebRTC Monitor Component */}
-       
 
         {/* Header */}
         <div className="mb-6">
@@ -835,38 +834,15 @@ const Analytics: React.FC = () => {
             </div>
 
             <div className="relative h-full ">
-              <div className="mb-6">
-                <WebRTCMonitor 
-                  selectedCamera={selectedCamera}
-                  detectionEnabled={detectionEnabled}
-                  onVideoRef={(ref) => {
-                    if (ref) videoRef.current = ref;
-                  }}
-                />
-              </div>
-{/* 
-              <div className="w-full h-full rounded-md overflow-hidden border border-slate-700/50 relative">
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <div
-                    className="relative"
-                    style={{ width: "640px", height: "480px" }}
-                  >
-                    <video
-                      ref={videoRef}
-                      width="640"
-                      height="480"
-                      autoPlay
-                      muted
-                      playsInline
-                      className="bg-black"
-                      style={{
-                        border: "none",
-                        pointerEvents: "none",
-                      }}
-                    />
-                  </div>
-                </div>
+              <WebRTCMonitor
+                selectedCamera={selectedCamera}
+                detectionEnabled={detectionEnabled}
+                onVideoRef={(ref) => {
+                  if (ref) videoRef.current = ref;
+                }}
+              />
 
+              <div className="w-full h-full rounded-md overflow-hidden border border-slate-700/50 relative">
                 {/* PTZ Controls Overlay */}
                 <div className="absolute bottom-4 right-4 z-20">
                   <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 min-w-[160px]">
@@ -1133,7 +1109,6 @@ const Analytics: React.FC = () => {
                   </div>
                 </div>
               </div>
-              {/* */}
             </div>
           </div>
 
