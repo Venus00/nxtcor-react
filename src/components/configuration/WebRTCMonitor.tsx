@@ -79,10 +79,9 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
 
-        const streamPath = selectedCamera === "cam1" ? "cam2" : "cam1"; // Reversed for stream
-        console.log(`Sending WebRTC offer to port 9898/${streamPath}`);
+        console.log(`Sending WebRTC offer to port 9898/${selectedCamera}`);
         const res = await fetch(
-          `http://${window.location.hostname}:9898/${streamPath}`,
+          `http://${window.location.hostname}:9898/${selectedCamera}`,
           {
             method: "POST",
             headers: {
