@@ -97,28 +97,15 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
           throw new Error(`Server returned ${res.status}: ${res.statusText}`);
         }
 
-        const answerText = await res.text();
-        console.log("Received WebRTC answer:", answerText.substring(0, 100));
+        const answer = await res.json();
+        console.log("Received WebRTC answer:", answer);
 
-        // Check if the response is JSON (server wraps SDP in JSON)
-        let sdpAnswer: string;
-        try {
-          const jsonResponse = JSON.parse(answerText);
-          sdpAnswer = jsonResponse.sdp;
-          console.log("Extracted SDP from JSON response");
-        } catch {
-          // Not JSON, use as-is
-          sdpAnswer = answerText;
-        }
-
-        if (!sdpAnswer || sdpAnswer.trim().length === 0) {
-          throw new Error("Received empty SDP answer from server");
-        }
-
-        await pc.setRemoteDescription({
-          type: "answer",
-          sdp: sdpAnswer,
-        });
+        await pc.setRemoteDescription(
+          new RTCSessionDescription({
+            type: "answer",
+            sdp: answer.sdp,
+          })
+        );
 
         console.log(`WebRTC connection established for ${selectedCamera}`);
       } catch (error) {
