@@ -703,15 +703,7 @@ const Analytics: React.FC = () => {
     <div className="h-full bg-black p-6">
       <div className="max-w-full mx-auto h-full flex flex-col">
         {/* WebRTC Monitor Component */}
-        <div className="mb-6">
-          <WebRTCMonitor 
-            selectedCamera={selectedCamera}
-            detectionEnabled={detectionEnabled}
-            onVideoRef={(ref) => {
-              if (ref) videoRef.current = ref;
-            }}
-          />
-        </div>
+       
 
         {/* Header */}
         <div className="mb-6">
@@ -843,6 +835,16 @@ const Analytics: React.FC = () => {
             </div>
 
             <div className="relative h-full ">
+              <div className="mb-6">
+                <WebRTCMonitor 
+                  selectedCamera={selectedCamera}
+                  detectionEnabled={detectionEnabled}
+                  onVideoRef={(ref) => {
+                    if (ref) videoRef.current = ref;
+                  }}
+                />
+              </div>
+{/* 
               <div className="w-full h-full rounded-md overflow-hidden border border-slate-700/50 relative">
                 <div className="relative w-full h-full flex items-center justify-center">
                   <div
@@ -1131,6 +1133,7 @@ const Analytics: React.FC = () => {
                   </div>
                 </div>
               </div>
+              {/* */}
             </div>
           </div>
 
