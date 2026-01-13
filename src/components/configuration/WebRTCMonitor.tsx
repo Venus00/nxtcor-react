@@ -82,16 +82,17 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
         await pc.setLocalDescription(offer);
 
         console.log(`Sending WebRTC offer to port 9898/${selectedCamera}`);
-        const res = await fetch(
-          `http://${window.location.hostname}:9898/${selectedCamera}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/sdp",
-            },
-            body: offer.sdp,
-          }
-        );
+        const serverHost =
+          window.location.hostname === "localhost"
+            ? "192.168.10.208"
+            : window.location.hostname;
+        const res = await fetch(`http://${serverHost}:9898/${selectedCamera}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/sdp",
+          },
+          body: offer.sdp,
+        });
 
         if (!res.ok) {
           throw new Error(`Server returned ${res.status}: ${res.statusText}`);
