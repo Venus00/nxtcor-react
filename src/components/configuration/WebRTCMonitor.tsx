@@ -13,6 +13,7 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
+  const connectionAttemptedRef = useRef<boolean>(false);
 
   // WebRTC connection for video feed
   useEffect(() => {
@@ -25,9 +26,16 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
+      connectionAttemptedRef.current = false;
       return;
     }
 
+    // Prevent multiple connection attempts
+    if (connectionAttemptedRef.current && pcRef.current) {
+      return;
+    }
+
+    connectionAttemptedRef.current = true;
     let pc: RTCPeerConnection | null = null;
 
     const startWebRTC = async () => {
@@ -127,7 +135,7 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
         pcRef.current = null;
       }
     };
-  }, [selectedCamera, detectionEnabled, onVideoRef]);
+  }, [selectedCamera, detectionEnabled]);
 
   return (
     <div className="w-full bg-black rounded-lg overflow-hidden border border-slate-600/50 shadow-2xl shadow-black/40">
