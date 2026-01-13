@@ -18,6 +18,7 @@ import {
   Focus,
 } from "lucide-react";
 import { useCameraContext } from "../../contexts/CameraContext";
+import WebRTCMonitor from "./WebRTCMonitor";
 
 interface TrackedObject {
   classification: number;
@@ -809,6 +810,11 @@ const Analytics: React.FC = () => {
   return (
     <div className="h-full bg-black p-6">
       <div className="max-w-full mx-auto h-full flex flex-col">
+        {/* WebRTC Monitor Component */}
+        <div className="mb-6">
+          <WebRTCMonitor />
+        </div>
+
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3">
