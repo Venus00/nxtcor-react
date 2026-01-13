@@ -67,7 +67,6 @@ const Analytics: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const pcRef = useRef<RTCPeerConnection | null>(null);
   const objectMapRef = useRef<Map<number, TrackedObjectWithTimestamp>>(
     new Map()
   );
@@ -84,121 +83,14 @@ const Analytics: React.FC = () => {
   useEffect(() => {
     if (!detectionEnabled) {
       // Clean up existing connection if detection is disabled
-      if (pcRef.current) {
-        pcRef.current.close();
-        pcRef.current = null;
-      }
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
       return;
     }
 
-    let pc: RTCPeerConnection | null = null;
-
-    const startWebRTC = async () => {
-      try {
-        pc = new RTCPeerConnection();
-        pcRef.current = pc;
-
-        pc.ontrack = (event) => {
-          console.log("WebRTC ontrack event received:", event);
-          console.log("Number of streams:", event.streams.length);
-          console.log("Track kind:", event.track.kind);
-          console.log("Track enabled:", event.track.enabled);
-          console.log("Track readyState:", event.track.readyState);
-
-          if (videoRef.current && event.streams[0]) {
-            videoRef.current.srcObject = event.streams[0];
-            console.log("Video srcObject set to stream");
-            console.log(
-              "Video element readyState:",
-              videoRef.current.readyState
-            );
-
-            // Add event listeners to video element
-            videoRef.current.onloadedmetadata = () => {
-              console.log("Video metadata loaded");
-            };
-            videoRef.current.oncanplay = () => {
-              console.log("Video can play");
-            };
-            videoRef.current.onerror = (e) => {
-              console.error("Video element error:", e);
-            };
-          } else {
-            console.warn("Video ref or stream not available");
-          }
-        };
-
-        pc.oniceconnectionstatechange = () => {
-          console.log("ICE connection state:", pc?.iceConnectionState);
-        };
-
-        pc.onconnectionstatechange = () => {
-          console.log("Connection state:", pc?.connectionState);
-        };
-
-        // Add transceiver for receiving video stream
-        pc.addTransceiver('video', { direction: 'recvonly' });
-
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-
-        const streamPath = selectedCamera === "cam1" ? "cam2" : "cam1"; // Reversed for stream
-        console.log(`Sending WebRTC offer to port 9898/${streamPath}`);
-        const res = await fetch(
-          `http://${window.location.hostname}:9898/${streamPath}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/sdp",
-            },
-            body: offer.sdp,
-          }
-        );
-
-        if (!res.ok) {
-          throw new Error(`Server returned ${res.status}: ${res.statusText}`);
-        }
-
-        const answerText = await res.text();
-        console.log("Received WebRTC answer:", answerText.substring(0, 100));
-
-        // Check if the response is JSON (server wraps SDP in JSON)
-        let sdpAnswer: string;
-        try {
-          const jsonResponse = JSON.parse(answerText);
-          sdpAnswer = jsonResponse.sdp;
-          console.log("Extracted SDP from JSON response");
-        } catch {
-          // Not JSON, use as-is
-          sdpAnswer = answerText;
-        }
-
-        if (!sdpAnswer || sdpAnswer.trim().length === 0) {
-          throw new Error("Received empty SDP answer from server");
-        }
-
-        await pc.setRemoteDescription({
-          type: "answer",
-          sdp: sdpAnswer,
-        });
-
-        console.log(`WebRTC connection established for ${selectedCamera}`);
-      } catch (error) {
-        console.error("WebRTC connection error:", error);
-      }
-    };
-
-    startWebRTC();
-
-    return () => {
-      if (pc) {
-        pc.close();
-        pcRef.current = null;
-      }
-    };
+    // WebRTC connection is now handled by WebRTCMonitor component
+    // This space kept for future enhancements if needed
   }, [selectedCamera, detectionEnabled]);
 
   // Load autofocus state from backend
@@ -812,7 +704,13 @@ const Analytics: React.FC = () => {
       <div className="max-w-full mx-auto h-full flex flex-col">
         {/* WebRTC Monitor Component */}
         <div className="mb-6">
-          <WebRTCMonitor />
+          <WebRTCMonitor 
+            selectedCamera={selectedCamera}
+            detectionEnabled={detectionEnabled}
+            onVideoRef={(ref) => {
+              if (ref) videoRef.current = ref;
+            }}
+          />
         </div>
 
         {/* Header */}
