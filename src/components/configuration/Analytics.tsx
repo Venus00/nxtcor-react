@@ -138,6 +138,9 @@ const Analytics: React.FC = () => {
           console.log("Connection state:", pc?.connectionState);
         };
 
+        // Add transceiver for receiving video stream
+        pc.addTransceiver('video', { direction: 'recvonly' });
+
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
 
