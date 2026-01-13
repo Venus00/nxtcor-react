@@ -14,6 +14,7 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const connectionAttemptedRef = useRef<boolean>(false);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // WebRTC connection for video feed
   useEffect(() => {
@@ -25,6 +26,10 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
       }
       if (videoRef.current) {
         videoRef.current.srcObject = null;
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
       connectionAttemptedRef.current = false;
       return;
@@ -119,6 +124,12 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
         console.log(`WebRTC connection established for ${selectedCamera}`);
       } catch (error) {
         console.error("WebRTC connection error:", error);
+        connectionAttemptedRef.current = false;
+        // Retry connection after 3 seconds
+        reconnectTimeoutRef.current = setTimeout(() => {
+          console.log(`Retrying WebRTC connection for ${selectedCamera}...`);
+          startWebRTC();
+        }, 3000);
       }
     };
 
@@ -134,6 +145,10 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
         pc.close();
         pcRef.current = null;
       }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
     };
   }, [selectedCamera, detectionEnabled]);
 
@@ -141,13 +156,15 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
     <div className="w-full bg-black rounded-lg overflow-hidden border border-slate-600/50 shadow-2xl shadow-black/40">
       <div
         className="relative"
-        style={{ width: "100%", aspectRatio: "4/3", backgroundColor: "#000" }}
+        style={{ width: "640px", height: "480px", backgroundColor: "#000" }}
       >
         <video
           ref={videoRef}
           autoPlay
           muted
           playsInline
+          width={640}
+          height={480}
           style={{
             width: "100%",
             height: "100%",
