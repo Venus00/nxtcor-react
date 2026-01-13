@@ -833,18 +833,19 @@ const Analytics: React.FC = () => {
               </div>
             </div>
 
-            <div className="relative h-full ">
-              <WebRTCMonitor
-                selectedCamera={selectedCamera}
-                detectionEnabled={detectionEnabled}
-                onVideoRef={(ref) => {
-                  if (ref) videoRef.current = ref;
-                }}
-              />
+            <div className="relative h-full flex flex-col">
+              <div className="flex-1 flex items-center justify-center bg-black rounded-lg overflow-hidden">
+                <WebRTCMonitor
+                  selectedCamera={selectedCamera}
+                  detectionEnabled={detectionEnabled}
+                  onVideoRef={(ref) => {
+                    if (ref) videoRef.current = ref;
+                  }}
+                />
+              </div>
 
-              <div className="w-full h-full rounded-md overflow-hidden border border-slate-700/50 relative">
-                {/* PTZ Controls Overlay */}
-                <div className="absolute bottom-4 right-4 z-20">
+              {/* PTZ Controls Overlay */}
+              <div className="absolute bottom-4 right-4 z-20">
                   <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 min-w-[160px]">
                     <div className="flex items-center justify-between mb-5 pb-3 border-b border-white/10">
                       <div className="flex items-center space-x-2">
@@ -1087,8 +1088,8 @@ const Analytics: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Status Overlay */}
-                <div className="absolute top-3 left-3 bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-md border border-slate-600/50">
+              {/* Status Overlay */}
+              <div className="absolute top-3 left-3 bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-md border border-slate-600/50 z-20">
                   <div className="text-xs text-slate-200 font-mono space-y-1">
                     <div>
                       Camera:{" "}
