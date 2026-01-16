@@ -64,6 +64,14 @@ const Analytics: React.FC = () => {
     const saved = localStorage.getItem("analytics_autofocus_enabled");
     return saved ? JSON.parse(saved) : false;
   });
+
+  // Handle camera switching - disable detection if active
+  const handleCameraSwitch = async (newCamera: CameraType) => {
+    if (detectionEnabled) {
+      await disableDetection();
+    }
+    setSelectedCamera(newCamera);
+  };
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -732,23 +740,21 @@ const Analytics: React.FC = () => {
                 </label>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setSelectedCamera("cam1")}
-                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${
-                      selectedCamera === "cam1"
+                    onClick={() => handleCameraSwitch("cam1")}
+                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === "cam1"
                         ? "bg-blue-600 text-white"
                         : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                    }`}
+                      }`}
                   >
                     <Camera className="w-4 h-4" />
                     Optique
                   </button>
                   <button
-                    onClick={() => setSelectedCamera("cam2")}
-                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${
-                      selectedCamera === "cam2"
+                    onClick={() => handleCameraSwitch("cam2")}
+                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === "cam2"
                         ? "bg-blue-600 text-white"
                         : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                    }`}
+                      }`}
                   >
                     <Thermometer className="w-4 h-4" />
                     Thermique
@@ -775,11 +781,10 @@ const Analytics: React.FC = () => {
               <div className="flex items-center gap-4 ml-auto">
                 <div className="flex items-center gap-2">
                   <Circle
-                    className={`h-3 w-3 ${
-                      detectionEnabled
+                    className={`h-3 w-3 ${detectionEnabled
                         ? "text-green-500 fill-green-500"
                         : "text-gray-500 fill-gray-500"
-                    }`}
+                      }`}
                   />
                   <span className="text-sm text-slate-300">
                     {detectionEnabled
@@ -789,11 +794,10 @@ const Analytics: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Circle
-                    className={`h-3 w-3 ${
-                      wsConnected
+                    className={`h-3 w-3 ${wsConnected
                         ? "text-green-500 fill-green-500"
                         : "text-red-500 fill-red-500"
-                    }`}
+                      }`}
                   />
                   <span className="text-sm text-slate-300">
                     {wsConnected
@@ -809,7 +813,7 @@ const Analytics: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 min-h-0 flex gap-4">
           {/* Video Feed */}
-          <div className="flex-1 bg-slate-800/60 border border-slate-600/50 rounded-lg overflow-hidden shadow-2xl shadow-black/40">
+          <div className="flex-[2] bg-slate-800/60 border border-slate-600/50 rounded-lg overflow-hidden shadow-2xl shadow-black/40">
             <div className="bg-black border-b border-slate-600/50 px-4 py-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -994,11 +998,10 @@ const Analytics: React.FC = () => {
                       onTouchStart={focusInHandlers.handleStart}
                       onTouchEnd={focusInHandlers.handleStop}
                       disabled={autoFocusEnabled}
-                      className={`group w-12 h-12 ${
-                        autoFocusEnabled
+                      className={`group w-12 h-12 ${autoFocusEnabled
                           ? "bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed"
                           : "bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white"
-                      } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
+                        } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
                       aria-label="Focus Near"
                     >
                       <Minus
@@ -1010,15 +1013,13 @@ const Analytics: React.FC = () => {
 
                     <button
                       onClick={toggleAutoFocus}
-                      className={`group w-12 h-12 ${
-                        autoFocusEnabled
+                      className={`group w-12 h-12 ${autoFocusEnabled
                           ? "bg-green-500/30 border-green-400/50 text-green-100"
                           : "bg-gray-500/20 border-gray-400/30 text-gray-400"
-                      } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg ${
-                        autoFocusEnabled
+                        } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg ${autoFocusEnabled
                           ? "hover:shadow-green-500/20"
                           : "hover:shadow-gray-500/20"
-                      }`}
+                        }`}
                       aria-label="Toggle Autofocus"
                       title={
                         autoFocusEnabled ? "Autofocus: ON" : "Autofocus: OFF"
@@ -1027,9 +1028,8 @@ const Analytics: React.FC = () => {
                       <Focus
                         size={16}
                         strokeWidth={2.5}
-                        className={`group-hover:scale-110 transition-transform duration-200 ${
-                          autoFocusEnabled ? "animate-pulse" : ""
-                        }`}
+                        className={`group-hover:scale-110 transition-transform duration-200 ${autoFocusEnabled ? "animate-pulse" : ""
+                          }`}
                       />
                     </button>
 
@@ -1040,11 +1040,10 @@ const Analytics: React.FC = () => {
                       onTouchStart={focusOutHandlers.handleStart}
                       onTouchEnd={focusOutHandlers.handleStop}
                       disabled={autoFocusEnabled}
-                      className={`group w-12 h-12 ${
-                        autoFocusEnabled
+                      className={`group w-12 h-12 ${autoFocusEnabled
                           ? "bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed"
                           : "bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white"
-                      } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
+                        } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
                       aria-label="Focus Far"
                     >
                       <Plus
@@ -1111,10 +1110,10 @@ const Analytics: React.FC = () => {
           </div>
 
           {/* Right Sidebar - Object List */}
-          <div className="w-80 bg-slate-800/60 border border-slate-600/50 rounded-lg overflow-hidden flex flex-col">
+          <div className="w-64 bg-slate-800/60 border border-slate-600/50 rounded-lg overflow-hidden flex flex-col">
             <div className="bg-black border-b border-slate-600/50 px-4 py-3">
               <h3 className="text-base font-medium text-white">
-                Detected Objectszdzdz
+                Detected Objects
               </h3>
             </div>
 
@@ -1130,11 +1129,10 @@ const Analytics: React.FC = () => {
                   return (
                     <div
                       key={`${obj.trackId}-${index}-${obj.lastSeen}`}
-                      className={`p-3 rounded-lg border transition-all ${
-                        isTracking
+                      className={`p-3 rounded-lg border transition-all ${isTracking
                           ? "bg-red-600/20 border-red-500/50"
                           : "bg-slate-700/60 border-slate-600/50"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div>
@@ -1146,11 +1144,10 @@ const Analytics: React.FC = () => {
                           </div>
                         </div>
                         <div
-                          className={`px-2 py-1 rounded text-xs ${
-                            isTracking
+                          className={`px-2 py-1 rounded text-xs ${isTracking
                               ? "bg-red-500 text-white"
                               : "bg-slate-600 text-slate-300"
-                          }`}
+                            }`}
                         >
                           {isTracking ? "TRACKING" : "IDLE"}
                         </div>
@@ -1169,11 +1166,10 @@ const Analytics: React.FC = () => {
                         <button
                           onClick={disableTracking}
                           disabled={!detectionEnabled}
-                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${
-                            !detectionEnabled
+                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${!detectionEnabled
                               ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
                               : "bg-slate-600 hover:bg-slate-500 text-white"
-                          }`}
+                            }`}
                         >
                           Stop Tracking
                         </button>
@@ -1181,11 +1177,10 @@ const Analytics: React.FC = () => {
                         <button
                           onClick={() => enableTracking(obj.trackId)}
                           disabled={!detectionEnabled || trackingId !== null}
-                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${
-                            !detectionEnabled || trackingId !== null
+                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${!detectionEnabled || trackingId !== null
                               ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
                               : "bg-red-600 hover:bg-red-700 text-white"
-                          }`}
+                            }`}
                         >
                           Enable Tracking
                         </button>
