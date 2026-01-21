@@ -10,7 +10,7 @@ import PTZSettings from '../pages/PTZSettings';
 import EventsManagement from '../pages/EventsManagement';
 
 const MainLayout: React.FC = () => {
-  const [activeConfigTab, setActiveConfigTab] = useState("General");
+  const [activeConfigTab, setActiveConfigTab] = useState("live");
 
   return (
     <div className="h-screen w-full flex flex-col bg-gray-100">
