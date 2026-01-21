@@ -26,7 +26,7 @@ const VideoStream: React.FC = () => {
   const focusInIntervalRef = useRef<number | null>(null);
   const focusOutIntervalRef = useRef<number | null>(null);
 
-  const camId = useParams().id;
+  const camId = useParams().id || 'cam1';
 
   // Load autofocus state from backend on mount
   useEffect(() => {
