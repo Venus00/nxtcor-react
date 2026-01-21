@@ -76,7 +76,7 @@ const Analytics: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const objectMapRef = useRef<Map<number, TrackedObjectWithTimestamp>>(
-    new Map()
+    new Map(),
   );
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const clearTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -106,7 +106,7 @@ const Analytics: React.FC = () => {
     const loadAutofocusState = async () => {
       try {
         const response = await fetch(
-          `http://${window.location.hostname}:3000/detection/state`
+          `http://${window.location.hostname}:3000/detection/state`,
         );
         const data = await response.json();
 
@@ -116,10 +116,10 @@ const Analytics: React.FC = () => {
             setAutoFocusEnabled(savedState);
             localStorage.setItem(
               "analytics_autofocus_enabled",
-              JSON.stringify(savedState)
+              JSON.stringify(savedState),
             );
             console.log(
-              `[Analytics] Loaded autofocus state from backend: ${savedState}`
+              `[Analytics] Loaded autofocus state from backend: ${savedState}`,
             );
           }
         }
@@ -137,7 +137,7 @@ const Analytics: React.FC = () => {
       try {
         // Get state from backend
         const response = await fetch(
-          `http://${window.location.hostname}:3000/detection/state?cameraId=${selectedCamera}`
+          `http://${window.location.hostname}:3000/detection/state?cameraId=${selectedCamera}`,
         );
         const data = await response.json();
 
@@ -149,7 +149,7 @@ const Analytics: React.FC = () => {
             setDetectionEnabled(true);
             localStorage.setItem(
               "analytics_detection_enabled",
-              JSON.stringify(true)
+              JSON.stringify(true),
             );
 
             // Re-enable detection on backend
@@ -169,7 +169,7 @@ const Analytics: React.FC = () => {
             setTrackingId(trackId);
             localStorage.setItem(
               "analytics_tracking_id",
-              JSON.stringify(trackId)
+              JSON.stringify(trackId),
             );
 
             // Re-enable tracking on backend
@@ -179,7 +179,7 @@ const Analytics: React.FC = () => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ cameraId: selectedCamera }),
-              }
+              },
             ).catch((err) => console.error("Error restoring tracking:", err));
           }
         }
@@ -188,7 +188,7 @@ const Analytics: React.FC = () => {
 
         // Fallback to localStorage if backend fails
         const savedDetection = localStorage.getItem(
-          "analytics_detection_enabled"
+          "analytics_detection_enabled",
         );
         const savedTracking = localStorage.getItem("analytics_tracking_id");
 
@@ -210,7 +210,7 @@ const Analytics: React.FC = () => {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ cameraId: selectedCamera }),
-            }
+            },
           ).catch((err) => console.error("Error restoring tracking:", err));
         }
       }
@@ -257,7 +257,7 @@ const Analytics: React.FC = () => {
               setDetectionEnabled(true);
               localStorage.setItem(
                 "analytics_detection_enabled",
-                JSON.stringify(true)
+                JSON.stringify(true),
               );
             }
 
@@ -290,12 +290,12 @@ const Analytics: React.FC = () => {
             clearTimeoutRef.current = setTimeout(async () => {
               if (trackingId !== null) {
                 console.log(
-                  "[Analytics] No data received, but tracking is active — skipping clear"
+                  "[Analytics] No data received, but tracking is active — skipping clear",
                 );
                 return;
               }
               console.log(
-                "[Analytics] No data received for 1 second, clearing boxes"
+                "[Analytics] No data received for 1 second, clearing boxes",
               );
               objectMapRef.current.clear();
               setObjects([]);
@@ -308,28 +308,28 @@ const Analytics: React.FC = () => {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ cameraId: selectedCamera }),
-                    }
+                    },
                   );
                   console.log(
-                    "[Analytics] Tracking cleared on backend due to timeout"
+                    "[Analytics] Tracking cleared on backend due to timeout",
                   );
                 } catch (error) {
                   console.error(
                     "[Analytics] Error clearing tracking on backend:",
-                    error
+                    error,
                   );
                 }
                 setTrackingId(null);
                 localStorage.setItem(
                   "analytics_tracking_id",
-                  JSON.stringify(null)
+                  JSON.stringify(null),
                 );
               }
             }, 1000);
 
             if (!data.data.crcValid) {
               console.warn(
-                "Checksum validation failed, but displaying objects anyway"
+                "Checksum validation failed, but displaying objects anyway",
               );
             }
           }
@@ -475,7 +475,7 @@ const Analytics: React.FC = () => {
       setDetectionEnabled(false);
       localStorage.setItem(
         "analytics_detection_enabled",
-        JSON.stringify(false)
+        JSON.stringify(false),
       );
 
       // Clear tracking when detection is disabled - call backend to persist state
@@ -487,7 +487,7 @@ const Analytics: React.FC = () => {
           },
           body: JSON.stringify({ cameraId: selectedCamera }),
         }).catch((err) =>
-          console.error("Error clearing tracking on backend:", err)
+          console.error("Error clearing tracking on backend:", err),
         );
       }
 
@@ -510,7 +510,7 @@ const Analytics: React.FC = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ cameraId: selectedCamera }),
-        }
+        },
       );
       setTrackingId(id);
       localStorage.setItem("analytics_tracking_id", JSON.stringify(id));
@@ -545,7 +545,7 @@ const Analytics: React.FC = () => {
       | "zoom_in"
       | "zoom_out"
       | "focus_in"
-      | "focus_out"
+      | "focus_out",
   ) => {
     try {
       let endpoint = "";
@@ -596,7 +596,7 @@ const Analytics: React.FC = () => {
       | "zoom_in"
       | "zoom_out"
       | "focus_in"
-      | "focus_out"
+      | "focus_out",
   ) => {
     try {
       let endpoint = "";
@@ -638,7 +638,7 @@ const Analytics: React.FC = () => {
       | "zoom_out"
       | "focus_in"
       | "focus_out",
-    intervalRef: React.MutableRefObject<number | null>
+    intervalRef: React.MutableRefObject<number | null>,
   ) => {
     const handleStart = () => {
       move(direction);
@@ -680,7 +680,7 @@ const Analytics: React.FC = () => {
       setAutoFocusEnabled(newState);
       localStorage.setItem(
         "analytics_autofocus_enabled",
-        JSON.stringify(newState)
+        JSON.stringify(newState),
       );
     } catch (err) {
       console.error("Error toggling autofocus:", err);
@@ -741,20 +741,22 @@ const Analytics: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleCameraSwitch("cam1")}
-                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === "cam1"
+                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${
+                      selectedCamera === "cam1"
                         ? "bg-blue-600 text-white"
                         : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                      }`}
+                    }`}
                   >
                     <Camera className="w-4 h-4" />
                     Optique
                   </button>
                   <button
                     onClick={() => handleCameraSwitch("cam2")}
-                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${selectedCamera === "cam2"
+                    className={`px-3 py-2 rounded-md flex items-center gap-2 transition-all ${
+                      selectedCamera === "cam2"
                         ? "bg-blue-600 text-white"
                         : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                      }`}
+                    }`}
                   >
                     <Thermometer className="w-4 h-4" />
                     Thermique
@@ -781,10 +783,11 @@ const Analytics: React.FC = () => {
               <div className="flex items-center gap-4 ml-auto">
                 <div className="flex items-center gap-2">
                   <Circle
-                    className={`h-3 w-3 ${detectionEnabled
+                    className={`h-3 w-3 ${
+                      detectionEnabled
                         ? "text-green-500 fill-green-500"
                         : "text-gray-500 fill-gray-500"
-                      }`}
+                    }`}
                   />
                   <span className="text-sm text-slate-300">
                     {detectionEnabled
@@ -794,10 +797,11 @@ const Analytics: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Circle
-                    className={`h-3 w-3 ${wsConnected
+                    className={`h-3 w-3 ${
+                      wsConnected
                         ? "text-green-500 fill-green-500"
                         : "text-red-500 fill-red-500"
-                      }`}
+                    }`}
                   />
                   <span className="text-sm text-slate-300">
                     {wsConnected
@@ -849,9 +853,9 @@ const Analytics: React.FC = () => {
               </div>
 
               {/* PTZ Controls Overlay */}
-              <div className="absolute bottom-4 right-4 z-20">
-                <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 min-w-[140px]">
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+              <div className="absolute bottom-20 right-12 z-20">
+                <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-3 min-w-[120px]">
+                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
                       <span className="text-white/90 text-xs font-medium tracking-wide">
@@ -860,42 +864,42 @@ const Analytics: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-center space-y-1.5 mb-4">
+                  <div className="flex flex-col items-center space-y-1 mb-3">
                     <button
                       onMouseDown={upHandlers.handleStart}
                       onMouseUp={upHandlers.handleStop}
                       onMouseLeave={upHandlers.handleStop}
                       onTouchStart={upHandlers.handleStart}
                       onTouchEnd={upHandlers.handleStop}
-                      className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                      className="group w-8 h-8 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                       aria-label="Tilt Up"
                     >
                       <ChevronUp
-                        size={18}
+                        size={14}
                         strokeWidth={2.5}
                         className="group-hover:scale-110 transition-transform duration-200"
                       />
                     </button>
 
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1.5">
                       <button
                         onMouseDown={leftHandlers.handleStart}
                         onMouseUp={leftHandlers.handleStop}
                         onMouseLeave={leftHandlers.handleStop}
                         onTouchStart={leftHandlers.handleStart}
                         onTouchEnd={leftHandlers.handleStop}
-                        className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                        className="group w-8 h-8 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                         aria-label="Pan Left"
                       >
                         <ChevronLeft
-                          size={18}
+                          size={14}
                           strokeWidth={2.5}
                           className="group-hover:scale-110 transition-transform duration-200"
                         />
                       </button>
 
-                      <div className="w-10 h-10 bg-white/5 border border-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                        <div className="w-2 h-2 bg-white/60 rounded-full shadow-lg"></div>
+                      <div className="w-8 h-8 bg-white/5 border border-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                        <div className="w-1.5 h-1.5 bg-white/60 rounded-full shadow-lg"></div>
                       </div>
 
                       <button
@@ -904,11 +908,11 @@ const Analytics: React.FC = () => {
                         onMouseLeave={rightHandlers.handleStop}
                         onTouchStart={rightHandlers.handleStart}
                         onTouchEnd={rightHandlers.handleStop}
-                        className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                        className="group w-8 h-8 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                         aria-label="Pan Right"
                       >
                         <ChevronRight
-                          size={18}
+                          size={14}
                           strokeWidth={2.5}
                           className="group-hover:scale-110 transition-transform duration-200"
                         />
@@ -921,11 +925,11 @@ const Analytics: React.FC = () => {
                       onMouseLeave={downHandlers.handleStop}
                       onTouchStart={downHandlers.handleStart}
                       onTouchEnd={downHandlers.handleStop}
-                      className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                      className="group w-8 h-8 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                       aria-label="Tilt Down"
                     >
                       <ChevronDown
-                        size={18}
+                        size={14}
                         strokeWidth={2.5}
                         className="group-hover:scale-110 transition-transform duration-200"
                       />
@@ -933,7 +937,7 @@ const Analytics: React.FC = () => {
                   </div>
 
                   {/* ZOOM */}
-                  <div className="relative mb-4">
+                  <div className="relative mb-3">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-white/10"></div>
                     </div>
@@ -944,18 +948,18 @@ const Analytics: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center space-x-3 mb-4">
+                  <div className="flex items-center justify-center space-x-2 mb-3">
                     <button
                       onMouseDown={zoomOutHandlers.handleStart}
                       onMouseUp={zoomOutHandlers.handleStop}
                       onMouseLeave={zoomOutHandlers.handleStop}
                       onTouchStart={zoomOutHandlers.handleStart}
                       onTouchEnd={zoomOutHandlers.handleStop}
-                      className="group w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                      className="group w-8 h-8 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                       aria-label="Zoom Out"
                     >
                       <ZoomOut
-                        size={16}
+                        size={12}
                         strokeWidth={2.5}
                         className="group-hover:scale-110 transition-transform duration-200"
                       />
@@ -967,11 +971,11 @@ const Analytics: React.FC = () => {
                       onMouseLeave={zoomInHandlers.handleStop}
                       onTouchStart={zoomInHandlers.handleStart}
                       onTouchEnd={zoomInHandlers.handleStop}
-                      className="group w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                      className="group w-8 h-8 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                       aria-label="Zoom In"
                     >
                       <ZoomIn
-                        size={16}
+                        size={12}
                         strokeWidth={2.5}
                         className="group-hover:scale-110 transition-transform duration-200"
                       />
@@ -979,7 +983,7 @@ const Analytics: React.FC = () => {
                   </div>
 
                   {/* FOCUS */}
-                  <div className="relative mb-4">
+                  <div className="relative mb-3">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-white/10"></div>
                     </div>
@@ -990,7 +994,7 @@ const Analytics: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center space-x-3 mb-4">
+                  <div className="flex items-center justify-center space-x-2 mb-3">
                     <button
                       onMouseDown={focusInHandlers.handleStart}
                       onMouseUp={focusInHandlers.handleStop}
@@ -998,14 +1002,15 @@ const Analytics: React.FC = () => {
                       onTouchStart={focusInHandlers.handleStart}
                       onTouchEnd={focusInHandlers.handleStop}
                       disabled={autoFocusEnabled}
-                      className={`group w-12 h-12 ${autoFocusEnabled
+                      className={`group w-8 h-8 ${
+                        autoFocusEnabled
                           ? "bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed"
                           : "bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white"
-                        } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
+                      } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
                       aria-label="Focus Near"
                     >
                       <Minus
-                        size={16}
+                        size={12}
                         strokeWidth={2.5}
                         className="group-hover:scale-110 transition-transform duration-200"
                       />
@@ -1013,23 +1018,26 @@ const Analytics: React.FC = () => {
 
                     <button
                       onClick={toggleAutoFocus}
-                      className={`group w-12 h-12 ${autoFocusEnabled
+                      className={`group w-8 h-8 ${
+                        autoFocusEnabled
                           ? "bg-green-500/30 border-green-400/50 text-green-100"
                           : "bg-gray-500/20 border-gray-400/30 text-gray-400"
-                        } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg ${autoFocusEnabled
+                      } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg ${
+                        autoFocusEnabled
                           ? "hover:shadow-green-500/20"
                           : "hover:shadow-gray-500/20"
-                        }`}
+                      }`}
                       aria-label="Toggle Autofocus"
                       title={
                         autoFocusEnabled ? "Autofocus: ON" : "Autofocus: OFF"
                       }
                     >
                       <Focus
-                        size={16}
+                        size={12}
                         strokeWidth={2.5}
-                        className={`group-hover:scale-110 transition-transform duration-200 ${autoFocusEnabled ? "animate-pulse" : ""
-                          }`}
+                        className={`group-hover:scale-110 transition-transform duration-200 ${
+                          autoFocusEnabled ? "animate-pulse" : ""
+                        }`}
                       />
                     </button>
 
@@ -1040,14 +1048,15 @@ const Analytics: React.FC = () => {
                       onTouchStart={focusOutHandlers.handleStart}
                       onTouchEnd={focusOutHandlers.handleStop}
                       disabled={autoFocusEnabled}
-                      className={`group w-12 h-12 ${autoFocusEnabled
+                      className={`group w-8 h-8 ${
+                        autoFocusEnabled
                           ? "bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed"
                           : "bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white"
-                        } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
+                      } border rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
                       aria-label="Focus Far"
                     >
                       <Plus
-                        size={16}
+                        size={12}
                         strokeWidth={2.5}
                         className="group-hover:scale-110 transition-transform duration-200"
                       />
@@ -1055,7 +1064,7 @@ const Analytics: React.FC = () => {
                   </div>
 
                   {/* SPEED */}
-                  <div className="relative mb-6">
+                  <div className="relative mb-4">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-white/10"></div>
                     </div>
@@ -1074,10 +1083,10 @@ const Analytics: React.FC = () => {
                       step="1"
                       value={speed}
                       onChange={(e) => setSpeed(Number(e.target.value))}
-                      className="w-32 accent-blue-500 cursor-pointer"
+                      className="w-24 accent-blue-500 cursor-pointer"
                       aria-label="Speed Control"
                     />
-                    <div className="flex justify-between w-32 mt-2 text-white/60 text-xs font-medium">
+                    <div className="flex justify-between w-24 mt-2 text-white/60 text-xs font-medium">
                       <span>1</span>
                       <span>3</span>
                       <span>5</span>
@@ -1129,10 +1138,11 @@ const Analytics: React.FC = () => {
                   return (
                     <div
                       key={`${obj.trackId}-${index}-${obj.lastSeen}`}
-                      className={`p-3 rounded-lg border transition-all ${isTracking
+                      className={`p-3 rounded-lg border transition-all ${
+                        isTracking
                           ? "bg-red-600/20 border-red-500/50"
                           : "bg-slate-700/60 border-slate-600/50"
-                        }`}
+                      }`}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div>
@@ -1144,10 +1154,11 @@ const Analytics: React.FC = () => {
                           </div>
                         </div>
                         <div
-                          className={`px-2 py-1 rounded text-xs ${isTracking
+                          className={`px-2 py-1 rounded text-xs ${
+                            isTracking
                               ? "bg-red-500 text-white"
                               : "bg-slate-600 text-slate-300"
-                            }`}
+                          }`}
                         >
                           {isTracking ? "TRACKING" : "IDLE"}
                         </div>
@@ -1166,10 +1177,11 @@ const Analytics: React.FC = () => {
                         <button
                           onClick={disableTracking}
                           disabled={!detectionEnabled}
-                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${!detectionEnabled
+                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${
+                            !detectionEnabled
                               ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
                               : "bg-slate-600 hover:bg-slate-500 text-white"
-                            }`}
+                          }`}
                         >
                           Stop Tracking
                         </button>
@@ -1177,10 +1189,11 @@ const Analytics: React.FC = () => {
                         <button
                           onClick={() => enableTracking(obj.trackId)}
                           disabled={!detectionEnabled || trackingId !== null}
-                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${!detectionEnabled || trackingId !== null
+                          className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${
+                            !detectionEnabled || trackingId !== null
                               ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
                               : "bg-red-600 hover:bg-red-700 text-white"
-                            }`}
+                          }`}
                         >
                           Enable Tracking
                         </button>
