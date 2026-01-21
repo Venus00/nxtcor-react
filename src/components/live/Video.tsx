@@ -878,9 +878,9 @@ const VideoStream: React.FC = () => {
               transform: `scale(${scale * 1.2}) translate(${position.x}px, ${position.y}px)`, // Zoom in by 1.2x
               transformOrigin: "center",
               transition: "transform 0.3s ease",
-              width: "120%", // Overflow to crop sides
+              width: "120%", // Overflow to stretch width
               height: "100%",
-              marginLeft: "-10%", // Center the overflow
+              marginLeft: "-10%", // Center the stretch
             } : {
               width: "100%",
               height: "100%",
