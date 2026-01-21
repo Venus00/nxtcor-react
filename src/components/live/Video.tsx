@@ -875,12 +875,12 @@ const VideoStream: React.FC = () => {
             className="w-full h-full border-0"
             allow="autoplay; fullscreen"
             style={camId === 'cam1' ? {
-              transform: `scale(${scale * 1.2}) translate(${position.x}px, ${position.y}px)`, // Zoom in by 1.2x
+              transform: `scaleX(${scale * 1.1}) translate(${position.x}px, ${position.y}px)`, // Stretch width by 1.1x, keep height
               transformOrigin: "center",
               transition: "transform 0.3s ease",
-              width: "120%", // Overflow to stretch width
+              width: "110%", // Slight overflow to stretch width
               height: "100%",
-              marginLeft: "-10%", // Center the stretch
+              marginLeft: "-5%", // Center the stretch
             } : {
               width: "100%",
               height: "100%",
