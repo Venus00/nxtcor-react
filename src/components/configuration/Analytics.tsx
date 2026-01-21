@@ -59,7 +59,7 @@ const Analytics: React.FC = () => {
     const saved = localStorage.getItem("analytics_detection_enabled");
     return saved ? JSON.parse(saved) : false;
   });
-  const [speed, setSpeed] = useState(5);
+  const [speed, setSpeed] = useState(2);
   const [autoFocusEnabled, setAutoFocusEnabled] = useState(() => {
     const saved = localStorage.getItem("analytics_autofocus_enabled");
     return saved ? JSON.parse(saved) : false;
@@ -884,7 +884,7 @@ const Analytics: React.FC = () => {
                         onMouseLeave={leftHandlers.handleStop}
                         onTouchStart={leftHandlers.handleStart}
                         onTouchEnd={leftHandlers.handleStop}
-                        className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                        className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                         aria-label="Pan Left"
                       >
                         <ChevronLeft
@@ -894,7 +894,7 @@ const Analytics: React.FC = () => {
                         />
                       </button>
 
-                      <div className="w-12 h-12 bg-white/5 border border-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                      <div className="w-10 h-10 bg-white/5 border border-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                         <div className="w-2 h-2 bg-white/60 rounded-full shadow-lg"></div>
                       </div>
 
@@ -904,7 +904,7 @@ const Analytics: React.FC = () => {
                         onMouseLeave={rightHandlers.handleStop}
                         onTouchStart={rightHandlers.handleStart}
                         onTouchEnd={rightHandlers.handleStop}
-                        className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                        className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                         aria-label="Pan Right"
                       >
                         <ChevronRight
@@ -921,7 +921,7 @@ const Analytics: React.FC = () => {
                       onMouseLeave={downHandlers.handleStop}
                       onTouchStart={downHandlers.handleStart}
                       onTouchEnd={downHandlers.handleStop}
-                      className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                      className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                       aria-label="Tilt Down"
                     >
                       <ChevronDown
@@ -933,7 +933,7 @@ const Analytics: React.FC = () => {
                   </div>
 
                   {/* ZOOM */}
-                  <div className="relative mb-6">
+                  <div className="relative mb-4">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-white/10"></div>
                     </div>
@@ -944,14 +944,14 @@ const Analytics: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center space-x-3 mb-6">
+                  <div className="flex items-center justify-center space-x-3 mb-4">
                     <button
                       onMouseDown={zoomOutHandlers.handleStart}
                       onMouseUp={zoomOutHandlers.handleStop}
                       onMouseLeave={zoomOutHandlers.handleStop}
                       onTouchStart={zoomOutHandlers.handleStart}
                       onTouchEnd={zoomOutHandlers.handleStop}
-                      className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                      className="group w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                       aria-label="Zoom Out"
                     >
                       <ZoomOut
@@ -967,7 +967,7 @@ const Analytics: React.FC = () => {
                       onMouseLeave={zoomInHandlers.handleStop}
                       onTouchStart={zoomInHandlers.handleStart}
                       onTouchEnd={zoomInHandlers.handleStop}
-                      className="group w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                      className="group w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                       aria-label="Zoom In"
                     >
                       <ZoomIn
@@ -979,7 +979,7 @@ const Analytics: React.FC = () => {
                   </div>
 
                   {/* FOCUS */}
-                  <div className="relative mb-6">
+                  <div className="relative mb-4">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-white/10"></div>
                     </div>
@@ -990,7 +990,7 @@ const Analytics: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center space-x-3 mb-6">
+                  <div className="flex items-center justify-center space-x-3 mb-4">
                     <button
                       onMouseDown={focusInHandlers.handleStart}
                       onMouseUp={focusInHandlers.handleStop}
