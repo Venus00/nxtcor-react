@@ -19,7 +19,7 @@ import { useParams } from "react-router-dom";
 const VideoStream: React.FC = () => {
   const [scale, setScale] = useState(1.5);
   const [position] = useState({ x: 0, y: 0 });
-  const [speed, setSpeed] = useState(5);
+  const [speed, setSpeed] = useState(2);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordingCompleted, setRecordingCompleted] = useState(false);
@@ -882,17 +882,21 @@ const VideoStream: React.FC = () => {
             src={`http://${window.location.hostname}:8889/${camId}`}
             className="w-full h-full border-0"
             allow="autoplay; fullscreen"
-            style={camId === 'cam1' ? {
-              transform: `scaleX(${scale * 1.1}) translate(${position.x}px, ${position.y}px)`, // Stretch width by 1.1x, keep height
-              transformOrigin: "center",
-              transition: "transform 0.3s ease",
-              width: "110%", // Slight overflow to stretch width
-              height: "100%",
-              marginLeft: "-5%", // Center the stretch
-            } : {
-              width: "100%",
-              height: "100%",
-            }}
+            style={
+              camId === "cam1"
+                ? {
+                    transform: `scaleX(${scale * 1.1}) translate(${position.x}px, ${position.y}px)`, // Stretch width by 1.1x, keep height
+                    transformOrigin: "center",
+                    transition: "transform 0.3s ease",
+                    width: "110%", // Slight overflow to stretch width
+                    height: "100%",
+                    marginLeft: "-5%", // Center the stretch
+                  }
+                : {
+                    width: "100%",
+                    height: "100%",
+                  }
+            }
           />
         </div>
       </div>
