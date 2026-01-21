@@ -665,9 +665,9 @@ const VideoStream: React.FC = () => {
 
           <iframe
             src={`http://${window.location.hostname}:8889/${camId}`}
-            width="640"
-            height="360"
-            className="object-fill"
+            // width="640"
+            // height="360"
+            className="object-fit"
             allow="autoplay; fullscreen"
             style={{
               transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
