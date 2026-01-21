@@ -1,17 +1,31 @@
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Minus, Plus, ZoomIn, ZoomOut, Video as VideoIcon, Square, Focus, Power } from 'lucide-react';
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Circle,
+  Minus,
+  Plus,
+  ZoomIn,
+  ZoomOut,
+  Video as VideoIcon,
+  Square,
+  Focus,
+  Power,
+} from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
 
 const VideoStream: React.FC = () => {
   const [scale, setScale] = useState(1.5);
-  const [position,] = useState({ x: 0, y: 0 });
+  const [position] = useState({ x: 0, y: 0 });
   const [speed, setSpeed] = useState(5);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordingCompleted, setRecordingCompleted] = useState(false);
-  const [recordingFileName, setRecordingFileName] = useState('');
+  const [recordingFileName, setRecordingFileName] = useState("");
   const [autoFocusEnabled, setAutoFocusEnabled] = useState(() => {
-    const saved = localStorage.getItem('video_autofocus_enabled');
+    const saved = localStorage.getItem("video_autofocus_enabled");
     return saved ? JSON.parse(saved) : false;
   });
   const recordingTimerRef = useRef<number | null>(null);
@@ -32,19 +46,27 @@ const VideoStream: React.FC = () => {
   useEffect(() => {
     const loadAutofocusState = async () => {
       try {
-        const response = await fetch(`http://${window.location.hostname}:3000/detection/state`);
+        const response = await fetch(
+          `http://${window.location.hostname}:3000/detection/state`,
+        );
         const data = await response.json();
 
         if (data.success && data.state?.autofocus) {
-          const savedState = data.state.autofocus[camId === 'cam1' ? 'cam2' : 'cam1']; // Reverse for Video.tsx
+          const savedState =
+            data.state.autofocus[camId === "cam1" ? "cam2" : "cam1"]; // Reverse for Video.tsx
           if (savedState !== undefined) {
             setAutoFocusEnabled(savedState);
-            localStorage.setItem('video_autofocus_enabled', JSON.stringify(savedState));
-            console.log(`[Video] Loaded autofocus state from backend: ${savedState}`);
+            localStorage.setItem(
+              "video_autofocus_enabled",
+              JSON.stringify(savedState),
+            );
+            console.log(
+              `[Video] Loaded autofocus state from backend: ${savedState}`,
+            );
           }
         }
       } catch (error) {
-        console.error('[Video] Error loading autofocus state:', error);
+        console.error("[Video] Error loading autofocus state:", error);
       }
     };
 
@@ -53,44 +75,57 @@ const VideoStream: React.FC = () => {
     }
   }, [camId]);
 
-  const move = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
+  const move = async (
+    direction:
+      | "up"
+      | "down"
+      | "left"
+      | "right"
+      | "zoom_in"
+      | "zoom_out"
+      | "focus_in"
+      | "focus_out",
+  ) => {
     console.log(direction, `speed: ${speed}`);
     try {
-      let endpoint = '';
+      let endpoint = "";
 
       // Map direction to specific API endpoint
       switch (direction) {
-        case 'up':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/up`;
+        case "up":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/up`;
           break;
-        case 'down':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/down`;
+        case "down":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/down`;
           break;
-        case 'left':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/left`;
+        case "left":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/left`;
           break;
-        case 'right':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/right`;
+        case "right":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/right`;
           break;
-        case 'zoom_in':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/zoom/in`;
+        case "zoom_in":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/zoom/in`;
           break;
-        case 'zoom_out':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/zoom/out`;
+        case "zoom_out":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/zoom/out`;
           break;
-        case 'focus_in':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/focus/near`;
+        case "focus_in":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/focus/near`;
           break;
-        case 'focus_out':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/focus/far`;
+        case "focus_out":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/focus/far`;
           break;
       }
 
-      const res = await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel: 0, speed }),
-      });
+      const res = await fetch(
+        `http://${window.location.hostname}:3000${endpoint}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ channel: 0, speed }),
+        },
+      );
       const data = await res.json();
       console.log(data);
     } catch (err) {
@@ -98,44 +133,57 @@ const VideoStream: React.FC = () => {
     }
   };
 
-  const stop = async (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out') => {
+  const stop = async (
+    direction:
+      | "up"
+      | "down"
+      | "left"
+      | "right"
+      | "zoom_in"
+      | "zoom_out"
+      | "focus_in"
+      | "focus_out",
+  ) => {
     console.log(direction, `speed: ${speed}`);
     try {
-      let endpoint = '';
+      let endpoint = "";
 
       // Map direction to specific stop endpoint
       switch (direction) {
-        case 'up':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/stop`;
+        case "up":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/stop`;
           break;
-        case 'down':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/stop`;
+        case "down":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/stop`;
           break;
-        case 'left':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/stop`;
+        case "left":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/stop`;
           break;
-        case 'right':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/move/stop`;
+        case "right":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/stop`;
           break;
-        case 'zoom_in':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/zoom/stop`;
+        case "zoom_in":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/zoom/stop`;
           break;
-        case 'zoom_out':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/zoom/stop`;
+        case "zoom_out":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/zoom/stop`;
           break;
-        case 'focus_in':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/focus/stop`;
+        case "focus_in":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/focus/stop`;
           break;
-        case 'focus_out':
-          endpoint = `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/focus/stop`;
+        case "focus_out":
+          endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/focus/stop`;
           break;
       }
 
-      const res = await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel: 0 }),
-      });
+      const res = await fetch(
+        `http://${window.location.hostname}:3000${endpoint}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ channel: 0 }),
+        },
+      );
       const data = await res.json();
       console.log(data);
     } catch (err) {
@@ -143,14 +191,25 @@ const VideoStream: React.FC = () => {
     }
   };
 
-  const createHoldHandlers = (direction: 'up' | 'down' | 'left' | 'right' | 'zoom_in' | 'zoom_out' | 'focus_in' | 'focus_out', intervalRef: React.MutableRefObject<number | null>) => {
+  const createHoldHandlers = (
+    direction:
+      | "up"
+      | "down"
+      | "left"
+      | "right"
+      | "zoom_in"
+      | "zoom_out"
+      | "focus_in"
+      | "focus_out",
+    intervalRef: React.MutableRefObject<number | null>,
+  ) => {
     const handleStart = () => {
       move(direction);
       intervalRef.current = setInterval(() => move(direction), 200);
     };
 
     const handleStop = () => {
-      stop(direction)
+      stop(direction);
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -160,65 +219,86 @@ const VideoStream: React.FC = () => {
     return { handleStart, handleStop };
   };
 
-  const upHandlers = createHoldHandlers('up', upIntervalRef);
-  const downHandlers = createHoldHandlers('down', downIntervalRef);
-  const leftHandlers = createHoldHandlers('left', leftIntervalRef);
-  const rightHandlers = createHoldHandlers('right', rightIntervalRef);
-  const zoomInHandlers = createHoldHandlers('zoom_in', zoomInIntervalRef);
-  const zoomOutHandlers = createHoldHandlers('zoom_out', zoomOutIntervalRef);
-  const focusInHandlers = createHoldHandlers('focus_in', focusInIntervalRef);
-  const focusOutHandlers = createHoldHandlers('focus_out', focusOutIntervalRef);
+  const upHandlers = createHoldHandlers("up", upIntervalRef);
+  const downHandlers = createHoldHandlers("down", downIntervalRef);
+  const leftHandlers = createHoldHandlers("left", leftIntervalRef);
+  const rightHandlers = createHoldHandlers("right", rightIntervalRef);
+  const zoomInHandlers = createHoldHandlers("zoom_in", zoomInIntervalRef);
+  const zoomOutHandlers = createHoldHandlers("zoom_out", zoomOutIntervalRef);
+  const focusInHandlers = createHoldHandlers("focus_in", focusInIntervalRef);
+  const focusOutHandlers = createHoldHandlers("focus_out", focusOutIntervalRef);
 
   const handleWiperOn = async () => {
     try {
-      const res = await fetch(`http://${window.location.hostname}:3000/camera/${camId}/ptz/wiper/on`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel: 0 }),
-      });
+      const res = await fetch(
+        `http://${window.location.hostname}:3000/camera/${camId}/ptz/wiper/on`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ channel: 0 }),
+        },
+      );
       const data = await res.json();
-      console.log('Wiper activated:', data);
+      console.log("Wiper activated:", data);
     } catch (err) {
-      console.error('Error activating wiper:', err);
+      console.error("Error activating wiper:", err);
     }
   };
 
   const handleRebootCamera = async () => {
-    if (!confirm('Are you sure you want to reboot the camera? This will temporarily interrupt the video stream.')) {
+    if (
+      !confirm(
+        "Are you sure you want to reboot the camera? This will temporarily interrupt the video stream.",
+      )
+    ) {
       return;
     }
 
     try {
-      const res = await fetch(`http://${window.location.hostname}:3000/camera/${camId}/system/reboot`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
+      const res = await fetch(
+        `http://${window.location.hostname}:3000/camera/${camId}/system/reboot`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
       const data = await res.json();
-      console.log('Camera reboot initiated:', data);
-      alert('Camera reboot initiated. The camera will be offline for about 30-60 seconds.');
+      console.log("Camera reboot initiated:", data);
+      alert(
+        "Camera reboot initiated. The camera will be offline for about 30-60 seconds.",
+      );
     } catch (err) {
-      console.error('Error rebooting camera:', err);
-      alert('Failed to reboot camera. Please try again.');
+      console.error("Error rebooting camera:", err);
+      alert("Failed to reboot camera. Please try again.");
     }
   };
 
   const handleRebootSystem = async () => {
-    if (!confirm('⚠️ WARNING: This will reboot the ENTIRE SYSTEM (server and all cameras).\n\nThe system will be offline for 1-2 minutes.\n\nAre you sure you want to proceed?')) {
+    if (
+      !confirm(
+        "⚠️ WARNING: This will reboot the ENTIRE SYSTEM (server and all cameras).\n\nThe system will be offline for 1-2 minutes.\n\nAre you sure you want to proceed?",
+      )
+    ) {
       return;
     }
 
     try {
-      const res = await fetch(`http://${window.location.hostname}:3000/system/reboot`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirm: true }),
-      });
+      const res = await fetch(
+        `http://${window.location.hostname}:3000/system/reboot`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ confirm: true }),
+        },
+      );
       const data = await res.json();
-      console.log('System reboot initiated:', data);
-      alert('System reboot initiated. All services will be offline for 1-2 minutes.');
+      console.log("System reboot initiated:", data);
+      alert(
+        "System reboot initiated. All services will be offline for 1-2 minutes.",
+      );
     } catch (err) {
-      console.error('Error rebooting system:', err);
-      alert('Failed to reboot system. Please try again.');
+      console.error("Error rebooting system:", err);
+      alert("Failed to reboot system. Please try again.");
     }
   };
 
@@ -226,26 +306,38 @@ const VideoStream: React.FC = () => {
     try {
       const newState = !autoFocusEnabled;
       const endpoint = autoFocusEnabled
-        ? `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/focus/auto/disable`
-        : `/camera/${camId === 'cam1' ? 'cam2' : 'cam1'}/ptz/focus/auto/enable`;
+        ? `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/focus/auto/disable`
+        : `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/focus/auto/enable`;
 
-      const res = await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel: 0 }),
-      });
+      const res = await fetch(
+        `http://${window.location.hostname}:3000${endpoint}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ channel: 0 }),
+        },
+      );
       const data = await res.json();
-      console.log('Autofocus toggled:', data);
+      console.log("Autofocus toggled:", data);
       setAutoFocusEnabled(newState);
-      localStorage.setItem('video_autofocus_enabled', JSON.stringify(newState));
+      localStorage.setItem("video_autofocus_enabled", JSON.stringify(newState));
     } catch (err) {
-      console.error('Error toggling autofocus:', err);
+      console.error("Error toggling autofocus:", err);
     }
   };
 
   useEffect(() => {
     return () => {
-      [upIntervalRef, downIntervalRef, leftIntervalRef, rightIntervalRef, zoomInIntervalRef, zoomOutIntervalRef, focusInIntervalRef, focusOutIntervalRef].forEach(ref => {
+      [
+        upIntervalRef,
+        downIntervalRef,
+        leftIntervalRef,
+        rightIntervalRef,
+        zoomInIntervalRef,
+        zoomOutIntervalRef,
+        focusInIntervalRef,
+        focusOutIntervalRef,
+      ].forEach((ref) => {
         if (ref.current) {
           clearInterval(ref.current);
         }
@@ -264,28 +356,34 @@ const VideoStream: React.FC = () => {
     setRecordingDuration(0);
 
     // Generate filename with timestamp
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .slice(0, -5);
     const fileName = `recording_${camId}_${timestamp}.mp4`;
     setRecordingFileName(fileName);
 
     // Start recording on backend
     // Reverse camera ID for recording (cam1 -> cam2, cam2 -> cam1)
-    const recordingCameraId = camId === 'cam1' ? 'cam2' : 'cam1';
+    const recordingCameraId = camId === "cam1" ? "cam2" : "cam1";
     try {
-      const res = await fetch(`http://${window.location.hostname}:3000/recording/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cameraId: recordingCameraId, fileName })
-      });
+      const res = await fetch(
+        `http://${window.location.hostname}:3000/recording/start`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cameraId: recordingCameraId, fileName }),
+        },
+      );
       const data = await res.json();
-      console.log('Recording started:', data);
+      console.log("Recording started:", data);
     } catch (error) {
-      console.error('Error starting recording:', error);
+      console.error("Error starting recording:", error);
     }
 
     // Start timer
     recordingTimerRef.current = window.setInterval(() => {
-      setRecordingDuration(prev => {
+      setRecordingDuration((prev) => {
         const newDuration = prev + 1;
         // Auto-stop at max duration
         if (newDuration >= maxRecordingDuration) {
@@ -302,17 +400,20 @@ const VideoStream: React.FC = () => {
 
     // Stop recording on backend
     // Reverse camera ID for recording (cam1 -> cam2, cam2 -> cam1)
-    const recordingCameraId = camId === 'cam1' ? 'cam2' : 'cam1';
+    const recordingCameraId = camId === "cam1" ? "cam2" : "cam1";
     try {
-      const res = await fetch(`http://${window.location.hostname}:3000/recording/stop`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cameraId: recordingCameraId })
-      });
+      const res = await fetch(
+        `http://${window.location.hostname}:3000/recording/stop`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cameraId: recordingCameraId }),
+        },
+      );
       const data = await res.json();
-      console.log('Recording stopped:', data);
+      console.log("Recording stopped:", data);
     } catch (error) {
-      console.error('Error stopping recording:', error);
+      console.error("Error stopping recording:", error);
     }
 
     // Clear timer
@@ -325,12 +426,21 @@ const VideoStream: React.FC = () => {
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   useEffect(() => {
     return () => {
-      [upIntervalRef, downIntervalRef, leftIntervalRef, rightIntervalRef, zoomInIntervalRef, zoomOutIntervalRef, focusInIntervalRef, focusOutIntervalRef].forEach(ref => {
+      [
+        upIntervalRef,
+        downIntervalRef,
+        leftIntervalRef,
+        rightIntervalRef,
+        zoomInIntervalRef,
+        zoomOutIntervalRef,
+        focusInIntervalRef,
+        focusOutIntervalRef,
+      ].forEach((ref) => {
         if (ref.current) {
           clearInterval(ref.current);
         }
@@ -352,7 +462,9 @@ const VideoStream: React.FC = () => {
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
                 <div className="flex items-center space-x-1.5">
                   <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
-                  <span className="text-white/90 text-[10px] font-medium tracking-wide">PTZ CONTROL</span>
+                  <span className="text-white/90 text-[10px] font-medium tracking-wide">
+                    PTZ CONTROL
+                  </span>
                 </div>
               </div>
 
@@ -361,23 +473,38 @@ const VideoStream: React.FC = () => {
                 <button
                   onClick={isRecording ? stopRecording : startRecording}
                   disabled={recordingCompleted}
-                  className={`group w-full h-10 ${isRecording
-                    ? 'bg-red-500/30 hover:bg-red-500/40 active:bg-red-500/50 border-red-400/50 hover:border-red-400/70 text-red-100 hover:shadow-red-500/20'
-                    : recordingCompleted
-                      ? 'bg-gray-500/20 border-gray-400/30 text-gray-400 cursor-not-allowed'
-                      : 'bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border-green-400/30 hover:border-green-400/50 text-green-100 hover:shadow-green-500/20'
-                    } border hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg disabled:hover:scale-100`}
-                  aria-label={isRecording ? "Stop Recording" : "Start Recording"}
+                  className={`group w-full h-10 ${
+                    isRecording
+                      ? "bg-red-500/30 hover:bg-red-500/40 active:bg-red-500/50 border-red-400/50 hover:border-red-400/70 text-red-100 hover:shadow-red-500/20"
+                      : recordingCompleted
+                        ? "bg-gray-500/20 border-gray-400/30 text-gray-400 cursor-not-allowed"
+                        : "bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border-green-400/30 hover:border-green-400/50 text-green-100 hover:shadow-green-500/20"
+                  } border hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg disabled:hover:scale-100`}
+                  aria-label={
+                    isRecording ? "Stop Recording" : "Start Recording"
+                  }
                 >
                   {isRecording ? (
                     <>
-                      <Square size={12} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200 fill-current" />
-                      <span className="text-xs font-medium tracking-wide">STOP</span>
+                      <Square
+                        size={12}
+                        strokeWidth={2.5}
+                        className="group-hover:scale-110 transition-transform duration-200 fill-current"
+                      />
+                      <span className="text-xs font-medium tracking-wide">
+                        STOP
+                      </span>
                     </>
                   ) : (
                     <>
-                      <VideoIcon size={12} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
-                      <span className="text-xs font-medium tracking-wide">RECORD</span>
+                      <VideoIcon
+                        size={12}
+                        strokeWidth={2.5}
+                        className="group-hover:scale-110 transition-transform duration-200"
+                      />
+                      <span className="text-xs font-medium tracking-wide">
+                        RECORD
+                      </span>
                     </>
                   )}
                 </button>
@@ -396,7 +523,9 @@ const VideoStream: React.FC = () => {
                     <div className="w-full bg-white/10 rounded-full h-0.5 mt-1.5">
                       <div
                         className="bg-red-500 h-0.5 rounded-full transition-all duration-1000"
-                        style={{ width: `${(recordingDuration / maxRecordingDuration) * 100}%` }}
+                        style={{
+                          width: `${(recordingDuration / maxRecordingDuration) * 100}%`,
+                        }}
                       ></div>
                     </div>
                   </div>
@@ -415,10 +544,22 @@ const VideoStream: React.FC = () => {
                       download={recordingFileName}
                       className="group w-full h-8 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
                       </svg>
-                      <span className="text-xs font-medium tracking-wide">DOWNLOAD</span>
+                      <span className="text-xs font-medium tracking-wide">
+                        DOWNLOAD
+                      </span>
                     </a>
                   </div>
                 )}
@@ -429,7 +570,9 @@ const VideoStream: React.FC = () => {
                   <div className="w-full border-t border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">PTZ</span>
+                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">
+                    PTZ
+                  </span>
                 </div>
               </div>
 
@@ -443,7 +586,11 @@ const VideoStream: React.FC = () => {
                   className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                   aria-label="Tilt Up"
                 >
-                  <ChevronUp size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <ChevronUp
+                    size={16}
+                    strokeWidth={2.5}
+                    className="group-hover:scale-110 transition-transform duration-200"
+                  />
                 </button>
 
                 <div className="flex items-center space-x-1.5">
@@ -456,7 +603,11 @@ const VideoStream: React.FC = () => {
                     className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                     aria-label="Pan Left"
                   >
-                    <ChevronLeft size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                    <ChevronLeft
+                      size={16}
+                      strokeWidth={2.5}
+                      className="group-hover:scale-110 transition-transform duration-200"
+                    />
                   </button>
 
                   <div className="w-10 h-10 bg-white/5 border border-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
@@ -472,7 +623,11 @@ const VideoStream: React.FC = () => {
                     className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                     aria-label="Pan Right"
                   >
-                    <ChevronRight size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                    <ChevronRight
+                      size={16}
+                      strokeWidth={2.5}
+                      className="group-hover:scale-110 transition-transform duration-200"
+                    />
                   </button>
                 </div>
 
@@ -485,7 +640,11 @@ const VideoStream: React.FC = () => {
                   className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                   aria-label="Tilt Down"
                 >
-                  <ChevronDown size={16} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2.5}
+                    className="group-hover:scale-110 transition-transform duration-200"
+                  />
                 </button>
               </div>
 
@@ -495,7 +654,9 @@ const VideoStream: React.FC = () => {
                   <div className="w-full border-t border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">ZOOM</span>
+                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">
+                    ZOOM
+                  </span>
                 </div>
               </div>
 
@@ -509,7 +670,11 @@ const VideoStream: React.FC = () => {
                   className="group w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   aria-label="Zoom Out"
                 >
-                  <ZoomOut size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <ZoomOut
+                    size={14}
+                    strokeWidth={2.5}
+                    className="group-hover:scale-110 transition-transform duration-200"
+                  />
                 </button>
 
                 <button
@@ -521,7 +686,11 @@ const VideoStream: React.FC = () => {
                   className="group w-10 h-10 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   aria-label="Zoom In"
                 >
-                  <ZoomIn size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <ZoomIn
+                    size={14}
+                    strokeWidth={2.5}
+                    className="group-hover:scale-110 transition-transform duration-200"
+                  />
                 </button>
               </div>
 
@@ -531,7 +700,9 @@ const VideoStream: React.FC = () => {
                   <div className="w-full border-t border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">FOCUS</span>
+                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">
+                    FOCUS
+                  </span>
                 </div>
               </div>
 
@@ -543,19 +714,27 @@ const VideoStream: React.FC = () => {
                   onTouchStart={focusInHandlers.handleStart}
                   onTouchEnd={focusInHandlers.handleStop}
                   disabled={autoFocusEnabled}
-                  className={`group w-10 h-10 ${autoFocusEnabled ? 'bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed' : 'bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white'} border rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
+                  className={`group w-10 h-10 ${autoFocusEnabled ? "bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed" : "bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white"} border rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
                   aria-label="Focus Near"
                 >
-                  <Minus size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <Minus
+                    size={14}
+                    strokeWidth={2.5}
+                    className="group-hover:scale-110 transition-transform duration-200"
+                  />
                 </button>
 
                 <button
                   onClick={toggleAutoFocus}
-                  className={`group w-10 h-10 ${autoFocusEnabled ? 'bg-green-500/30 border-green-400/50 text-green-100' : 'bg-gray-500/20 border-gray-400/30 text-gray-400'} border rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg ${autoFocusEnabled ? 'hover:shadow-green-500/20' : 'hover:shadow-gray-500/20'}`}
+                  className={`group w-10 h-10 ${autoFocusEnabled ? "bg-green-500/30 border-green-400/50 text-green-100" : "bg-gray-500/20 border-gray-400/30 text-gray-400"} border rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg ${autoFocusEnabled ? "hover:shadow-green-500/20" : "hover:shadow-gray-500/20"}`}
                   aria-label="Toggle Autofocus"
                   title={autoFocusEnabled ? "Autofocus: ON" : "Autofocus: OFF"}
                 >
-                  <Focus size={14} strokeWidth={2.5} className={`group-hover:scale-110 transition-transform duration-200 ${autoFocusEnabled ? 'animate-pulse' : ''}`} />
+                  <Focus
+                    size={14}
+                    strokeWidth={2.5}
+                    className={`group-hover:scale-110 transition-transform duration-200 ${autoFocusEnabled ? "animate-pulse" : ""}`}
+                  />
                 </button>
 
                 <button
@@ -565,10 +744,14 @@ const VideoStream: React.FC = () => {
                   onTouchStart={focusOutHandlers.handleStart}
                   onTouchEnd={focusOutHandlers.handleStop}
                   disabled={autoFocusEnabled}
-                  className={`group w-10 h-10 ${autoFocusEnabled ? 'bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed' : 'bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white'} border rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
+                  className={`group w-10 h-10 ${autoFocusEnabled ? "bg-gray-500/20 border-gray-400/30 text-gray-500 cursor-not-allowed" : "bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white"} border rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20 disabled:hover:scale-100`}
                   aria-label="Focus Far"
                 >
-                  <Plus size={14} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
+                  <Plus
+                    size={14}
+                    strokeWidth={2.5}
+                    className="group-hover:scale-110 transition-transform duration-200"
+                  />
                 </button>
               </div>
 
@@ -578,7 +761,9 @@ const VideoStream: React.FC = () => {
                   <div className="w-full border-t border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">WIPER</span>
+                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">
+                    WIPER
+                  </span>
                 </div>
               </div>
 
@@ -588,8 +773,14 @@ const VideoStream: React.FC = () => {
                   className="group w-full h-10 bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 border border-purple-400/30 hover:border-purple-400/50 text-purple-100 hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20"
                   aria-label="Activate Wiper"
                 >
-                  <Circle size={12} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-xs font-medium tracking-wide">WIPER ON</span>
+                  <Circle
+                    size={12}
+                    strokeWidth={2.5}
+                    className="group-hover:scale-110 transition-transform duration-200"
+                  />
+                  <span className="text-xs font-medium tracking-wide">
+                    WIPER ON
+                  </span>
                 </button>
               </div>
 
@@ -599,7 +790,9 @@ const VideoStream: React.FC = () => {
                   <div className="w-full border-t border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">SPEED</span>
+                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">
+                    SPEED
+                  </span>
                 </div>
               </div>
 
@@ -628,7 +821,9 @@ const VideoStream: React.FC = () => {
                   <div className="w-full border-t border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">SYSTEM</span>
+                  <span className="bg-black/20 px-2 text-white/50 text-[10px] font-medium tracking-wider">
+                    SYSTEM
+                  </span>
                 </div>
               </div>
 
@@ -638,8 +833,14 @@ const VideoStream: React.FC = () => {
                   className="group w-full h-10 bg-red-500/20 hover:bg-red-500/30 active:bg-red-500/40 border border-red-400/30 hover:border-red-400/50 text-red-100 hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-red-500/20"
                   aria-label="Reboot Camera"
                 >
-                  <Power size={12} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-xs font-medium tracking-wide">REBOOT CAM</span>
+                  <Power
+                    size={12}
+                    strokeWidth={2.5}
+                    className="group-hover:scale-110 transition-transform duration-200"
+                  />
+                  <span className="text-xs font-medium tracking-wide">
+                    REBOOT CAM
+                  </span>
                 </button>
               </div>
 
@@ -649,8 +850,14 @@ const VideoStream: React.FC = () => {
                   className="group w-full h-10 bg-orange-500/20 hover:bg-orange-500/30 active:bg-orange-500/40 border border-orange-400/30 hover:border-orange-400/50 text-orange-100 hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-orange-500/20"
                   aria-label="Reboot System"
                 >
-                  <Power size={12} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-xs font-medium tracking-wide">REBOOT SYS</span>
+                  <Power
+                    size={12}
+                    strokeWidth={2.5}
+                    className="group-hover:scale-110 transition-transform duration-200"
+                  />
+                  <span className="text-xs font-medium tracking-wide">
+                    REBOOT SYS
+                  </span>
                 </button>
               </div>
 
@@ -664,17 +871,13 @@ const VideoStream: React.FC = () => {
           </div>
 
           <iframe
-            src={`http://${window.location.hostname}:8889/${camId}`}
-            width="640"
-            height="360"
-            className="object-fill"
+            src={`http://${window.location.hostname}:8889/${camId}/index.html?video=true&audio=false`}
+            className="w-full h-full border-0"
             allow="autoplay; fullscreen"
             style={{
               transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
               transformOrigin: "center",
               transition: "transform 0.3s ease",
-              width: "100%",
-              height: "100%",
             }}
           />
         </div>
