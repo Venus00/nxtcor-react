@@ -205,15 +205,23 @@ const VideoStream: React.FC = () => {
   ) => {
     const handleStart = () => {
       move(direction);
-      intervalRef.current = setInterval(() => move(direction), 200);
+      intervalRef.current = setInterval(() => move(direction), 100);
+      // Auto-stop after 30 seconds for safety
+      setTimeout(() => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+          stop(direction);
+        }
+      }, 15000);
     };
 
     const handleStop = () => {
-      stop(direction);
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      stop(direction);
     };
 
     return { handleStart, handleStop };
