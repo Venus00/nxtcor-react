@@ -875,7 +875,7 @@ const VideoStream: React.FC = () => {
             className="w-full h-full border-0"
             allow="autoplay; fullscreen"
             style={{
-              transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
+              transform: `scale(${scale}) scaleX(1.3) translate(${position.x}px, ${position.y}px)`, // Adjust 1.3 to your needs
               transformOrigin: "center",
               transition: "transform 0.3s ease",
             }}
