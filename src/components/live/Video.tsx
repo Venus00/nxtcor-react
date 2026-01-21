@@ -667,7 +667,7 @@ const VideoStream: React.FC = () => {
             src={`http://${window.location.hostname}:8889/${camId}`}
             // width="640"
             // height="360"
-            className="object-fit"
+            className="object-fit bg-red-500"
             allow="autoplay; fullscreen"
             style={{
               transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
