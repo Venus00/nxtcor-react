@@ -874,13 +874,16 @@ const VideoStream: React.FC = () => {
             src={`http://${window.location.hostname}:8889/${camId}`}
             className="w-full h-full border-0"
             allow="autoplay; fullscreen"
-            style={{
+            style={camId === 'cam1' ? {
               transform: `scale(${scale * 1.2}) translate(${position.x}px, ${position.y}px)`, // Zoom in by 1.2x
               transformOrigin: "center",
               transition: "transform 0.3s ease",
               width: "120%", // Overflow to crop sides
               height: "100%",
               marginLeft: "-10%", // Center the overflow
+            } : {
+              width: "100%",
+              height: "100%",
             }}
           />
         </div>
