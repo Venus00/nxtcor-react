@@ -871,7 +871,7 @@ const VideoStream: React.FC = () => {
           </div>
 
           <iframe
-            src={`http://${window.location.hostname}:8889/${camId}/index.html?video=true&audio=false`}
+            src={`http://${window.location.hostname}:8889/${camId}`}
             className="w-full h-full border-0"
             allow="autoplay; fullscreen"
             style={{
