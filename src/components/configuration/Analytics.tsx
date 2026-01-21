@@ -850,8 +850,8 @@ const Analytics: React.FC = () => {
 
               {/* PTZ Controls Overlay */}
               <div className="absolute bottom-4 right-4 z-20">
-                <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 min-w-[160px]">
-                  <div className="flex items-center justify-between mb-5 pb-3 border-b border-white/10">
+                <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 min-w-[140px]">
+                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
                       <span className="text-white/90 text-xs font-medium tracking-wide">
@@ -860,14 +860,14 @@ const Analytics: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-center space-y-2 mb-6">
+                  <div className="flex flex-col items-center space-y-1.5 mb-4">
                     <button
                       onMouseDown={upHandlers.handleStart}
                       onMouseUp={upHandlers.handleStop}
                       onMouseLeave={upHandlers.handleStop}
                       onTouchStart={upHandlers.handleStart}
                       onTouchEnd={upHandlers.handleStop}
-                      className="group w-12 h-12 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
+                      className="group w-10 h-10 bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                       aria-label="Tilt Up"
                     >
                       <ChevronUp

@@ -213,7 +213,7 @@ const VideoStream: React.FC = () => {
           intervalRef.current = null;
           stop(direction);
         }
-      }, 15000);
+      }, 5000);
     };
 
     const handleStop = () => {
