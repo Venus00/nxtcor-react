@@ -667,15 +667,14 @@ const VideoStream: React.FC = () => {
             src={`http://${window.location.hostname}:8889/${camId}`}
             // width="640"
             // height="360"
-            className=""
+            className="object-fit bg-"
             allow="autoplay; fullscreen"
             style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              zIndex: -1,
+              transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
+              transformOrigin: "center",
+              transition: "transform 0.3s ease",
+              width: "100%",
+              height: "100%",
             }}
           />
         </div>
