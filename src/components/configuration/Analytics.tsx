@@ -48,22 +48,17 @@ interface TrackingData {
 type CameraType = "cam1" | "cam2";
 
 const Analytics: React.FC = () => {
-  const [selectedCamera, setSelectedCamera] = useState<CameraType>("cam1"); // cam1 = optique (API), cam2 = thermique (API)
+  // Restore selected camera from localStorage
+  const [selectedCamera, setSelectedCamera] = useState<CameraType>(() => {
+    const saved = localStorage.getItem("analytics_selected_camera");
+    return (saved && (saved === "cam1" || saved === "cam2")) ? saved : "cam1";
+  });
   const [objects, setObjects] = useState<TrackedObjectWithTimestamp[]>([]);
-  const [trackingId, setTrackingId] = useState<number | null>(() => {
-    const saved = localStorage.getItem("analytics_tracking_id");
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [trackingId, setTrackingId] = useState<number | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
-  const [detectionEnabled, setDetectionEnabled] = useState(() => {
-    const saved = localStorage.getItem("analytics_detection_enabled");
-    return saved ? JSON.parse(saved) : false;
-  });
+  const [detectionEnabled, setDetectionEnabled] = useState(false);
   const [speed, setSpeed] = useState(2);
-  const [autoFocusEnabled, setAutoFocusEnabled] = useState(() => {
-    const saved = localStorage.getItem("analytics_autofocus_enabled");
-    return saved ? JSON.parse(saved) : false;
-  });
+  const [autoFocusEnabled, setAutoFocusEnabled] = useState(false);
 
   // Handle camera switching - disable detection if active
   const handleCameraSwitch = async (newCamera: CameraType) => {
@@ -71,6 +66,7 @@ const Analytics: React.FC = () => {
       await disableDetection();
     }
     setSelectedCamera(newCamera);
+    localStorage.setItem("analytics_selected_camera", newCamera);
   };
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -116,7 +112,7 @@ const Analytics: React.FC = () => {
           const isEnabled = focusStatus === "running";
           setAutoFocusEnabled(isEnabled);
           localStorage.setItem(
-            "analytics_autofocus_enabled",
+            `analytics_autofocus_enabled_${selectedCamera}`,
             JSON.stringify(isEnabled),
           );
           console.log(
@@ -153,7 +149,7 @@ const Analytics: React.FC = () => {
           if (trackingStatus === "running") {
             setDetectionEnabled(true);
             localStorage.setItem(
-              "analytics_detection_enabled",
+              `analytics_detection_enabled_${selectedCamera}`,
               JSON.stringify(true),
             );
 
@@ -168,7 +164,7 @@ const Analytics: React.FC = () => {
           // Restore tracking state (follow = running means an object is being tracked)
           if (followStatus === "running") {
             // Note: We don't have the trackId in the state file, so we'll try to restore from localStorage
-            const savedTracking = localStorage.getItem("analytics_tracking_id");
+            const savedTracking = localStorage.getItem(`analytics_tracking_id_${selectedCamera}`);
             if (savedTracking && JSON.parse(savedTracking) !== null) {
               const trackId = JSON.parse(savedTracking);
               setTrackingId(trackId);
@@ -189,7 +185,7 @@ const Analytics: React.FC = () => {
           if (focusStatus === "running") {
             setAutoFocusEnabled(true);
             localStorage.setItem(
-              "analytics_autofocus_enabled",
+              `analytics_autofocus_enabled_${selectedCamera}`,
               JSON.stringify(true),
             );
           }
@@ -199,9 +195,9 @@ const Analytics: React.FC = () => {
 
         // Fallback to localStorage if backend fails
         const savedDetection = localStorage.getItem(
-          "analytics_detection_enabled",
+          `analytics_detection_enabled_${selectedCamera}`,
         );
-        const savedTracking = localStorage.getItem("analytics_tracking_id");
+        const savedTracking = localStorage.getItem(`analytics_tracking_id_${selectedCamera}`);
 
         if (savedDetection && JSON.parse(savedDetection)) {
           setDetectionEnabled(true);
@@ -468,7 +464,7 @@ const Analytics: React.FC = () => {
         body: JSON.stringify({ cameraId: selectedCamera }),
       });
       setDetectionEnabled(true);
-      localStorage.setItem("analytics_detection_enabled", JSON.stringify(true));
+      localStorage.setItem(`analytics_detection_enabled_${selectedCamera}`, JSON.stringify(true));
     } catch (error) {
       console.error("Error enabling detection:", error);
     }
@@ -485,7 +481,7 @@ const Analytics: React.FC = () => {
       });
       setDetectionEnabled(false);
       localStorage.setItem(
-        "analytics_detection_enabled",
+        `analytics_detection_enabled_${selectedCamera}`,
         JSON.stringify(false),
       );
 
@@ -503,7 +499,7 @@ const Analytics: React.FC = () => {
       }
 
       setTrackingId(null);
-      localStorage.setItem("analytics_tracking_id", JSON.stringify(null));
+      localStorage.setItem(`analytics_tracking_id_${selectedCamera}`, JSON.stringify(null));
       setObjects([]);
       objectMapRef.current.clear();
     } catch (error) {
@@ -524,7 +520,7 @@ const Analytics: React.FC = () => {
         },
       );
       setTrackingId(id);
-      localStorage.setItem("analytics_tracking_id", JSON.stringify(id));
+      localStorage.setItem(`analytics_tracking_id_${selectedCamera}`, JSON.stringify(id));
     } catch (error) {
       console.error("Error enabling tracking:", error);
     }
@@ -540,7 +536,7 @@ const Analytics: React.FC = () => {
         body: JSON.stringify({ cameraId: selectedCamera }),
       });
       setTrackingId(null);
-      localStorage.setItem("analytics_tracking_id", JSON.stringify(null));
+      localStorage.setItem(`analytics_tracking_id_${selectedCamera}`, JSON.stringify(null));
     } catch (error) {
       console.error("Error disabling tracking:", error);
     }
@@ -690,7 +686,7 @@ const Analytics: React.FC = () => {
       });
       setAutoFocusEnabled(newState);
       localStorage.setItem(
-        "analytics_autofocus_enabled",
+        `analytics_autofocus_enabled_${selectedCamera}`,
         JSON.stringify(newState),
       );
     } catch (err) {
