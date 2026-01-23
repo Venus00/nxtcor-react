@@ -1120,7 +1120,7 @@ const Analytics: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* {isTracking ? (
+                    {isTracking ? (
                       <button
                         onClick={disableTracking}
                         disabled={!detectionEnabled}
@@ -1142,7 +1142,7 @@ const Analytics: React.FC = () => {
                       >
                         Enable Tracking
                       </button>
-                    )} */}
+                    )}
                   </div>
                 );
               })
