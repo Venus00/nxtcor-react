@@ -283,20 +283,47 @@ const VideoStream: React.FC = () => {
       | "focus_out",
     intervalRef: React.MutableRefObject<number | null>,
   ) => {
-    const handleStart = () => {
+    const handleStart = (e?: React.MouseEvent | React.TouchEvent) => {
+      // Prevent default to avoid ghost clicks
+      if (e) {
+        e.preventDefault();
+      }
+      
+      // Clear any existing interval first
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      
+      // Clear any existing timeout
+      if (autoStopTimeoutRef.current) {
+        clearTimeout(autoStopTimeoutRef.current);
+        autoStopTimeoutRef.current = null;
+      }
+      
       move(direction);
-      intervalRef.current = setInterval(() => move(direction), 100);
-      // Auto-stop after 5 seconds for safety
+      intervalRef.current = window.setInterval(() => move(direction), 100);
+      
+      // Auto-stop after 2 seconds for safety
       autoStopTimeoutRef.current = setTimeout(() => {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
           stop(direction);
         }
+        if (autoStopTimeoutRef.current) {
+          clearTimeout(autoStopTimeoutRef.current);
+          autoStopTimeoutRef.current = null;
+        }
       }, 2000);
     };
 
-    const handleStop = () => {
+    const handleStop = (e?: React.MouseEvent | React.TouchEvent) => {
+      // Prevent default to avoid ghost clicks
+      if (e) {
+        e.preventDefault();
+      }
+      
       // Clear the auto-stop timeout
       if (autoStopTimeoutRef.current) {
         clearTimeout(autoStopTimeoutRef.current);
@@ -680,6 +707,7 @@ const VideoStream: React.FC = () => {
                   onMouseLeave={upHandlers.handleStop}
                   onTouchStart={upHandlers.handleStart}
                   onTouchEnd={upHandlers.handleStop}
+
                   className="group w-[2vw] h-[2vw] bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                   aria-label="Tilt Up"
                 >
