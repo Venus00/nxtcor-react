@@ -85,13 +85,21 @@ const EventTable: React.FC = () => {
   };
 
   const handleClearAll = async () => {
+    
     if (!confirm('Êtes-vous sûr de vouloir effacer tous les événements?')) return;
 
     try {
-      // await axios.post('/cgi-bin/clearEvents.cgi');
-      setEvents([]);
+      const response = await axios.delete(`${API_BASE_URL}/detection/photos`);
+      
+      if (response.data.success) {
+        setEvents([]);
+        alert(`${response.data.deleted} photos supprimées avec succès`);
+      } else {
+        alert('Erreur lors de la suppression des photos');
+      }
     } catch (error) {
       console.error('Error clearing events:', error);
+      alert('Erreur lors de la suppression des événements');
     }
   };
 
@@ -327,7 +335,7 @@ const EventTable: React.FC = () => {
           <div className="text-sm text-gray-400">
             Page <span className="font-semibold text-white">{currentPage}</span> sur <span className="font-semibold text-white">{totalPages}</span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCurrentPage(1)}
@@ -343,15 +351,15 @@ const EventTable: React.FC = () => {
             >
               «
             </button>
-            
+
             {/* Page Numbers */}
             <div className="flex items-center gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1)
                 .filter(page => {
                   // Show first page, last page, current page, and adjacent pages
-                  return page === 1 || 
-                         page === totalPages || 
-                         (page >= currentPage - 1 && page <= currentPage + 1);
+                  return page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1);
                 })
                 .map((page, index, array) => (
                   <React.Fragment key={page}>
@@ -360,11 +368,10 @@ const EventTable: React.FC = () => {
                     )}
                     <button
                       onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                        currentPage === page
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${currentPage === page
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-700 hover:bg-gray-600 text-white'
-                      }`}
+                        }`}
                     >
                       {page}
                     </button>
