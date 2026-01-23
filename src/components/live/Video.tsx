@@ -48,6 +48,7 @@ const VideoStream: React.FC = () => {
   const zoomOutIntervalRef = useRef<number | null>(null);
   const focusInIntervalRef = useRef<number | null>(null);
   const focusOutIntervalRef = useRef<number | null>(null);
+  const autoStopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const camId = useParams().id || 'cam1';
 
@@ -285,17 +286,23 @@ const VideoStream: React.FC = () => {
     const handleStart = () => {
       move(direction);
       intervalRef.current = setInterval(() => move(direction), 100);
-      // Auto-stop after 30 seconds for safety
-      setTimeout(() => {
+      // Auto-stop after 5 seconds for safety
+      autoStopTimeoutRef.current = setTimeout(() => {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
           stop(direction);
         }
-      }, 5000);
+      }, 2000);
     };
 
     const handleStop = () => {
+      // Clear the auto-stop timeout
+      if (autoStopTimeoutRef.current) {
+        clearTimeout(autoStopTimeoutRef.current);
+        autoStopTimeoutRef.current = null;
+      }
+
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -532,6 +539,11 @@ const VideoStream: React.FC = () => {
           clearInterval(ref.current);
         }
       });
+
+      // Clean up auto-stop timeout
+      if (autoStopTimeoutRef.current) {
+        clearTimeout(autoStopTimeoutRef.current);
+      }
 
       // Clean up recording timer on unmount
       if (recordingTimerRef.current) {
