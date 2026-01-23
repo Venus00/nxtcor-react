@@ -318,7 +318,7 @@ const VideoStream: React.FC = () => {
   const handleWiperOn = async () => {
     try {
       const res = await fetch(
-        `http://${window.location.hostname}:3000/camera/${camId}/ptz/wiper/on`,
+        `http://${window.location.hostname}:3000/camera/cam1/ptz/wiper/on`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -719,7 +719,7 @@ const VideoStream: React.FC = () => {
                   className="group w-[2vw] h-[2vw] bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                   aria-label="Pan Right"
                 >
-                  <ChevronRight
+                  <ChevronDown
                     className="w-[1vw] h-[1vw] group-hover:scale-110 transition-transform duration-200"
                     strokeWidth={2.5}
                   />
@@ -948,12 +948,8 @@ const VideoStream: React.FC = () => {
             style={
               camId === "cam1"
                 ? {
-                  transform: `scaleX(${scale * 1.1}) translate(${position.x}px, ${position.y}px)`, // Stretch width by 1.1x, keep height
-                  transformOrigin: "center",
-                  transition: "transform 0.3s ease",
-                  width: "110%", // Slight overflow to stretch width
+                  width: "100%",
                   height: "100%",
-                  marginLeft: "-5%", // Center the stretch
                 }
                 : {
                   width: "100%",
