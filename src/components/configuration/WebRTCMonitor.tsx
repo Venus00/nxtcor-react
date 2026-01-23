@@ -207,8 +207,8 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
           muted
           playsInline
           style={{
-            width: "130%",
-            height: "130%",
+            width: "100%",
+            height: "100%",
             objectFit: "contain",
             backgroundColor: "#000",
             display: "block",

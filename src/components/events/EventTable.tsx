@@ -28,6 +28,8 @@ const EventTable: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<EventRecord | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
   const [searchDate, setSearchDate] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
 
   useEffect(() => {
     fetchEvents();
@@ -134,6 +136,17 @@ const EventTable: React.FC = () => {
     return matchesType && matchesDate;
   });
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredEvents.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const paginatedEvents = filteredEvents.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterType, searchDate]);
+
   return (
     <div className="mt-6 bg-gray-800/30 rounded-lg border border-gray-700 overflow-hidden">
       {/* Header */}
@@ -203,7 +216,7 @@ const EventTable: React.FC = () => {
       {/* Event Count */}
       <div className="px-4 py-2 bg-gray-800/30 border-b border-gray-700">
         <p className="text-sm text-gray-400">
-          Affichage de <span className="font-semibold text-white">{filteredEvents.length}</span> sur <span className="font-semibold text-white">{events.length}</span> événements
+          Affichage de <span className="font-semibold text-white">{startIndex + 1}-{Math.min(endIndex, filteredEvents.length)}</span> sur <span className="font-semibold text-white">{filteredEvents.length}</span> événements
         </p>
       </div>
 
@@ -235,7 +248,7 @@ const EventTable: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
-              {filteredEvents.map((event) => (
+              {paginatedEvents.map((event) => (
                 <tr
                   key={event.id}
                   className="hover:bg-gray-800/30 transition-colors cursor-pointer"
@@ -307,6 +320,79 @@ const EventTable: React.FC = () => {
           </table>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {!loading && filteredEvents.length > 0 && (
+        <div className="px-4 py-3 bg-gray-800/30 border-t border-gray-700 flex items-center justify-between">
+          <div className="text-sm text-gray-400">
+            Page <span className="font-semibold text-white">{currentPage}</span> sur <span className="font-semibold text-white">{totalPages}</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded text-sm font-medium transition-colors disabled:cursor-not-allowed"
+            >
+              ««
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded text-sm font-medium transition-colors disabled:cursor-not-allowed"
+            >
+              «
+            </button>
+            
+            {/* Page Numbers */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  // Show first page, last page, current page, and adjacent pages
+                  return page === 1 || 
+                         page === totalPages || 
+                         (page >= currentPage - 1 && page <= currentPage + 1);
+                })
+                .map((page, index, array) => (
+                  <React.Fragment key={page}>
+                    {index > 0 && array[index - 1] !== page - 1 && (
+                      <span className="px-2 text-gray-500">...</span>
+                    )}
+                    <button
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-700 hover:bg-gray-600 text-white'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  </React.Fragment>
+                ))}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded text-sm font-medium transition-colors disabled:cursor-not-allowed"
+            >
+              »
+            </button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded text-sm font-medium transition-colors disabled:cursor-not-allowed"
+            >
+              »»
+            </button>
+          </div>
+
+          <div className="text-sm text-gray-400">
+            {rowsPerPage} lignes par page
+          </div>
+        </div>
+      )}
 
       {/* Event Details Modal */}
       {selectedEvent && (
