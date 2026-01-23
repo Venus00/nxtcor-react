@@ -15,32 +15,32 @@ const MainLayout: React.FC = () => {
   return (
     <div className="h-screen w-full flex flex-col bg-gray-100">
       <Navbar />
-      
+
       <div className="flex flex-1 overflow-hidden ">
         {/* <Sidebar 
           activeConfigTab={activeConfigTab}
           setActiveConfigTab={setActiveConfigTab}
         /> */}
-        
+
         <div className="flex-1 overflow-auto   ">
           <Routes>
             <Route path="/live/:id" element={<Live />} />
             <Route path="/live" element={<Live />} />
             <Route path="/playback" element={<Playback />} />
-            <Route 
-              path="/configuration" 
+            <Route
+              path="/configuration"
               element={
-                <Configuration 
+                <Configuration
                   activeConfigTab={activeConfigTab}
                   setActiveConfigTab={setActiveConfigTab}
                 />
-              } 
+              }
             />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/camera-settings" element={<CameraSettingsPage />} />
             <Route path="/ptz-settings" element={<PTZSettings />} />
             <Route path="/events-management" element={<EventsManagement />} />
-            <Route path="/" element={<Navigate to="/live" replace />} />
+            <Route path="/" element={<Navigate to="/live/cam1" replace />} />
           </Routes>
         </div>
       </div>

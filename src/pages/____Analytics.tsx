@@ -25,6 +25,17 @@ interface TrackingData {
   };
 }
 
+interface CameraState {
+  tracking: string;
+  follow: string;
+  focus: string;
+}
+
+interface AnalyticsState {
+  cam1: CameraState;
+  cam2: CameraState;
+}
+
 type CameraType = "cam1" | "cam2";
 
 const Analytics: React.FC = () => {
@@ -32,9 +43,35 @@ const Analytics: React.FC = () => {
   const [objects, setObjects] = useState<TrackedObject[]>([]);
   const [trackingId, setTrackingId] = useState<number | null>(null);
   const [detectionEnabled, setDetectionEnabled] = useState(false);
+  const [analyticsState, setAnalyticsState] = useState<AnalyticsState | null>(null);
+  const [stateLoading, setStateLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
+
+  // Load analytics state from backend on component mount
+  useEffect(() => {
+    const loadAnalyticsState = async () => {
+      try {
+        setStateLoading(true);
+        const response = await fetch('http://localhost:3000/analytics/state');
+        const data = await response.json();
+
+        if (data.success) {
+          setAnalyticsState(data.state);
+          console.log('[Analytics] Loaded state:', data.state);
+        } else {
+          console.error('[Analytics] Failed to load state:', data.error);
+        }
+      } catch (error) {
+        console.error('[Analytics] Error loading state:', error);
+      } finally {
+        setStateLoading(false);
+      }
+    };
+
+    loadAnalyticsState();
+  }, []);
 
   // WebRTC connection for video feed - only starts when detection is enabled
   useEffect(() => {
@@ -245,24 +282,10 @@ const Analytics: React.FC = () => {
     <div className="h-full bg-black p-6">
       <div className="max-w-full mx-auto h-full flex flex-col">
         {/* WebRTC Monitor Component */}
-        
+
 
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-md shadow-lg shadow-red-500/25">
-              <Target className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-semibold text-white">
-                Object Tracking tttt
-              </h1>
-              <p className="text-slate-300">
-                Real-time object detection and tracking
-              </p>
-            </div>
-          </div>
-        </div>
+
 
         {/* Camera Selection */}
         <div className="mb-6">
@@ -272,21 +295,19 @@ const Analytics: React.FC = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setSelectedCamera("cam1")}
-                  className={`px-4 py-2 rounded-md transition-all ${
-                    selectedCamera === "cam1"
-                      ? "bg-red-600 text-white"
-                      : "bg-slate-700/60 text-slate-300 hover:bg-slate-600/60"
-                  }`}
+                  className={`px-4 py-2 rounded-md transition-all ${selectedCamera === "cam1"
+                    ? "bg-red-600 text-white"
+                    : "bg-slate-700/60 text-slate-300 hover:bg-slate-600/60"
+                    }`}
                 >
                   Camera 1
                 </button>
                 <button
                   onClick={() => setSelectedCamera("cam2")}
-                  className={`px-4 py-2 rounded-md transition-all ${
-                    selectedCamera === "cam2"
-                      ? "bg-red-600 text-white"
-                      : "bg-slate-700/60 text-slate-300 hover:bg-slate-600/60"
-                  }`}
+                  className={`px-4 py-2 rounded-md transition-all ${selectedCamera === "cam2"
+                    ? "bg-red-600 text-white"
+                    : "bg-slate-700/60 text-slate-300 hover:bg-slate-600/60"
+                    }`}
                 >
                   Camera 2
                 </button>
@@ -294,11 +315,10 @@ const Analytics: React.FC = () => {
 
               <div className="flex items-center gap-2 ml-auto">
                 <Circle
-                  className={`h-3 w-3 ${
-                    detectionEnabled
-                      ? "text-green-500 fill-green-500"
-                      : "text-gray-500 fill-gray-500"
-                  }`}
+                  className={`h-3 w-3 ${detectionEnabled
+                    ? "text-green-500 fill-green-500"
+                    : "text-gray-500 fill-gray-500"
+                    }`}
                 />
                 <span className="text-sm text-slate-300">
                   {detectionEnabled ? "Detection Active" : "Detection Inactive"}
@@ -307,6 +327,72 @@ const Analytics: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Analytics State Display */}
+        {stateLoading ? (
+          <div className="mb-6">
+            <div className="bg-slate-800/60 border border-slate-600/50 rounded-lg p-4">
+              <div className="text-slate-300">Chargement de l'état...</div>
+            </div>
+          </div>
+        ) : analyticsState && (
+          <div className="mb-6">
+            <div className="bg-slate-800/60 border border-slate-600/50 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-white mb-3">État des Caméras</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Camera 1 State */}
+                <div className="bg-slate-700/60 rounded-lg p-3">
+                  <div className="text-sm font-medium text-white mb-2">Camera 1</div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Suivi:</span>
+                      <span className={`font-medium ${analyticsState.cam1.tracking === 'running' ? 'text-green-400' : 'text-slate-300'}`}>
+                        {analyticsState.cam1.tracking === 'running' ? 'En cours' : 'Arrêté'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Follow:</span>
+                      <span className={`font-medium ${analyticsState.cam1.follow === 'running' ? 'text-green-400' : 'text-slate-300'}`}>
+                        {analyticsState.cam1.follow === 'running' ? 'En cours' : 'Arrêté'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Focus:</span>
+                      <span className={`font-medium ${analyticsState.cam1.focus === 'running' ? 'text-green-400' : 'text-slate-300'}`}>
+                        {analyticsState.cam1.focus === 'running' ? 'En cours' : 'Arrêté'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Camera 2 State */}
+                <div className="bg-slate-700/60 rounded-lg p-3">
+                  <div className="text-sm font-medium text-white mb-2">Camera 2</div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Suivi:</span>
+                      <span className={`font-medium ${analyticsState.cam2.tracking === 'running' ? 'text-green-400' : 'text-slate-300'}`}>
+                        {analyticsState.cam2.tracking === 'running' ? 'En cours' : 'Arrêté'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Follow:</span>
+                      <span className={`font-medium ${analyticsState.cam2.follow === 'running' ? 'text-green-400' : 'text-slate-300'}`}>
+                        {analyticsState.cam2.follow === 'running' ? 'En cours' : 'Arrêté'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Focus:</span>
+                      <span className={`font-medium ${analyticsState.cam2.focus === 'running' ? 'text-green-400' : 'text-slate-300'}`}>
+                        {analyticsState.cam2.focus === 'running' ? 'En cours' : 'Arrêté'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Detection Control */}
         <div className="mb-6">
@@ -354,11 +440,10 @@ const Analytics: React.FC = () => {
                 return (
                   <div
                     key={obj.trackId}
-                    className={`p-3 rounded-lg border transition-all ${
-                      isTracking
-                        ? "bg-red-600/20 border-red-500/50"
-                        : "bg-slate-700/60 border-slate-600/50"
-                    }`}
+                    className={`p-3 rounded-lg border transition-all ${isTracking
+                      ? "bg-red-600/20 border-red-500/50"
+                      : "bg-slate-700/60 border-slate-600/50"
+                      }`}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div>
@@ -370,11 +455,10 @@ const Analytics: React.FC = () => {
                         </div>
                       </div>
                       <div
-                        className={`px-2 py-1 rounded text-xs ${
-                          isTracking
-                            ? "bg-red-500 text-white"
-                            : "bg-slate-600 text-slate-300"
-                        }`}
+                        className={`px-2 py-1 rounded text-xs ${isTracking
+                          ? "bg-red-500 text-white"
+                          : "bg-slate-600 text-slate-300"
+                          }`}
                       >
                         {isTracking ? "TRACKING" : "IDLE"}
                       </div>
@@ -397,11 +481,10 @@ const Analytics: React.FC = () => {
                       <button
                         onClick={() => enableTracking(obj.trackId)}
                         disabled={trackingId !== null}
-                        className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${
-                          trackingId !== null
-                            ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
-                            : "bg-red-600 hover:bg-red-700 text-white"
-                        }`}
+                        className={`w-full px-3 py-2 rounded-md text-sm transition-colors ${trackingId !== null
+                          ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
+                          : "bg-red-600 hover:bg-red-700 text-white"
+                          }`}
                       >
                         Enable Tracking
                       </button>

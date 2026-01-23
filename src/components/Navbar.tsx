@@ -80,7 +80,7 @@ const Navbar = () => {
                   }`}
               >
                 <BarChart3 className="h-4 w-4" />
-                Analytics
+                Analytique
               </Link>
             </li>
 
@@ -186,7 +186,7 @@ const Navbar = () => {
                   <div className="px-4 py-3 bg-gradient-to-r from-slate-700/30 to-slate-800/30 border-b border-slate-600/30">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
-                      <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">System Status</span>
+                      <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">État du Système</span>
                     </div>
                   </div>
 
@@ -200,7 +200,7 @@ const Navbar = () => {
                         <div className="p-1.5 bg-blue-500/20 group-hover:bg-blue-500/30 rounded-lg transition-all duration-300">
                           <Shield className="h-4 w-4 text-blue-400 group-hover:text-blue-300" />
                         </div>
-                        <span>Security Settings</span>
+                        <span>Paramètres de Sécurité</span>
                       </div>
                       <div className="absolute right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <div className="w-1 h-4 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full"></div>
@@ -218,7 +218,7 @@ const Navbar = () => {
                         <div className="p-1.5 bg-red-500/20 group-hover:bg-red-500/30 rounded-lg transition-all duration-300">
                           <LogOut className="h-4 w-4 text-red-400 group-hover:text-red-300" />
                         </div>
-                        <span>Sign Out</span>
+                        <span>Déconnexion</span>
                       </div>
                       <div className="absolute right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <div className="w-1 h-4 bg-gradient-to-b from-red-400 to-red-600 rounded-full"></div>

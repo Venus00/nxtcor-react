@@ -34,14 +34,14 @@ const Configuration = () => {
 
       if (response.data.includes('success')) {
 
-        setToast({ message: 'Sensitvity saved successufuly', type: 'success' });
+        setToast({ message: 'Sensibilité enregistrée avec succès', type: 'success' });
       } else {
 
-        setToast({ message: 'Error', type: 'error' });
+        setToast({ message: 'Erreur', type: 'error' });
       }
     } catch (error) {
       console.log(error)
-      setToast({ message: 'Error ', type: 'error' });
+      setToast({ message: 'Erreur', type: 'error' });
     }
   };
 
@@ -65,14 +65,14 @@ const Configuration = () => {
   return (
     <div>
       <div className="w-1/3 p-6 space-y-12 ">
-        <Slider label="Sensitivity" value={Sensitivity} setValue={setSensitivity} max={8} />
+        <Slider label="Sensibilité" value={Sensitivity} setValue={setSensitivity} max={8} />
         {/* <Slider label="delay between Notifications (min)" value={Delay} setValue={setDelay} max={15} /> */}
 
       </div>
       <div className="flex flex-col items-center justify-center gap-4 w-3/4 mt-4">
-  
+
         <div>
-          <SaveButton onClick={submitMotionConfig} label="SAVE CHANGES" loading={false} />
+          <SaveButton onClick={submitMotionConfig} label="ENREGISTRER LES MODIFICATIONS" loading={false} />
         </div>
       </div>
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />

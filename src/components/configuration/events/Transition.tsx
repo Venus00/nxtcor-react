@@ -33,7 +33,7 @@ const Stepper: React.FC<StepperProps> = ({ currentStep, onStepClick }) => {
                 >
                     2
                 </div>
-                <p className={`ml-2 text-xl mb-1 ${currentStep === 2 ? 'text-blue-500' : 'text-gray-400'}`}>Arming</p>
+                <p className={`ml-2 text-xl mb-1 ${currentStep === 2 ? 'text-blue-500' : 'text-gray-400'}`}>Armement</p>
                 <div
                     className={`w-full h-1 ${currentStep > 2 ? 'bg-blue-200' : 'bg-gray-200'}`}
                 ></div>
@@ -45,7 +45,7 @@ const Stepper: React.FC<StepperProps> = ({ currentStep, onStepClick }) => {
                 >
                     3
                 </div>
-                <p className={`ml-2 text-xl mb-1 ${currentStep === 3 ? 'text-blue-500' : 'text-gray-400'}`}>Alert</p>
+                <p className={`ml-2 text-xl mb-1 ${currentStep === 3 ? 'text-blue-500' : 'text-gray-400'}`}>Alerte</p>
             </li>
         </ol>
     );

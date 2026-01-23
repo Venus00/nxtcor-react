@@ -41,11 +41,11 @@ const Display = () => {
             });
 
 
-            if (response.data.includes('success')){
-                setToast({ message:  'Configuration Updated', type: 'success' });
+            if (response.data.includes('success')) {
+                setToast({ message: 'Configuration Updated', type: 'success' });
                 setIsSaving(false)
             } else {
-                setToast({ message:  'Error updating Configuration', type: 'error' });
+                setToast({ message: 'Error updating Configuration', type: 'error' });
                 setIsSaving(false)
             }
         } catch (error) {
@@ -78,9 +78,9 @@ const Display = () => {
           lg:w-2/4 /* Larger screens (1024px and up) */
          `}
             >
-            <Toggle label="Display Time" value={isCheckedDisplayTime} setValue={setIsCheckedDisplayTime} />
+                <Toggle label="Display Time" value={isCheckedDisplayTime} setValue={setIsCheckedDisplayTime} />
             </div>
-            <SaveButton onClick={submitDisplayConfig}  loading={isSaving} label='SAVE CHANGES' />
+            <SaveButton onClick={submitDisplayConfig} loading={isSaving} label='ENREGISTRER LES MODIFICATIONS' />
             <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
 
         </div>

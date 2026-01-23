@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 export interface ScheduledPeriod {
   id: number;
@@ -50,6 +51,8 @@ const MotionDetection: React.FC<MotionDetectionProps> = ({
 }) => {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showAreaModal, setShowAreaModal] = useState(false);
+  const [isBasicSettingsOpen, setIsBasicSettingsOpen] = useState(false);
+  const [isAdvancedSettingsOpen, setIsAdvancedSettingsOpen] = useState(false);
 
   const updateConfig = (updates: Partial<MotionDetectionConfig>) => {
     onConfigChange({ ...config, ...updates });
@@ -71,7 +74,7 @@ const MotionDetection: React.FC<MotionDetectionProps> = ({
           <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
-          Motion Detection
+          Détection de Mouvement
         </h3>
       </div>
 
@@ -82,384 +85,402 @@ const MotionDetection: React.FC<MotionDetectionProps> = ({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div className="text-sm text-blue-300">
-            <p><strong>Motion Detection:</strong></p>
+            <p><strong>Détection de Mouvement:</strong></p>
             <p className="text-blue-200/90 mt-1">
-              Detect motion in the camera view and trigger alarms, recordings, or other actions. Configure detection areas, sensitivity, and response actions.
+              Détecter les mouvements dans la vue de la caméra et déclencher des alarmes, des enregistrements ou d'autres actions. Configurer les zones de détection, la sensibilité et les actions de réponse.
             </p>
           </div>
         </div>
       </div>
 
       {/* Main Configuration */}
-      <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-6 space-y-6">
-        {/* Step 2: Enable/Disable */}
-        <div>
-          <label className="block text-white font-medium mb-3 text-sm">
-            Step 2: Enable Motion Detection
-          </label>
-          
-          <div className="flex gap-3">
-            <button
-              onClick={() => updateConfig({ enabled: true })}
-              className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all font-medium ${
-                config.enabled
-                  ? 'bg-gradient-to-br from-green-600 to-green-700 border-green-500 text-white shadow-lg'
-                  : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                ON
-              </div>
-            </button>
-            <button
-              onClick={() => updateConfig({ enabled: false })}
-              className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all font-medium ${
-                !config.enabled
-                  ? 'bg-gradient-to-br from-red-600 to-red-700 border-red-500 text-white shadow-lg'
-                  : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                OFF
-              </div>
-            </button>
-          </div>
-        </div>
+      <div className="space-y-4">
+        {/* Basic Settings - Collapsible */}
+        <div className="bg-gray-800/50 rounded-lg border border-gray-700 overflow-hidden">
+          <button
+            onClick={() => setIsBasicSettingsOpen(!isBasicSettingsOpen)}
+            className="w-full flex items-center justify-between p-4 bg-gray-800/70 hover:bg-gray-800 transition-colors"
+          >
+            <span className="text-lg font-medium text-white">Paramètres de Base</span>
+            {isBasicSettingsOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+          </button>
 
-        {/* Anti-Dither */}
-        <div>
-          <label className="flex items-center gap-2 text-white font-medium mb-3 text-sm">
-            Anti-Dither
-            <span className="text-gray-400 text-xs font-normal">(0-100 seconds)</span>
-          </label>
-          
-          <div className="space-y-3">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={config.antiDither}
-              onChange={handleAntiDitherChange}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-red-600"
-              style={{
-                background: `linear-gradient(to right, #DC2626 0%, #DC2626 ${config.antiDither}%, #374151 ${config.antiDither}%, #374151 100%)`
-              }}
-            />
-            
-            <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-sm">Current Value:</span>
-                <span className="text-white font-mono font-bold text-lg">{config.antiDither}s</span>
-              </div>
-              <p className="text-gray-500 text-xs mt-2">
-                Motion detection time is recorded only once in this anti-dither period
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Record */}
-        <div>
-          <label className="flex items-center gap-3 cursor-pointer group">
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={config.record}
-                onChange={(e) => updateConfig({ record: e.target.checked })}
-                className="sr-only"
-              />
-              <div className={`w-14 h-7 rounded-full transition-colors ${
-                config.record ? 'bg-green-600' : 'bg-gray-600'
-              }`}>
-                <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${
-                  config.record ? 'translate-x-7' : 'translate-x-0'
-                }`}></div>
-              </div>
-            </div>
-            <div className="flex-1">
-              <span className="text-white font-medium text-sm">Record</span>
-              <p className="text-gray-400 text-xs mt-0.5">
-                Automatically record when local alarm occurs (requires alarm video taking period in Storage Management)
-              </p>
-            </div>
-          </label>
-        </div>
-
-        {/* Record Delay */}
-        {config.record && (
-          <div className="ml-16 space-y-3">
-            <label className="flex items-center gap-2 text-white font-medium text-sm">
-              Record Delay
-              <span className="text-gray-400 text-xs font-normal">(10-300 seconds)</span>
-            </label>
-            
-            <input
-              type="range"
-              min="10"
-              max="300"
-              step="10"
-              value={config.recordDelay}
-              onChange={handleRecordDelayChange}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-red-600"
-              style={{
-                background: `linear-gradient(to right, #DC2626 0%, #DC2626 ${((config.recordDelay - 10) / 290) * 100}%, #374151 ${((config.recordDelay - 10) / 290) * 100}%, #374151 100%)`
-              }}
-            />
-            
-            <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-sm">Delay Time:</span>
-                <span className="text-white font-mono font-bold text-lg">{config.recordDelay}s</span>
-              </div>
-              <p className="text-gray-500 text-xs mt-2">
-                Continue recording for this period after alarm stops
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Send Email */}
-        <div>
-          <label className="flex items-center gap-3 cursor-pointer group">
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={config.sendEmail}
-                onChange={(e) => updateConfig({ sendEmail: e.target.checked })}
-                className="sr-only"
-              />
-              <div className={`w-14 h-7 rounded-full transition-colors ${
-                config.sendEmail ? 'bg-green-600' : 'bg-gray-600'
-              }`}>
-                <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${
-                  config.sendEmail ? 'translate-x-7' : 'translate-x-0'
-                }`}></div>
-              </div>
-            </div>
-            <div className="flex-1">
-              <span className="text-white font-medium text-sm">Send Email</span>
-              <p className="text-gray-400 text-xs mt-0.5">
-                Send email notification when alarm occurs (configure email in SMTP settings)
-              </p>
-            </div>
-          </label>
-        </div>
-
-        {/* PTZ Linkage */}
-        <div className="space-y-4">
-          <label className="flex items-center gap-3 cursor-pointer group">
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={config.ptz.enabled}
-                onChange={(e) => updateConfig({ ptz: { ...config.ptz, enabled: e.target.checked } })}
-                className="sr-only"
-              />
-              <div className={`w-14 h-7 rounded-full transition-colors ${
-                config.ptz.enabled ? 'bg-green-600' : 'bg-gray-600'
-              }`}>
-                <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${
-                  config.ptz.enabled ? 'translate-x-7' : 'translate-x-0'
-                }`}></div>
-              </div>
-            </div>
-            <div className="flex-1">
-              <span className="text-white font-medium text-sm">PTZ Linkage</span>
-              <p className="text-gray-400 text-xs mt-0.5">
-                Link to PTZ preset point, tour, or pattern when alarm occurs
-              </p>
-            </div>
-          </label>
-
-          {config.ptz.enabled && (
-            <div className="ml-16 space-y-3">
-              {/* PTZ Action Type */}
+          {isBasicSettingsOpen && (
+            <div className="p-6 space-y-6">
+              {/* Step 2: Enable/Disable */}
               <div>
-                <label className="block text-white font-medium mb-2 text-sm">Action Type</label>
-                <div className="grid grid-cols-3 gap-2">
+                <label className="block text-white font-medium mb-3 text-sm">
+                  Étape 2: Activer la Détection de Mouvement
+                </label>
+
+                <div className="flex gap-3">
                   <button
-                    onClick={() => updateConfig({ ptz: { ...config.ptz, actionType: 'preset', actionNumber: 0 } })}
-                    className={`py-2 px-3 rounded-lg border-2 transition-all text-sm font-medium ${
-                      config.ptz.actionType === 'preset'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 border-red-500 text-white'
+                    onClick={() => updateConfig({ enabled: true })}
+                    className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all font-medium ${config.enabled
+                        ? 'bg-gradient-to-br from-green-600 to-green-700 border-green-500 text-white shadow-lg'
                         : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
-                    }`}
+                      }`}
                   >
-                    Preset
+                    <div className="flex items-center justify-center gap-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      ON
+                    </div>
                   </button>
                   <button
-                    onClick={() => updateConfig({ ptz: { ...config.ptz, actionType: 'tour', actionNumber: 0 } })}
-                    className={`py-2 px-3 rounded-lg border-2 transition-all text-sm font-medium ${
-                      config.ptz.actionType === 'tour'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 border-red-500 text-white'
+                    onClick={() => updateConfig({ enabled: false })}
+                    className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all font-medium ${!config.enabled
+                        ? 'bg-gradient-to-br from-red-600 to-red-700 border-red-500 text-white shadow-lg'
                         : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
-                    }`}
+                      }`}
                   >
-                    Tour
-                  </button>
-                  <button
-                    onClick={() => updateConfig({ ptz: { ...config.ptz, actionType: 'pattern', actionNumber: 0 } })}
-                    className={`py-2 px-3 rounded-lg border-2 transition-all text-sm font-medium ${
-                      config.ptz.actionType === 'pattern'
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 border-red-500 text-white'
-                        : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
-                    }`}
-                  >
-                    Pattern
+                    <div className="flex items-center justify-center gap-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      OFF
+                    </div>
                   </button>
                 </div>
               </div>
 
-              {/* PTZ Action Number */}
+              {/* Anti-Dither */}
               <div>
-                <label className="block text-white font-medium mb-2 text-sm">
-                  {config.ptz.actionType.charAt(0).toUpperCase() + config.ptz.actionType.slice(1)} Number
+                <label className="flex items-center gap-2 text-white font-medium mb-3 text-sm">
+                  Anti-Gigue
+                  <span className="text-gray-400 text-xs font-normal">(0-100 secondes)</span>
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="255"
-                  value={config.ptz.actionNumber || ''}
-                  onChange={(e) => updateConfig({ ptz: { ...config.ptz, actionNumber: parseInt(e.target.value) || 0 } })}
-                  placeholder="Enter number"
-                  className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-red-500"
-                />
-              </div>
-            </div>
-          )}
-        </div>
 
-        {/* Snapshot */}
-        <div>
-          <label className="flex items-center gap-3 cursor-pointer group">
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={config.snapshot}
-                onChange={(e) => updateConfig({ snapshot: e.target.checked })}
-                className="sr-only"
-              />
-              <div className={`w-14 h-7 rounded-full transition-colors ${
-                config.snapshot ? 'bg-green-600' : 'bg-gray-600'
-              }`}>
-                <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${
-                  config.snapshot ? 'translate-x-7' : 'translate-x-0'
-                }`}></div>
-              </div>
-            </div>
-            <div className="flex-1">
-              <span className="text-white font-medium text-sm">Snapshot</span>
-              <p className="text-gray-400 text-xs mt-0.5">
-                Automatically capture image when alarm occurs
-              </p>
-            </div>
-          </label>
-        </div>
+                <div className="space-y-3">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={config.antiDither}
+                    onChange={handleAntiDitherChange}
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-red-600"
+                    style={{
+                      background: `linear-gradient(to right, #DC2626 0%, #DC2626 ${config.antiDither}%, #374151 ${config.antiDither}%, #374151 100%)`
+                    }}
+                  />
 
-        {/* Scheduled Period */}
-        <div>
-          <label className="block text-white font-medium mb-3 text-sm">Scheduled Period</label>
-          
-          <button
-            onClick={() => setShowScheduleModal(true)}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white py-3 px-4 rounded-lg border border-blue-500 transition-all duration-200 shadow-lg hover:shadow-blue-500/50 flex items-center justify-center gap-2 font-medium"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            Setup Schedule
-            {config.scheduledPeriods.length > 0 && (
-              <span className="ml-2 bg-blue-800/50 px-2 py-0.5 rounded text-xs">
-                {config.scheduledPeriods.length} period{config.scheduledPeriods.length > 1 ? 's' : ''}
-              </span>
-            )}
-          </button>
-
-          <p className="text-gray-400 text-xs mt-2">
-            Set time periods when motion detection will be active. Alarm events will only be triggered within the set time periods.
-          </p>
-        </div>
-
-        {/* Setup Area */}
-        <div>
-          <label className="block text-white font-medium mb-3 text-sm">Detection Areas</label>
-          
-          <button
-            onClick={() => setShowAreaModal(true)}
-            className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white py-3 px-4 rounded-lg border border-purple-500 transition-all duration-200 shadow-lg hover:shadow-purple-500/50 flex items-center justify-center gap-2 font-medium"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-            </svg>
-            Setup Areas
-            {config.detectionAreas.length > 0 && (
-              <span className="ml-2 bg-purple-800/50 px-2 py-0.5 rounded text-xs">
-                {config.detectionAreas.length} area{config.detectionAreas.length > 1 ? 's' : ''}
-              </span>
-            )}
-          </button>
-
-          <p className="text-gray-400 text-xs mt-2">
-            Define detection regions with custom sensitivity and threshold settings (Region1, Region2, Region3, Region4)
-          </p>
-
-          {/* Area List */}
-          {config.detectionAreas.length > 0 && (
-            <div className="mt-3 space-y-2">
-              {config.detectionAreas.map((area) => (
-                <div key={area.id} className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-4 h-4 rounded"
-                      style={{ backgroundColor: area.color }}
-                    ></div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-white font-medium text-sm">{area.name}</span>
-                        <button
-                          onClick={() => {
-                            updateConfig({
-                              detectionAreas: config.detectionAreas.filter(a => a.id !== area.id)
-                            });
-                          }}
-                          className="text-red-400 hover:text-red-300 text-xs"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                      <div className="text-gray-400 text-xs space-y-0.5">
-                        <div>Sensitivity: {area.sensitivity}%</div>
-                        <div>Threshold: {area.threshold}%</div>
-                      </div>
+                  <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">Valeur Actuelle:</span>
+                      <span className="text-white font-mono font-bold text-lg">{config.antiDither}s</span>
                     </div>
+                    <p className="text-gray-500 text-xs mt-2">
+                      Le temps de détection de mouvement n'est enregistré qu'une seule fois pendant cette période anti-gigue
+                    </p>
                   </div>
                 </div>
-              ))}
+              </div>
+
+              {/* Record */}
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={config.record}
+                      onChange={(e) => updateConfig({ record: e.target.checked })}
+                      className="sr-only"
+                    />
+                    <div className={`w-14 h-7 rounded-full transition-colors ${config.record ? 'bg-green-600' : 'bg-gray-600'
+                      }`}>
+                      <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${config.record ? 'translate-x-7' : 'translate-x-0'
+                        }`}></div>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-white font-medium text-sm">Enregistrer</span>
+                    <p className="text-gray-400 text-xs mt-0.5">
+                      Enregistrer automatiquement lorsqu'une alarme locale se produit (nécessite une période de prise vidéo d'alarme dans Gestion du Stockage)
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Record Delay */}
+              {config.record && (
+                <div className="ml-16 space-y-3">
+                  <label className="flex items-center gap-2 text-white font-medium text-sm">
+                    Délai d'Enregistrement
+                    <span className="text-gray-400 text-xs font-normal">(10-300 secondes)</span>
+                  </label>
+
+                  <input
+                    type="range"
+                    min="10"
+                    max="300"
+                    step="10"
+                    value={config.recordDelay}
+                    onChange={handleRecordDelayChange}
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-red-600"
+                    style={{
+                      background: `linear-gradient(to right, #DC2626 0%, #DC2626 ${((config.recordDelay - 10) / 290) * 100}%, #374151 ${((config.recordDelay - 10) / 290) * 100}%, #374151 100%)`
+                    }}
+                  />
+
+                  <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">Temps de Délai:</span>
+                      <span className="text-white font-mono font-bold text-lg">{config.recordDelay}s</span>
+                    </div>
+                    <p className="text-gray-500 text-xs mt-2">
+                      Continuer l'enregistrement pendant cette période après l'arrêt de l'alarme
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Send Email */}
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={config.sendEmail}
+                      onChange={(e) => updateConfig({ sendEmail: e.target.checked })}
+                      className="sr-only"
+                    />
+                    <div className={`w-14 h-7 rounded-full transition-colors ${config.sendEmail ? 'bg-green-600' : 'bg-gray-600'
+                      }`}>
+                      <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${config.sendEmail ? 'translate-x-7' : 'translate-x-0'
+                        }`}></div>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-white font-medium text-sm">Envoyer un Email</span>
+                    <p className="text-gray-400 text-xs mt-0.5">
+                      Envoyer une notification par email lorsqu'une alarme se produit (configurer l'email dans les paramètres SMTP)
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* PTZ Linkage */}
+              <div className="space-y-4">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={config.ptz.enabled}
+                      onChange={(e) => updateConfig({ ptz: { ...config.ptz, enabled: e.target.checked } })}
+                      className="sr-only"
+                    />
+                    <div className={`w-14 h-7 rounded-full transition-colors ${config.ptz.enabled ? 'bg-green-600' : 'bg-gray-600'
+                      }`}>
+                      <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${config.ptz.enabled ? 'translate-x-7' : 'translate-x-0'
+                        }`}></div>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-white font-medium text-sm">Liaison PTZ</span>
+                    <p className="text-gray-400 text-xs mt-0.5">
+                      Lier au point de préréglage PTZ, tournée ou modèle lorsqu'une alarme se produit
+                    </p>
+                  </div>
+                </label>
+
+                {config.ptz.enabled && (
+                  <div className="ml-16 space-y-3">
+                    {/* PTZ Action Type */}
+                    <div>
+                      <label className="block text-white font-medium mb-2 text-sm">Type d'Action</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          onClick={() => updateConfig({ ptz: { ...config.ptz, actionType: 'preset', actionNumber: 0 } })}
+                          className={`py-2 px-3 rounded-lg border-2 transition-all text-sm font-medium ${config.ptz.actionType === 'preset'
+                              ? 'bg-gradient-to-r from-red-600 to-red-700 border-red-500 text-white'
+                              : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
+                            }`}
+                        >
+                          Préréglage
+                        </button>
+                        <button
+                          onClick={() => updateConfig({ ptz: { ...config.ptz, actionType: 'tour', actionNumber: 0 } })}
+                          className={`py-2 px-3 rounded-lg border-2 transition-all text-sm font-medium ${config.ptz.actionType === 'tour'
+                              ? 'bg-gradient-to-r from-red-600 to-red-700 border-red-500 text-white'
+                              : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
+                            }`}
+                        >
+                          Tournée
+                        </button>
+                        <button
+                          onClick={() => updateConfig({ ptz: { ...config.ptz, actionType: 'pattern', actionNumber: 0 } })}
+                          className={`py-2 px-3 rounded-lg border-2 transition-all text-sm font-medium ${config.ptz.actionType === 'pattern'
+                              ? 'bg-gradient-to-r from-red-600 to-red-700 border-red-500 text-white'
+                              : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
+                            }`}
+                        >
+                          Modèle
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* PTZ Action Number */}
+                    <div>
+                      <label className="block text-white font-medium mb-2 text-sm">
+                        {config.ptz.actionType.charAt(0).toUpperCase() + config.ptz.actionType.slice(1)} Number
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="255"
+                        value={config.ptz.actionNumber || ''}
+                        onChange={(e) => updateConfig({ ptz: { ...config.ptz, actionNumber: parseInt(e.target.value) || 0 } })}
+                        placeholder="Enter number"
+                        className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-red-500"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Snapshot */}
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={config.snapshot}
+                      onChange={(e) => updateConfig({ snapshot: e.target.checked })}
+                      className="sr-only"
+                    />
+                    <div className={`w-14 h-7 rounded-full transition-colors ${config.snapshot ? 'bg-green-600' : 'bg-gray-600'
+                      }`}>
+                      <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${config.snapshot ? 'translate-x-7' : 'translate-x-0'
+                        }`}></div>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-white font-medium text-sm">Capture d'Écran</span>
+                    <p className="text-gray-400 text-xs mt-0.5">
+                      Capturer automatiquement une image lorsqu'une alarme se produit
+                    </p>
+                  </div>
+                </label>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Step 3: Save Button */}
-        <div className="pt-4 border-t border-gray-700">
-          <label className="block text-white font-medium mb-3 text-sm">
-            Step 3: Save Configuration
-          </label>
-          
+        {/* Advanced Settings - Collapsible */}
+        <div className="bg-gray-800/50 rounded-lg border border-gray-700 overflow-hidden">
           <button
-            onClick={onSave}
-            className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white py-3 px-4 rounded-lg border border-green-500 transition-all duration-200 shadow-lg hover:shadow-green-500/50 flex items-center justify-center gap-2 font-medium"
+            onClick={() => setIsAdvancedSettingsOpen(!isAdvancedSettingsOpen)}
+            className="w-full flex items-center justify-between p-4 bg-gray-800/70 hover:bg-gray-800 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-            </svg>
-            Save Motion Detection Settings
+            <span className="text-lg font-medium text-white">Paramètres Avancés</span>
+            {isAdvancedSettingsOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </button>
+
+          {isAdvancedSettingsOpen && (
+            <div className="p-6 space-y-6">
+
+              {/* Scheduled Period */}
+              <div>
+                <label className="block text-white font-medium mb-3 text-sm">Période Programmée</label>
+
+                <button
+                  onClick={() => setShowScheduleModal(true)}
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white py-3 px-4 rounded-lg border border-blue-500 transition-all duration-200 shadow-lg hover:shadow-blue-500/50 flex items-center justify-center gap-2 font-medium"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Configurer le Planning
+                  {config.scheduledPeriods.length > 0 && (
+                    <span className="ml-2 bg-blue-800/50 px-2 py-0.5 rounded text-xs">
+                      {config.scheduledPeriods.length} période{config.scheduledPeriods.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </button>
+
+                <p className="text-gray-400 text-xs mt-2">
+                  Définir les périodes pendant lesquelles la détection de mouvement sera active. Les événements d'alarme ne seront déclenchés que pendant les périodes définies.
+                </p>
+              </div>
+
+              {/* Setup Area */}
+              <div>
+                <label className="block text-white font-medium mb-3 text-sm">Zones de Détection</label>
+
+                <button
+                  onClick={() => setShowAreaModal(true)}
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white py-3 px-4 rounded-lg border border-purple-500 transition-all duration-200 shadow-lg hover:shadow-purple-500/50 flex items-center justify-center gap-2 font-medium"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                  </svg>
+                  Configurer les Zones
+                  {config.detectionAreas.length > 0 && (
+                    <span className="ml-2 bg-purple-800/50 px-2 py-0.5 rounded text-xs">
+                      {config.detectionAreas.length} zone{config.detectionAreas.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </button>
+
+                <p className="text-gray-400 text-xs mt-2">
+                  Définir les régions de détection avec des paramètres de sensibilité et de seuil personnalisés (Région1, Région2, Région3, Région4)
+                </p>
+
+                {/* Area List */}
+                {config.detectionAreas.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {config.detectionAreas.map((area) => (
+                      <div key={area.id} className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-4 h-4 rounded"
+                            style={{ backgroundColor: area.color }}
+                          ></div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-white font-medium text-sm">{area.name}</span>
+                              <button
+                                onClick={() => {
+                                  updateConfig({
+                                    detectionAreas: config.detectionAreas.filter(a => a.id !== area.id)
+                                  });
+                                }}
+                                className="text-red-400 hover:text-red-300 text-xs"
+                              >
+                                Supprimer
+                              </button>
+                            </div>
+                            <div className="text-gray-400 text-xs space-y-0.5">
+                              <div>Sensibilité: {area.sensitivity}%</div>
+                              <div>Seuil: {area.threshold}%</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Step 3: Save Button */}
+              <div className="pt-4 border-t border-gray-700">
+                <label className="block text-white font-medium mb-3 text-sm">
+                  Étape 3: Enregistrer la Configuration
+                </label>
+
+                <button
+                  onClick={onSave}
+                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white py-3 px-4 rounded-lg border border-green-500 transition-all duration-200 shadow-lg hover:shadow-green-500/50 flex items-center justify-center gap-2 font-medium"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  Enregistrer les Paramètres de Détection de Mouvement
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -471,14 +492,14 @@ const MotionDetection: React.FC<MotionDetectionProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div className="text-sm text-green-300">
-              <strong>Motion Detection is Active</strong>
+              <strong>La Détection de Mouvement est Active</strong>
               <div className="space-y-1 mt-2 text-green-200/90 text-xs">
-                <p>• Anti-Dither: {config.antiDither}s</p>
-                {config.record && <p>• Recording enabled (Delay: {config.recordDelay}s)</p>}
-                {config.sendEmail && <p>• Email notifications enabled</p>}
-                {config.ptz.enabled && <p>• PTZ linkage: {config.ptz.actionType} #{config.ptz.actionNumber}</p>}
-                {config.snapshot && <p>• Snapshot capture enabled</p>}
-                {config.detectionAreas.length > 0 && <p>• Detection areas: {config.detectionAreas.length} configured</p>}
+                <p>• Anti-Gigue: {config.antiDither}s</p>
+                {config.record && <p>• Enregistrement activé (Délai: {config.recordDelay}s)</p>}
+                {config.sendEmail && <p>• Notifications par email activées</p>}
+                {config.ptz.enabled && <p>• Liaison PTZ: {config.ptz.actionType} #{config.ptz.actionNumber}</p>}
+                {config.snapshot && <p>• Capture d'écran activée</p>}
+                {config.detectionAreas.length > 0 && <p>• Zones de détection: {config.detectionAreas.length} configurée{config.detectionAreas.length > 1 ? 's' : ''}</p>}
               </div>
             </div>
           </div>
@@ -528,16 +549,16 @@ const ScheduleSetupModal: React.FC<ScheduleSetupModalProps> = ({
     scheduledPeriods.length > 0
       ? scheduledPeriods
       : [
-          {
-            id: 1,
-            dayOfWeek: 'all',
-            periods: Array(6).fill(null).map(() => ({
-              enabled: false,
-              startTime: '00:00',
-              endTime: '23:59',
-            })),
-          },
-        ]
+        {
+          id: 1,
+          dayOfWeek: 'all',
+          periods: Array(6).fill(null).map(() => ({
+            enabled: false,
+            startTime: '00:00',
+            endTime: '23:59',
+          })),
+        },
+      ]
   );
 
   const [selectedDay, setSelectedDay] = useState<'all' | 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat'>('all');
@@ -568,7 +589,7 @@ const ScheduleSetupModal: React.FC<ScheduleSetupModalProps> = ({
   const updateDaySchedule = (dayOfWeek: typeof selectedDay, updatedPeriods: ScheduledPeriod['periods']) => {
     const existingIndex = periods.findIndex(p => p.dayOfWeek === dayOfWeek);
     let newPeriods = [...periods];
-    
+
     if (existingIndex >= 0) {
       newPeriods[existingIndex] = {
         ...newPeriods[existingIndex],
@@ -581,7 +602,7 @@ const ScheduleSetupModal: React.FC<ScheduleSetupModalProps> = ({
         periods: updatedPeriods,
       });
     }
-    
+
     setPeriods(newPeriods);
   };
 
@@ -629,11 +650,10 @@ const ScheduleSetupModal: React.FC<ScheduleSetupModalProps> = ({
                 <button
                   key={day.value}
                   onClick={() => setSelectedDay(day.value)}
-                  className={`py-2 px-3 rounded-lg border-2 transition-all font-medium text-sm ${
-                    selectedDay === day.value
+                  className={`py-2 px-3 rounded-lg border-2 transition-all font-medium text-sm ${selectedDay === day.value
                       ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-500 text-white shadow-lg'
                       : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
-                  }`}
+                    }`}
                 >
                   {day.label}
                 </button>
@@ -646,14 +666,13 @@ const ScheduleSetupModal: React.FC<ScheduleSetupModalProps> = ({
             <label className="block text-white font-medium mb-3 text-sm">
               Time Periods for {days.find(d => d.value === selectedDay)?.label}
             </label>
-            
+
             <div className="space-y-3">
               {currentSchedule.periods.map((period, index) => (
                 <div
                   key={index}
-                  className={`bg-gray-900/50 rounded-lg p-4 border-2 transition-all ${
-                    period.enabled ? 'border-green-500/50' : 'border-gray-700'
-                  }`}
+                  className={`bg-gray-900/50 rounded-lg p-4 border-2 transition-all ${period.enabled ? 'border-green-500/50' : 'border-gray-700'
+                    }`}
                 >
                   <div className="flex items-center gap-4">
                     {/* Enable Checkbox */}
@@ -679,7 +698,7 @@ const ScheduleSetupModal: React.FC<ScheduleSetupModalProps> = ({
                           className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:border-blue-500"
                         />
                       </div>
-                      
+
                       <svg className="w-4 h-4 text-gray-500 mt-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                       </svg>
@@ -829,7 +848,7 @@ const AreaSetupModal: React.FC<AreaSetupModalProps> = ({
             {/* Left: Video Preview Area */}
             <div>
               <label className="block text-white font-medium mb-3 text-sm">Video Preview</label>
-              
+
               <div className="relative aspect-video bg-gray-900 rounded-lg border-2 border-gray-700 overflow-hidden">
                 {/* Placeholder Video */}
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -846,9 +865,8 @@ const AreaSetupModal: React.FC<AreaSetupModalProps> = ({
                 {areas.map((area) => (
                   <div
                     key={area.id}
-                    className={`absolute inset-4 border-4 rounded-lg pointer-events-none transition-opacity ${
-                      selectedAreaId === area.id ? 'opacity-70' : 'opacity-30'
-                    }`}
+                    className={`absolute inset-4 border-4 rounded-lg pointer-events-none transition-opacity ${selectedAreaId === area.id ? 'opacity-70' : 'opacity-30'
+                      }`}
                     style={{
                       borderColor: area.color,
                       backgroundColor: `${area.color}20`,
@@ -893,11 +911,10 @@ const AreaSetupModal: React.FC<AreaSetupModalProps> = ({
                   <button
                     key={area.id}
                     onClick={() => setSelectedAreaId(area.id)}
-                    className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                      selectedAreaId === area.id
+                    className={`w-full text-left p-3 rounded-lg border-2 transition-all ${selectedAreaId === area.id
                         ? 'border-purple-500 bg-purple-500/10'
                         : 'border-gray-700 bg-gray-900/50 hover:border-gray-600'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <div

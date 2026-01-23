@@ -93,23 +93,23 @@ const NetworkAccess = () => {
             <div className="">
                 <Select label="Network Interface" value={networkInterface} setValue={setnetworkInterface} options={networkInterfaceOptions} labelClassName="text-black" />
                 <div className="pt-4">
-                <Toggle label="Enable DHCP" value={isCheckedDHCP} setValue={setIsCheckedDHCP}  />
+                    <Toggle label="Enable DHCP" value={isCheckedDHCP} setValue={setIsCheckedDHCP} />
                 </div>
             </div>
             <div className={`${isCheckedDHCP ? 'hidden' : 'block'} `} >
                 <div className="text-xl font-semibold  mb-3">IPv4</div>
                 <div className="grid grid-cols-3    gap-10">
-                    <TextField label="IP address" value={ipv4Address} setValue={setipv4Address} placeholder="192.168.10.22"      isEditable={true} labelClassName="text-black"/>
-                    <TextField label="Subnet mask" value={ipv4Mask} setValue={setipv4Mask} placeholder="255.255.255.0"     isEditable={true} labelClassName="text-black" />
-                    <TextField label="Gatway" value={ipv4Gateway} setValue={setipv4Gateway} placeholder="192.168.10.254"      isEditable={true} labelClassName="text-black" />
+                    <TextField label="IP address" value={ipv4Address} setValue={setipv4Address} placeholder="192.168.10.22" isEditable={true} labelClassName="text-black" />
+                    <TextField label="Subnet mask" value={ipv4Mask} setValue={setipv4Mask} placeholder="255.255.255.0" isEditable={true} labelClassName="text-black" />
+                    <TextField label="Gatway" value={ipv4Gateway} setValue={setipv4Gateway} placeholder="192.168.10.254" isEditable={true} labelClassName="text-black" />
                 </div>
             </div>
             <div className={`${isCheckedDHCP ? 'hidden' : 'hidden'} `} >
                 <div className="text-xl font-semibold  mb-3">IPv6</div>
                 <div className="grid grid-cols-3    gap-10">
-                    <TextField label="IP address" value={ipv6Address} setValue={setipv6Address} placeholder="192.168.10.22"   labelClassName="text-white"     isEditable={true}/>
-                    <TextField label="Subnet mask" value={ipv6Mask} setValue={setipv6Mask} placeholder="255.255.255.0"    labelClassName="text-white"   isEditable={true}/>
-                    <TextField label="Gatway" value={ipv6Gateway} setValue={setipv6Gateway} placeholder="192.168.10.254"  labelClassName="text-white"     isEditable={true} />
+                    <TextField label="IP address" value={ipv6Address} setValue={setipv6Address} placeholder="192.168.10.22" labelClassName="text-white" isEditable={true} />
+                    <TextField label="Subnet mask" value={ipv6Mask} setValue={setipv6Mask} placeholder="255.255.255.0" labelClassName="text-white" isEditable={true} />
+                    <TextField label="Gatway" value={ipv6Gateway} setValue={setipv6Gateway} placeholder="192.168.10.254" labelClassName="text-white" isEditable={true} />
                 </div>
             </div>
 
@@ -117,12 +117,12 @@ const NetworkAccess = () => {
             <div className={`${isCheckedDHCP ? 'hidden' : 'block'} `} >
                 <div className="text-xl font-semibold mb-3">DNS server</div>
                 <div className="grid grid-cols-3    gap-10">
-                    <TextField label="Prefered DNS server " labelClassName="text-white" value={primaryDns} setValue={setprimaryDns} placeholder="8.8.8.8"      isEditable={true}/>
-                    <TextField label="Alternate DNS server " labelClassName="text-white" value={secondaryDns} setValue={setsecondaryDns} placeholder="8.8.8.8"      isEditable={true} />
+                    <TextField label="Prefered DNS server " labelClassName="text-white" value={primaryDns} setValue={setprimaryDns} placeholder="8.8.8.8" isEditable={true} />
+                    <TextField label="Alternate DNS server " labelClassName="text-white" value={secondaryDns} setValue={setsecondaryDns} placeholder="8.8.8.8" isEditable={true} />
                 </div>
             </div>
-<div className="pt-6">
-            <SaveButton onClick={submitNetworkConfig}  loading={isSaving} label='SAVE CHANGES'  />
+            <div className="pt-6">
+                <SaveButton onClick={submitNetworkConfig} loading={isSaving} label='ENREGISTRER LES MODIFICATIONS' />
             </div>
             <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
 

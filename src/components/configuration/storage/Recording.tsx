@@ -37,17 +37,17 @@ const Recording = () => {
             if (response.data.includes('success')) {
                 const actionUrl = 'cgi-bin/mj-settings_new.cgi';
 
-          
-            const payload = {
-                action: 'update_restart',
-                _records_enabled: enable,
-            }
 
-            await axios.post(actionUrl, payload, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                const payload = {
+                    action: 'update_restart',
+                    _records_enabled: enable,
                 }
-            });
+
+                await axios.post(actionUrl, payload, {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
                 setToast({ message: 'Schedule recording Times Saved', type: 'success' });
 
             } else {
@@ -185,7 +185,7 @@ const Recording = () => {
             <div className="grid grid-cols-3 mb-6">
                 <Toggle label="Enable Recording" value={enable} setValue={setEnable} />
             </div>
-            
+
             {enable && (
                 <>
                     <div className="flex justify-end mb-4">
@@ -196,7 +196,7 @@ const Recording = () => {
                             Clear All
                         </button>
                     </div>
-                    
+
                     <div className="bg-black rounded-lg overflow-hidden shadow-lg">
                         <table className="min-w-full">
                             <thead className="bg-black text-white">
@@ -221,11 +221,10 @@ const Recording = () => {
                                                     type="checkbox"
                                                     checked={checkedState[dayIndex][timeIndex]}
                                                     onChange={() => handleCheckboxChange(dayIndex, timeIndex)}
-                                                    className={`h-5 w-5 rounded cursor-pointer transition-all duration-200 ${
-                                                        checkedState[dayIndex][timeIndex] 
-                                                            ? 'bg-green-500 border-green-500' 
+                                                    className={`h-5 w-5 rounded cursor-pointer transition-all duration-200 ${checkedState[dayIndex][timeIndex]
+                                                            ? 'bg-green-500 border-green-500'
                                                             : 'bg-gray-400 border-gray-400 hover:bg-gray-300'
-                                                    }`}
+                                                        }`}
                                                 />
                                             </td>
                                         ))}
@@ -236,19 +235,19 @@ const Recording = () => {
                     </div>
                 </>
             )}
-            
+
             <div className="flex justify-center mt-6">
                 {enable ? (
-                    <SaveButton onClick={submitMotionConfig} label="SAVE CHANGES" loading={isSaving} />
+                    <SaveButton onClick={submitMotionConfig} label="ENREGISTRER LES MODIFICATIONS" loading={isSaving} />
                 ) : (
-                    <SaveButton onClick={submitMotionDisable} label="SAVE CHANGES" loading={isSaving} />
+                    <SaveButton onClick={submitMotionDisable} label="ENREGISTRER LES MODIFICATIONS" loading={isSaving} />
                 )}
             </div>
-            
-            <Toast 
-                message={toast.message} 
-                type={toast.type} 
-                onClose={() => setToast({ message: '', type: 'info' })} 
+
+            <Toast
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast({ message: '', type: 'info' })}
             />
         </div>
     );

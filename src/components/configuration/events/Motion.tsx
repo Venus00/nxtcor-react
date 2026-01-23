@@ -34,15 +34,15 @@ const Motion = () => {
 
             if (response.data.includes('success')) {
                 setIsSaving(false)
-                setToast({ message: 'Motion Disabled successufuly', type: 'success' });
+                setToast({ message: 'Détection de mouvement désactivée avec succès', type: 'success' });
             } else {
                 setIsSaving(false)
-                setToast({ message: 'Error', type: 'error' });
+                setToast({ message: 'Erreur', type: 'error' });
             }
         } catch (error) {
             console.log(error)
             setIsSaving(false)
-            setToast({ message: 'Error ', type: 'error' });
+            setToast({ message: 'Erreur', type: 'error' });
 
         }
     }
@@ -74,14 +74,14 @@ const Motion = () => {
          `}
         >
             <div className="w-1/4">
-                <Toggle label="Enable Motion" value={isCheckedMotion} setValue={setIsCheckedMotion} />
+                <Toggle label="Activer la Détection de Mouvement" value={isCheckedMotion} setValue={setIsCheckedMotion} />
             </div>
             {isCheckedMotion && <Stepper />}
 
             {!isCheckedMotion && <div className="flex flex-col items-center  w-3/4 justify-center gap-4  mt-4">
 
                 <div>
-                    <SaveButton onClick={submitMotionConfig}  label="SAVE CHANGES" loading={isSaving} />
+                    <SaveButton onClick={submitMotionConfig} label="ENREGISTRER LES MODIFICATIONS" loading={isSaving} />
                 </div>
             </div>}
 

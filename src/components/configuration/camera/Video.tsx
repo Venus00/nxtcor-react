@@ -21,7 +21,7 @@ const Video = () => {
     const [videoProfile, setVideoProfile] = useState('');
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' }>({
         message: '',
-        type: 'info' 
+        type: 'info'
     });
 
 
@@ -49,10 +49,10 @@ const Video = () => {
                 }
             });
             if (response.data.includes('success')) {
-                setToast({ message:  'Configuration Updated', type: 'success' });
+                setToast({ message: 'Configuration Updated', type: 'success' });
                 setIsSaving(false)
             } else {
-                setToast({ message:  'Error Updating Configuration', type: 'error' });
+                setToast({ message: 'Error Updating Configuration', type: 'error' });
                 setIsSaving(false)
             }
         } catch (error) {
@@ -90,13 +90,13 @@ const Video = () => {
             lg:w-1/4 /* Larger screens (1024px and up) */
            `}
         >
-            <Select label="Video Resolution" value={videoResolution} setValue={setVideoResolution} options={VideoResoltionOptions}labelClassName="text-black" />
+            <Select label="Video Resolution" value={videoResolution} setValue={setVideoResolution} options={VideoResoltionOptions} labelClassName="text-black" />
             <Select label="Video Encoding" value={videoEncoding} setValue={setVideoEncoding} options={VideoEncodingOptions} labelClassName="text-black" />
             <TextField label="Frame rate (FPS)" value={videoFPS} placeholder="20" setValue={setVideoFPS} labelClassName="text-black " />
             <TextField label="Video Bitrate" value={videoBitrate} placeholder="4096" setValue={setVideoBitrate} labelClassName="text-black" />
             <Select label="Rate control mode" value={rateControlMode} setValue={setRateControlMode} options={RateControlModeOptions} labelClassName="text-black" />
             <Select label="Video Profile" value={videoProfile} setValue={setVideoProfile} options={VideoProfileOptions} labelClassName="text-black" />
-            <SaveButton onClick={submitVideoConfig}  loading={isSaving} label='SAVE CHANGES' />
+            <SaveButton onClick={submitVideoConfig} loading={isSaving} label='ENREGISTRER LES MODIFICATIONS' />
             <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
 
 

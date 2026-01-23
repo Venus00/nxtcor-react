@@ -5,7 +5,7 @@ import axios from "axios";
 
 
 const ArmingTable = () => {
-    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
     const timeSlots = ['00-02', '02-04', '04-06', '06-08', '08-10', '10-12', '12-14', '14-16', '16-18', '18-20', '20-22', '22-00'];
     // State to keep track of checkbox status
     const [checkedState, setCheckedState] = useState(
@@ -33,14 +33,14 @@ const ArmingTable = () => {
 
             if (response.data.includes('success')) {
 
-                setToast({ message: 'Arming Times Saved', type: 'success' });
+                setToast({ message: 'Horaires d\'armement enregistrés', type: 'success' });
             } else {
 
                 setToast({ message: response.data, type: 'error' });
             }
         } catch (error) {
             console.log(error)
-            setToast({ message: 'Error ', type: 'error' });
+            setToast({ message: 'Erreur', type: 'error' });
         }
     };
     // Handle checkbox change
@@ -131,7 +131,7 @@ const ArmingTable = () => {
                     className="mb-2 px-4 py-2 bg-red-500 text-white font-medium rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300"
                     onClick={clearAllCheckboxes}
                 >
-                    Clear All
+                    Tout Effacer
                 </button>
             </div>
             <table className="min-w-full border">
@@ -165,7 +165,7 @@ const ArmingTable = () => {
             <div className="flex flex-col items-center justify-center gap-4  mt-4">
 
                 <div>
-                    <SaveButton onClick={submitMotionConfig} label="SAVE CHANGES" loading={false} />
+                    <SaveButton onClick={submitMotionConfig} label="ENREGISTRER LES MODIFICATIONS" loading={false} />
                 </div>
             </div>
             <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />

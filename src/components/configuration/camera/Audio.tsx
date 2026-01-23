@@ -109,7 +109,7 @@ const Audio = () => {
                 isCheckedSpeaker && <Slider label="Line Out" value={SpeakerVolume} setValue={setSpeakerVolume} max={30} />
 
             }
-            <SaveButton onClick={submitAudioConfig}  loading={isSaving}  label='SAVE CHANGES' />
+            <SaveButton onClick={submitAudioConfig} loading={isSaving} label='ENREGISTRER LES MODIFICATIONS' />
             <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
 
         </div>

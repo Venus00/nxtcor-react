@@ -55,10 +55,10 @@ const Image = () => {
 
 
             if (response.data.includes('success')) {
-                setToast({ message:  'Configuration Updated', type: 'success' });
+                setToast({ message: 'Configuration Updated', type: 'success' });
                 setIsSaving(false)
             } else {
-                setToast({ message:  'Error Updating Configuration ', type: 'error' });
+                setToast({ message: 'Error Updating Configuration ', type: 'error' });
                 setIsSaving(false)
             }
         } catch (error) {
@@ -108,7 +108,7 @@ const Image = () => {
                 <Select label="Rotate Image Clockwise" value={rotation} setValue={setrotation} options={ImageRotationOptions} />
 
             </div>
-            <SaveButton onClick={submitImageConfig}  loading={isSaving} label='SAVE CHANGES' />
+            <SaveButton onClick={submitImageConfig} loading={isSaving} label='ENREGISTRER LES MODIFICATIONS' />
             <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
 
         </div>

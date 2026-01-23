@@ -275,15 +275,15 @@ const VideoListSidebar = () => {
     return (
         <div className="flex h-screen bg-gray-900">
             {/* Controls and Date Selector */}
-            <div className="w-80 h-full rounded-lg p-4 flex flex-col bg-gray-800 shadow-md border border-gray-700 overflow-hidden">
+            <div className="w-80 ml-4 mt-4 h-full rounded-lg p-4 flex flex-col bg-gray-800 shadow-md border border-gray-700 overflow-hidden">
                 <h2 className="text-xl font-semibold mb-4 text-white flex items-center gap-2">
                     <Calendar className="w-5 h-5" />
-                    Playback Controls
+                    Contrôles de Lecture
                 </h2>
 
                 {/* Camera Selector */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Select Camera</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Sélectionner la Caméra</label>
                     <div className="grid grid-cols-2 gap-2">
                         <button
                             onClick={() => setSelectedCamera('cam1')}
@@ -310,13 +310,13 @@ const VideoListSidebar = () => {
 
                 {/* Date Selector */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Select Date</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Sélectionner la Date</label>
                     <select
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
                         className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                        <option value="">All Dates</option>
+                        <option value="">Toutes les Dates</option>
                         {availableDates.map(date => (
                             <option key={date} value={date}>{date}</option>
                         ))}
@@ -325,13 +325,13 @@ const VideoListSidebar = () => {
 
                 {/* Search */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Search Video</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Rechercher une Vidéo</label>
                     <div className="flex gap-2">
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Video name..."
+                            placeholder="Nom de la vidéo..."
                             className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <button
@@ -350,7 +350,7 @@ const VideoListSidebar = () => {
                         className="mb-4 w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md flex items-center justify-center gap-2"
                     >
                         <Trash2 className="w-4 h-4" />
-                        Delete All ({selectedDate})
+                        Tout Supprimer ({selectedDate})
                     </button>
                 )}
 
@@ -366,11 +366,11 @@ const VideoListSidebar = () => {
                 <div className="w-1/3 h-full rounded-lg p-4 flex flex-col bg-gray-800 border border-gray-700 overflow-auto">
                     <h2 className="text-xl font-semibold mb-4 text-white flex items-center gap-2">
                         <Video className="w-5 h-5" />
-                        Videos ({filteredVideos.length})
+                        Vidéos ({filteredVideos.length})
                     </h2>
 
                     {loading ? (
-                        <div className="text-center text-gray-400">Loading...</div>
+                        <div className="text-center text-gray-400">Chargement...</div>
                     ) : Object.keys(videosByDateAndHour).length > 0 ? (
                         <div className="space-y-2">
                             {Object.entries(videosByDateAndHour).sort().reverse().map(([date, hourGroups]) => (
@@ -388,7 +388,7 @@ const VideoListSidebar = () => {
                                             <Folder className="w-4 h-4 text-yellow-400" />
                                             <span className="font-semibold text-gray-200">{date}</span>
                                             <span className="text-xs text-gray-400">
-                                                ({Object.values(hourGroups).reduce((sum, vids) => sum + vids.length, 0)} videos)
+                                                ({Object.values(hourGroups).reduce((sum, vids) => sum + vids.length, 0)} vidéos)
                                             </span>
                                         </div>
                                         <button
@@ -399,7 +399,7 @@ const VideoListSidebar = () => {
                                             className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-900/20"
                                         >
                                             <Trash2 className="w-3 h-3" />
-                                            Delete Day
+                                            Supprimer le Jour
                                         </button>
                                     </div>
 
@@ -423,7 +423,7 @@ const VideoListSidebar = () => {
                                                                 {hour}:00
                                                             </span>
                                                             <span className="text-xs text-gray-500">
-                                                                ({videos.length} videos)
+                                                                ({videos.length} vidéos)
                                                             </span>
                                                         </div>
                                                         <button
@@ -444,8 +444,8 @@ const VideoListSidebar = () => {
                                                                 <li
                                                                     key={`${video.date}-${video.name}-${index}`}
                                                                     className={`flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-700 transition-colors ${selectedVideo?.name === video.name && selectedVideo?.date === video.date
-                                                                            ? 'bg-blue-900/50 border border-blue-500'
-                                                                            : 'bg-gray-900/30 border border-transparent'
+                                                                        ? 'bg-blue-900/50 border border-blue-500'
+                                                                        : 'bg-gray-900/30 border border-transparent'
                                                                         }`}
                                                                     onClick={() => handleSelectVideo(video)}
                                                                 >
@@ -476,7 +476,7 @@ const VideoListSidebar = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center text-gray-400">No videos found</div>
+                        <div className="text-center text-gray-400">Aucune vidéo trouvée</div>
                     )}
                 </div>
 
@@ -494,7 +494,7 @@ const VideoListSidebar = () => {
                     ) : (
                         <div className="text-white text-lg flex flex-col items-center gap-4">
                             <Video className="w-16 h-16 opacity-50" />
-                            <span>Select a video to play</span>
+                            <span>Sélectionnez une vidéo à lire</span>
                         </div>
                     )}
                 </div>

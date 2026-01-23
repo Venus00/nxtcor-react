@@ -72,7 +72,7 @@ const EventTable: React.FC = () => {
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet événement?')) return;
 
     try {
       // await axios.post('/cgi-bin/deleteEvent.cgi', { eventId });
@@ -83,7 +83,7 @@ const EventTable: React.FC = () => {
   };
 
   const handleClearAll = async () => {
-    if (!confirm('Are you sure you want to clear all events?')) return;
+    if (!confirm('Êtes-vous sûr de vouloir effacer tous les événements?')) return;
 
     try {
       // await axios.post('/cgi-bin/clearEvents.cgi');
@@ -107,6 +107,15 @@ const EventTable: React.FC = () => {
 
   const getEventTypeColor = (eventType: string) => {
     const colors: { [key: string]: string } = {
+      'Détection de Mouvement': 'bg-red-500/20 text-red-400 border-red-500/30',
+      'Détection d\'Effraction': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+      'Changement de Scène': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+      'Intrusion Régionale': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+      'Objet Abandonné': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      'Mouvement Rapide': 'bg-green-500/20 text-green-400 border-green-500/30',
+      'Détection de Foule': 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+      'Détection d\'Objet': 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+      // Keep English versions for backward compatibility
       'Motion Detection': 'bg-red-500/20 text-red-400 border-red-500/30',
       'Tamper Detection': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
       'Scene Changing': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
@@ -131,8 +140,8 @@ const EventTable: React.FC = () => {
       <div className="bg-gray-800/50 border-b border-gray-700 p-4">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h2 className="text-xl font-bold text-white mb-1">Event History</h2>
-            <p className="text-sm text-gray-400">Detected events with snapshots and classifications</p>
+            <h2 className="text-xl font-bold text-white mb-1">Historique des Événements</h2>
+            <p className="text-sm text-gray-400">Événements détectés avec captures d'écran et classifications</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -143,7 +152,7 @@ const EventTable: React.FC = () => {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Refresh
+              Actualiser
             </button>
 
             <button
@@ -153,7 +162,7 @@ const EventTable: React.FC = () => {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              Clear All
+              Tout Effacer
             </button>
           </div>
         </div>
@@ -161,26 +170,26 @@ const EventTable: React.FC = () => {
         {/* Filters */}
         <div className="mt-4 flex gap-4 flex-wrap">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-400 mb-2">Filter by Event Type</label>
+            <label className="block text-sm font-medium text-gray-400 mb-2">Filtrer par Type d'Événement</label>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">All Events</option>
-              <option value="Motion Detection">Motion Detection</option>
-              <option value="Tamper Detection">Tamper Detection</option>
-              <option value="Scene Changing">Scene Changing</option>
-              <option value="Regional Intrusion">Regional Intrusion</option>
-              <option value="Abandoned Object">Abandoned Object</option>
-              <option value="Fast-Moving">Fast-Moving</option>
-              <option value="Crowd Detection">Crowd Detection</option>
-              <option value="Object Detection">Object Detection</option>
+              <option value="all">Tous les Événements</option>
+              <option value="Motion Detection">Détection de Mouvement</option>
+              <option value="Tamper Detection">Détection d'Effraction</option>
+              <option value="Scene Changing">Changement de Scène</option>
+              <option value="Regional Intrusion">Intrusion Régionale</option>
+              <option value="Abandoned Object">Objet Abandonné</option>
+              <option value="Fast-Moving">Mouvement Rapide</option>
+              <option value="Crowd Detection">Détection de Foule</option>
+              <option value="Object Detection">Détection d'Objet</option>
             </select>
           </div>
 
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-400 mb-2">Search by Date</label>
+            <label className="block text-sm font-medium text-gray-400 mb-2">Rechercher par Date</label>
             <input
               type="date"
               value={searchDate}
@@ -194,7 +203,7 @@ const EventTable: React.FC = () => {
       {/* Event Count */}
       <div className="px-4 py-2 bg-gray-800/30 border-b border-gray-700">
         <p className="text-sm text-gray-400">
-          Showing <span className="font-semibold text-white">{filteredEvents.length}</span> of <span className="font-semibold text-white">{events.length}</span> events
+          Affichage de <span className="font-semibold text-white">{filteredEvents.length}</span> sur <span className="font-semibold text-white">{events.length}</span> événements
         </p>
       </div>
 
@@ -203,25 +212,25 @@ const EventTable: React.FC = () => {
         {loading ? (
           <div className="p-8 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            <p className="mt-2 text-gray-400">Loading events...</p>
+            <p className="mt-2 text-gray-400">Chargement des événements...</p>
           </div>
         ) : filteredEvents.length === 0 ? (
           <div className="p-8 text-center">
             <svg className="mx-auto h-12 w-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
-            <p className="mt-2 text-gray-400">No events found</p>
+            <p className="mt-2 text-gray-400">Aucun événement trouvé</p>
           </div>
         ) : (
           <table className="w-full">
             <thead className="bg-gray-800/50 border-b border-gray-700">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Snapshot</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date & Time</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Event Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Capture</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date et Heure</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Type d'Événement</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Classification</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Confidence</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Details</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Confiance</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Détails</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -311,7 +320,7 @@ const EventTable: React.FC = () => {
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">Event Details</h3>
+                <h3 className="text-xl font-bold text-white">Détails de l'Événement</h3>
                 <button
                   onClick={() => setSelectedEvent(null)}
                   className="text-gray-400 hover:text-white transition-colors"
@@ -325,7 +334,7 @@ const EventTable: React.FC = () => {
               <div className="space-y-4">
                 {/* Snapshot */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Snapshot</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Capture</label>
                   <div className="w-full rounded-lg overflow-hidden bg-gray-900">
                     <img
                       src={selectedEvent.snapshotUrl}
@@ -341,7 +350,7 @@ const EventTable: React.FC = () => {
                 {/* Event Information */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Event Type</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Type d'Événement</label>
                     <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-md border ${getEventTypeColor(selectedEvent.eventType)}`}>
                       {selectedEvent.eventType}
                     </span>
@@ -351,12 +360,12 @@ const EventTable: React.FC = () => {
                     <p className="text-white font-medium">{selectedEvent.classification}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Date & Time</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Date et Heure</label>
                     <p className="text-white">{formatDate(selectedEvent.timestamp)}</p>
                   </div>
                   {selectedEvent.confidence !== undefined && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-1">Confidence</label>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">Confiance</label>
                       <p className="text-white">{selectedEvent.confidence}%</p>
                     </div>
                   )}
@@ -364,7 +373,7 @@ const EventTable: React.FC = () => {
 
                 {selectedEvent.details && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Details</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Détails</label>
                     <p className="text-white">{selectedEvent.details}</p>
                   </div>
                 )}
@@ -377,13 +386,13 @@ const EventTable: React.FC = () => {
                     }}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
                   >
-                    Delete Event
+                    Supprimer l'Événement
                   </button>
                   <button
                     onClick={() => setSelectedEvent(null)}
                     className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
                   >
-                    Close
+                    Fermer
                   </button>
                 </div>
               </div>

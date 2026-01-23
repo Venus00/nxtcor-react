@@ -61,21 +61,19 @@ const Storage: React.FC = () => {
         <nav className="-mb-px flex space-x-6">
           <button
             onClick={() => setActiveTab("recording")}
-            className={`py-1 px-1 border-b-2 text-sm font-medium ${
-              activeTab === "recording"
+            className={`py-1 px-1 border-b-2 text-sm font-medium ${activeTab === "recording"
                 ? "border-blue-500 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
+              }`}
           >
             Recording schedule
           </button>
           <button
             onClick={() => setActiveTab("storage")}
-            className={`py-1 px-1 border-b-2 text-sm font-medium ${
-              activeTab === "storage"
+            className={`py-1 px-1 border-b-2 text-sm font-medium ${activeTab === "storage"
                 ? "border-blue-500 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
+              }`}
           >
             Storage management
           </button>
@@ -97,73 +95,73 @@ const Storage: React.FC = () => {
               </label>
             </div>
 
-       <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Format</label>
-                    <select
-                      value={format}
-                      onChange={(e) => setFormat(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="MP4">MP4</option>
-                      <option value="AVI">AVI</option>
-                      <option value="MOV">MOV</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Resolution</label>
-                    <select
-                      value={resolution}
-                      onChange={(e) => setResolution(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="1920*1080">1920*1080</option>
-                      <option value="1280*720">1280*720</option>
-                      <option value="640*480">640*480</option>
-                    </select>
-                  </div>
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Format</label>
+                <select
+                  value={format}
+                  onChange={(e) => setFormat(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="MP4">MP4</option>
+                  <option value="AVI">AVI</option>
+                  <option value="MOV">MOV</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Resolution</label>
+                <select
+                  value={resolution}
+                  onChange={(e) => setResolution(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="1920*1080">1920*1080</option>
+                  <option value="1280*720">1280*720</option>
+                  <option value="640*480">640*480</option>
+                </select>
+              </div>
+            </div>
 
-                {/* Quality and Bitrate */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quality</label>
-                    <select
-                      value={quality}
-                      onChange={(e) => setQuality(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bitrate</label>
-                    <select
-                      value={bitrate}
-                      onChange={(e) => setBitrate(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="2048">2048</option>
-                      <option value="1024">1024</option>
-                      <option value="512">512</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1"> time</label>
-                    <select
-                      value={framerate}
-                      onChange={(e) => setFramerate(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="30fps">ms</option>
-                      <option value="25fps">s</option>
-                      <option value="15fps">m</option>
-                    </select>
-                  </div>
-                </div>
-             
+            {/* Quality and Bitrate */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Quality</label>
+                <select
+                  value={quality}
+                  onChange={(e) => setQuality(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bitrate</label>
+                <select
+                  value={bitrate}
+                  onChange={(e) => setBitrate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="2048">2048</option>
+                  <option value="1024">1024</option>
+                  <option value="512">512</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1"> time</label>
+                <select
+                  value={framerate}
+                  onChange={(e) => setFramerate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="30fps">ms</option>
+                  <option value="25fps">s</option>
+                  <option value="15fps">m</option>
+                </select>
+              </div>
+            </div>
+
 
             <div>
               <div className="flex justify-between items-center mb-2">
@@ -198,9 +196,8 @@ const Storage: React.FC = () => {
                           onClick={() => toggleScheduleCell(dayIndex, hourIndex)}
                         >
                           <div
-                            className={`w-3 h-3 rounded-sm ${
-                              schedule[dayIndex][hourIndex] ? "bg-green-500" : "bg-gray-200 hover:bg-gray-300"
-                            }`}
+                            className={`w-3 h-3 rounded-sm ${schedule[dayIndex][hourIndex] ? "bg-green-500" : "bg-gray-200 hover:bg-gray-300"
+                              }`}
                           />
                         </div>
                       ))}
@@ -211,12 +208,12 @@ const Storage: React.FC = () => {
             </div>
 
             <button className="px-3 py-1 bg-red-600 text-white  rounded hover:bg-red-700 focus:ring-1 focus:ring-red-500">
-              Save Changes
+              Enregistrer les Modifications
             </button>
           </div>
         )}
 
-     
+
         {activeTab === "storage" && (
           <div className="space-y-6">
             {/* Hard disk management table */}
@@ -365,7 +362,7 @@ const Storage: React.FC = () => {
               </div>
 
               <button className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                SAVE CHANGES
+                ENREGISTRER LES MODIFICATIONS
               </button>
             </div>
           </div>

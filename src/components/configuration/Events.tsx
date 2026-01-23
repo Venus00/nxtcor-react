@@ -1,14 +1,14 @@
-import  { useState } from 'react';
+import { useState } from 'react';
 import Motion from './events/Motion';
 
 
 // import User_Management from './general/User_Management';
 
 const Events = () => {
-  const [activeTab, setActiveTab] = useState('Motion Detection');
+  const [activeTab, setActiveTab] = useState('Détection de Mouvement');
 
   const tabs = [
-    { name: 'Motion Detection', content: <Motion /> }
+    { name: 'Détection de Mouvement', content: <Motion /> }
   ];
 
   return (
@@ -21,11 +21,10 @@ const Events = () => {
           {tabs.map((tab) => (
             <li className="me-2" role="presentation" key={tab.name}>
               <button
-                className={`inline-block p-4  rounded-t-lg ${
-                  activeTab === tab.name
+                className={`inline-block p-4  rounded-t-lg ${activeTab === tab.name
                     ? 'text-black border-black border-b-2'
                     : 'text-gray-500 hover:text-gray-600 hover:border-gray-300 '
-                }`}
+                  }`}
                 onClick={() => setActiveTab(tab.name)}
                 type="button"
                 role="tab"
@@ -41,12 +40,11 @@ const Events = () => {
         {tabs.map((tab) => (
           <div
             key={tab.name}
-            className={`p-4 rounded-lg   ${
-              activeTab === tab.name ? '' : 'hidden'
-            }`}
+            className={`p-4 rounded-lg   ${activeTab === tab.name ? '' : 'hidden'
+              }`}
             role="tabpanel"
           >
-             <div>{tabs.find((tab) => tab.name === activeTab)?.content}</div>
+            <div>{tabs.find((tab) => tab.name === activeTab)?.content}</div>
           </div>
         ))}
       </div>

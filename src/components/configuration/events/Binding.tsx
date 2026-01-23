@@ -45,7 +45,7 @@ const Binding = () => {
       }
     } catch (error) {
       console.log(error)
-      setToast({ message: 'Error ', type: 'error' });
+      setToast({ message: 'Erreur', type: 'error' });
     }
   };
   const getData = async () => {
@@ -72,18 +72,18 @@ const Binding = () => {
   return (
     <div>
       <div className="w-3/4 grid grid-cols-2 gap-4 p-6">
-        <TextField label=" Sender Email" value={senderEmail} setValue={setSenderEmail} placeholder="xxxxx@gmail.com" isEditable={true} />
-        <TextField label="Sender Password" value={senderPassword} setValue={setSenderPassword} placeholder="*********" isEditable={true} />
-        <TextField label="Receiver Email" value={receiverEmail} setValue={setReceiverEmail} placeholder="xxxxx@gmail.com" isEditable={true} />
-        <TextField label="Email Subject" value={emailsubject} setValue={setEmailSubject} placeholder="Motion Alert" isEditable={true} />
-        <Toggle label="Attach Snapshot" value={isCheckedSnapshot} setValue={setIsCheckedSnapshot} />
+        <TextField label="Email de l'Expéditeur" value={senderEmail} setValue={setSenderEmail} placeholder="xxxxx@gmail.com" isEditable={true} />
+        <TextField label="Mot de Passe de l'Expéditeur" value={senderPassword} setValue={setSenderPassword} placeholder="*********" isEditable={true} />
+        <TextField label="Email du Destinataire" value={receiverEmail} setValue={setReceiverEmail} placeholder="xxxxx@gmail.com" isEditable={true} />
+        <TextField label="Objet de l'Email" value={emailsubject} setValue={setEmailSubject} placeholder="Alerte de Mouvement" isEditable={true} />
+        <Toggle label="Joindre une Capture d'Écran" value={isCheckedSnapshot} setValue={setIsCheckedSnapshot} />
 
       </div>
 
       <div className="flex flex-col items-center justify-center gap-4 w-3/4 mt-4">
 
         <div>
-          <SaveButton onClick={submitMotionConfig} label="SAVE CHANGES" loading={false} />
+          <SaveButton onClick={submitMotionConfig} label="ENREGISTRER LES MODIFICATIONS" loading={false} />
         </div>
       </div>
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />

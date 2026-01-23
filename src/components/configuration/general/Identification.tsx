@@ -66,25 +66,25 @@ const Identification = () => {
   return (
     <div className="space-y-4 bg-white text-black p-6 rounded-lg gap-2">
       <div className="flex items-center space-x-4 gap-2">
-  <div className="w-1/4 flex flex-col space-y-4">
-  <Select
-    label="Type Camera"
-    value={cameraType}
-    setValue={setCameraType}
-    options={cameraTypeOptions}
-    labelClassName="text-black"
-  />
-  <TextField
-    label="Camera name"
-    value={deviceName}
-    setValue={setdeviceName}
-    placeholder=""
-    isEditable={true}
-    labelClassName="text-black"
-  />
-</div>
+        <div className="w-1/4 flex flex-col space-y-4">
+          <Select
+            label="Type Camera"
+            value={cameraType}
+            setValue={setCameraType}
+            options={cameraTypeOptions}
+            labelClassName="text-black"
+          />
+          <TextField
+            label="Camera name"
+            value={deviceName}
+            setValue={setdeviceName}
+            placeholder=""
+            isEditable={true}
+            labelClassName="text-black"
+          />
+        </div>
 
-      
+
       </div>
 
       <div className="w-1/4 space-y-4">
@@ -98,9 +98,9 @@ const Identification = () => {
             disabled={isSaving}
             className="flex items-center justify-center text-white text-sm  bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-md p-4 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSaving ? "Saving..." : "SAVE CHANGES"}
+            {isSaving ? "Enregistrement..." : "ENREGISTRER LES MODIFICATIONS"}
           </button>
-      </div>
+        </div>
       </div>
 
       {/* Render Toast */}

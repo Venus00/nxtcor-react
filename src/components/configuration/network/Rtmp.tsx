@@ -82,14 +82,14 @@ const Rtmp = () => {
                 <Toggle label="Enable" value={isCheckedRtmp} setValue={setIsCheckedRtmp} />
             </div>
             <div className={`${isCheckedRtmp ? 'block' : 'hidden'}  `}>
-                <TextField label="URL" value={Rtmp} setValue={setRtmp} placeholder=""      isEditable={true} />
+                <TextField label="URL" value={Rtmp} setValue={setRtmp} placeholder="" isEditable={true} />
             </div>
 
 
 
 
 
-            <SaveButton onClick={handleSave} loading={isSaving} label='SAVE CHANGES' />
+            <SaveButton onClick={handleSave} loading={isSaving} label='ENREGISTRER LES MODIFICATIONS' />
             <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
 
         </div>

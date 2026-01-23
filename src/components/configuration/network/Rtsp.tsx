@@ -84,7 +84,7 @@ const Rtsp = () => {
 
 
 
-            <SaveButton onClick={handleSave} loading={isSaving} label='SAVE CHANGES' />
+            <SaveButton onClick={handleSave} loading={isSaving} label='ENREGISTRER LES MODIFICATIONS' />
             <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
 
         </div>
