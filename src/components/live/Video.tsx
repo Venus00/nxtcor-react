@@ -571,6 +571,7 @@ const VideoStream: React.FC = () => {
               <div className="flex flex-col items-center mb-[0.8vw]">
                 <button
                   onClick={isRecording ? stopRecording : startRecording}
+                  onTouchEnd={isRecording ? stopRecording : startRecording}
                   disabled={recordingCompleted}
                   className={`group w-full h-[2vw] ${isRecording
                     ? "bg-red-500/30 hover:bg-red-500/40 active:bg-red-500/50 border-red-400/50 hover:border-red-400/70 text-red-100 hover:shadow-red-500/20"
@@ -811,6 +812,7 @@ const VideoStream: React.FC = () => {
 
                 <button
                   onClick={toggleAutoFocus}
+                  onTouchEnd={toggleAutoFocus}
                   className={`group w-[2vw] h-[2vw] ${autoFocusEnabled ? "bg-green-500/30 border-green-400/50 text-green-100" : "bg-gray-500/20 border-gray-400/30 text-gray-400"} border rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg ${autoFocusEnabled ? "hover:shadow-green-500/20" : "hover:shadow-gray-500/20"}`}
                   aria-label="Toggle Autofocus"
                   title={autoFocusEnabled ? "Autofocus: ACTIVÉ" : "Autofocus: DÉSACTIVÉ"}
@@ -853,6 +855,7 @@ const VideoStream: React.FC = () => {
               <div className="flex items-center justify-center mb-[0.8vw]">
                 <button
                   onClick={handleWiperOn}
+                  onTouchEnd={handleWiperOn}
                   className="group w-full h-[2vw] bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 border border-purple-400/30 hover:border-purple-400/50 text-purple-100 hover:text-white rounded-xl flex items-center justify-center space-x-[0.3vw] transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20"
                   aria-label="Activate Wiper"
                 >
@@ -912,6 +915,7 @@ const VideoStream: React.FC = () => {
               <div className="flex items-center justify-center mb-[0.8vw]">
                 <button
                   onClick={handleRebootCamera}
+                  onTouchEnd={handleRebootCamera}
                   className="group w-full h-[2vw] bg-red-500/20 hover:bg-red-500/30 active:bg-red-500/40 border border-red-400/30 hover:border-red-400/50 text-red-100 hover:text-white rounded-xl flex items-center justify-center space-x-[0.3vw] transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-red-500/20"
                   aria-label="Reboot Camera"
                 >
@@ -928,6 +932,7 @@ const VideoStream: React.FC = () => {
               <div className="flex items-center justify-center mb-[0.8vw]">
                 <button
                   onClick={handleRebootSystem}
+                  onTouchEnd={handleRebootSystem}
                   className="group w-full h-[2vw] bg-orange-500/20 hover:bg-orange-500/30 active:bg-orange-500/40 border border-orange-400/30 hover:border-orange-400/50 text-orange-100 hover:text-white rounded-xl flex items-center justify-center space-x-[0.3vw] transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-orange-500/20"
                   aria-label="Reboot System"
                 >
