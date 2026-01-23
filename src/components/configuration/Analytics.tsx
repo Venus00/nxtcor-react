@@ -110,18 +110,18 @@ const Analytics: React.FC = () => {
         );
         const data = await response.json();
 
-        if (data.success && data.state?.autofocus) {
-          const savedState = data.state.autofocus[selectedCamera];
-          if (savedState !== undefined) {
-            setAutoFocusEnabled(savedState);
-            localStorage.setItem(
-              "analytics_autofocus_enabled",
-              JSON.stringify(savedState),
-            );
-            console.log(
-              `[Analytics] Loaded autofocus state from backend: ${savedState}`,
-            );
-          }
+        if (data.success && data.state?.[selectedCamera]) {
+          // Check if focus is "running" to set autofocus enabled
+          const focusStatus = data.state[selectedCamera].focus;
+          const isEnabled = focusStatus === "running";
+          setAutoFocusEnabled(isEnabled);
+          localStorage.setItem(
+            "analytics_autofocus_enabled",
+            JSON.stringify(isEnabled),
+          );
+          console.log(
+            `[Analytics] Loaded autofocus state from backend: ${focusStatus} (enabled: ${isEnabled})`,
+          );
         }
       } catch (error) {
         console.error("[Analytics] Error loading autofocus state:", error);
@@ -135,7 +135,7 @@ const Analytics: React.FC = () => {
   useEffect(() => {
     const restoreState = async () => {
       try {
-        // Get state from backend
+        // Get state from backend - always reads from file
         const response = await fetch(
           `http://${window.location.hostname}:3000/detection/state?cameraId=${selectedCamera}`,
         );
@@ -144,8 +144,13 @@ const Analytics: React.FC = () => {
         if (data.success && data.state) {
           console.log("[Analytics] Loaded state from backend:", data.state);
 
-          // Restore detection state
-          if (data.state.detectionEnabled) {
+          // Check if tracking is "running" to restore detection state
+          const trackingStatus = data.state.tracking;
+          const followStatus = data.state.follow;
+          const focusStatus = data.state.focus;
+
+          // Restore detection state (tracking = running means detection is enabled)
+          if (trackingStatus === "running") {
             setDetectionEnabled(true);
             localStorage.setItem(
               "analytics_detection_enabled",
@@ -160,27 +165,33 @@ const Analytics: React.FC = () => {
             }).catch((err) => console.error("Error restoring detection:", err));
           }
 
-          // Restore tracking state
-          if (
-            data.state.trackingEnabled &&
-            data.state.trackingObjectId !== null
-          ) {
-            const trackId = data.state.trackingObjectId;
-            setTrackingId(trackId);
-            localStorage.setItem(
-              "analytics_tracking_id",
-              JSON.stringify(trackId),
-            );
+          // Restore tracking state (follow = running means an object is being tracked)
+          if (followStatus === "running") {
+            // Note: We don't have the trackId in the state file, so we'll try to restore from localStorage
+            const savedTracking = localStorage.getItem("analytics_tracking_id");
+            if (savedTracking && JSON.parse(savedTracking) !== null) {
+              const trackId = JSON.parse(savedTracking);
+              setTrackingId(trackId);
 
-            // Re-enable tracking on backend
-            fetch(
-              `http://${window.location.hostname}:3000/track/object/${trackId}`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ cameraId: selectedCamera }),
-              },
-            ).catch((err) => console.error("Error restoring tracking:", err));
+              // Re-enable tracking on backend
+              fetch(
+                `http://${window.location.hostname}:3000/track/object/${trackId}`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ cameraId: selectedCamera }),
+                },
+              ).catch((err) => console.error("Error restoring tracking:", err));
+            }
+          }
+
+          // Restore autofocus state
+          if (focusStatus === "running") {
+            setAutoFocusEnabled(true);
+            localStorage.setItem(
+              "analytics_autofocus_enabled",
+              JSON.stringify(true),
+            );
           }
         }
       } catch (error) {
