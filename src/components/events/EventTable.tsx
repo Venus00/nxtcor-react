@@ -56,8 +56,8 @@ const EventTable: React.FC = () => {
           eventType: 'Object Detection',
           classification: photo.classification.charAt(0).toUpperCase() + photo.classification.slice(1),
           snapshotUrl: `${API_BASE_URL}${photo.path}`,
-          confidence: Math.round(photo.score * 100),
-          details: `Object detected: ${photo.classification} (Score: ${(photo.score * 100).toFixed(1)}%)`
+          confidence: photo.score,
+          details: `Object detected: ${photo.classification} (Score: ${photo.score}%)`
         }));
 
         setEvents(eventRecords);
@@ -85,12 +85,12 @@ const EventTable: React.FC = () => {
   };
 
   const handleClearAll = async () => {
-    
+
     if (!confirm('Êtes-vous sûr de vouloir effacer tous les événements?')) return;
 
     try {
       const response = await axios.delete(`${API_BASE_URL}/detection/photos`);
-      
+
       if (response.data.success) {
         setEvents([]);
         alert(`${response.data.deleted} photos supprimées avec succès`);
@@ -369,8 +369,8 @@ const EventTable: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(page)}
                       className={`px-3 py-1 rounded text-sm font-medium transition-colors ${currentPage === page
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-700 hover:bg-gray-600 text-white'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-700 hover:bg-gray-600 text-white'
                         }`}
                     >
                       {page}
