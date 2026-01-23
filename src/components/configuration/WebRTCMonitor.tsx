@@ -169,108 +169,108 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
 
     startWebRTC();
 
-// Expose video ref to parent if callback provided
-if (onVideoRef) {
-  onVideoRef(videoRef.current);
-}
+    // Expose video ref to parent if callback provided
+    if (onVideoRef) {
+      onVideoRef(videoRef.current);
+    }
 
-return () => {
-  if (pc) {
-    pc.close();
-    pcRef.current = null;
-  }
-  if (reconnectTimeoutRef.current) {
-    clearTimeout(reconnectTimeoutRef.current);
-    reconnectTimeoutRef.current = null;
-  }
-};
+    return () => {
+      if (pc) {
+        pc.close();
+        pcRef.current = null;
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+    };
   }, [selectedCamera, detectionEnabled, retryCount]);
 
-const handleManualRetry = () => {
-  setConnectionError(false);
-  setRetryCount(0);
-  setIsLoading(true);
-  connectionAttemptedRef.current = false;
-};
+  const handleManualRetry = () => {
+    setConnectionError(false);
+    setRetryCount(0);
+    setIsLoading(true);
+    connectionAttemptedRef.current = false;
+  };
 
-return (
-  <div className="w-full h-full bg-black rounded-lg overflow-hidden border border-slate-600/50 shadow-2xl shadow-black/40">
-    <div className="relative w-full h-full flex items-center justify-center" style={{ backgroundColor: "#000" }}>
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        playsInline
-        style={{
-          width: "200%",
-          height: "200%",
-          objectFit: "contain",
-          backgroundColor: "#000",
-          display: "block",
-          transform: "scale(1)",
-          transformOrigin: "center center",
-        }}
-      />
+  return (
+    <div className="w-full h-full bg-black rounded-lg overflow-hidden border border-slate-600/50 shadow-2xl shadow-black/40">
+      <div className="relative w-full h-full flex items-center justify-center" style={{ backgroundColor: "#000" }}>
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline
+          style={{
+            width: "130%",
+            height: "130%",
+            objectFit: "contain",
+            backgroundColor: "#000",
+            display: "block",
+            transform: "scale(1)",
+            transformOrigin: "center center",
+          }}
+        />
 
-      {/* Loading Overlay */}
-      {isLoading && !isVideoPlaying && !connectionError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-          <div className="relative mb-6">
-            <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
-            <Loader2 className="relative w-20 h-20 text-blue-400 animate-spin" />
+        {/* Loading Overlay */}
+        {isLoading && !isVideoPlaying && !connectionError && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+              <Loader2 className="relative w-20 h-20 text-blue-400 animate-spin" />
+            </div>
+            <div className="text-blue-400 text-xl font-semibold mb-2">
+              Chargement du flux vidéo...
+            </div>
+            <div className="text-slate-400 text-sm">
+              Connexion à {selectedCamera === "cam1" ? "la caméra optique" : "la caméra thermique"}
+            </div>
           </div>
-          <div className="text-blue-400 text-xl font-semibold mb-2">
-            Chargement du flux vidéo...
-          </div>
-          <div className="text-slate-400 text-sm">
-            Connexion à {selectedCamera === "cam1" ? "la caméra optique" : "la caméra thermique"}
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Retry Overlay */}
-      {isRetrying && !isVideoPlaying && !connectionError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-          <div className="relative mb-6">
-            <div className="absolute inset-0 bg-yellow-500/20 rounded-full blur-3xl animate-pulse"></div>
-            <RefreshCw className="relative w-20 h-20 text-yellow-400 animate-spin" />
+        {/* Retry Overlay */}
+        {isRetrying && !isVideoPlaying && !connectionError && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-yellow-500/20 rounded-full blur-3xl animate-pulse"></div>
+              <RefreshCw className="relative w-20 h-20 text-yellow-400 animate-spin" />
+            </div>
+            <div className="text-yellow-400 text-xl font-semibold mb-2">
+              Reconnexion en cours...
+            </div>
+            <div className="text-slate-400 text-sm mb-2">
+              Tentative de reconnexion au flux vidéo
+            </div>
+            <div className="text-slate-500 text-xs">
+              Tentative {retryCount}/{maxRetries}
+            </div>
           </div>
-          <div className="text-yellow-400 text-xl font-semibold mb-2">
-            Reconnexion en cours...
-          </div>
-          <div className="text-slate-400 text-sm mb-2">
-            Tentative de reconnexion au flux vidéo
-          </div>
-          <div className="text-slate-500 text-xs">
-            Tentative {retryCount}/{maxRetries}
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Error Overlay */}
-      {connectionError && !isVideoPlaying && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-          <div className="relative mb-6">
-            <div className="absolute inset-0 bg-red-500/20 rounded-full blur-3xl animate-pulse"></div>
-            <AlertCircle className="relative w-20 h-20 text-red-500" />
+        {/* Error Overlay */}
+        {connectionError && !isVideoPlaying && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-red-500/20 rounded-full blur-3xl animate-pulse"></div>
+              <AlertCircle className="relative w-20 h-20 text-red-500" />
+            </div>
+            <h3 className="text-white text-xl font-bold mb-2">Connexion échouée</h3>
+            <p className="text-slate-300 text-base mb-1">Impossible de se connecter à la caméra</p>
+            <p className="text-slate-400 text-sm mb-6">
+              {selectedCamera === "cam1" ? "Caméra optique" : "Caméra thermique"} non disponible
+            </p>
+            <button
+              onClick={handleManualRetry}
+              className="group px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-300 flex items-center gap-3 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-105 active:scale-95"
+            >
+              <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+              <span>Réessayer</span>
+            </button>
           </div>
-          <h3 className="text-white text-xl font-bold mb-2">Connexion échouée</h3>
-          <p className="text-slate-300 text-base mb-1">Impossible de se connecter à la caméra</p>
-          <p className="text-slate-400 text-sm mb-6">
-            {selectedCamera === "cam1" ? "Caméra optique" : "Caméra thermique"} non disponible
-          </p>
-          <button
-            onClick={handleManualRetry}
-            className="group px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-300 flex items-center gap-3 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-105 active:scale-95"
-          >
-            <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-            <span>Réessayer</span>
-          </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default WebRTCMonitor;
