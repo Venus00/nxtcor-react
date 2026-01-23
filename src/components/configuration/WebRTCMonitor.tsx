@@ -158,7 +158,7 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
             console.log(`Retrying WebRTC connection for ${selectedCamera}... (Attempt ${retryCount + 1}/${maxRetries})`);
             setIsRetrying(true);
             setIsLoading(true);
-            startWebRTC();
+            startWebRTC().catch(err => console.error("Retry failed:", err));
           }, 3000);
         } else {
           setConnectionError(true);
@@ -167,7 +167,12 @@ const WebRTCMonitor: React.FC<WebRTCMonitorProps> = ({
       }
     };
 
-    startWebRTC();
+    // Start WebRTC connection asynchronously without blocking
+    startWebRTC().catch(err => {
+      console.error("Failed to start WebRTC:", err);
+      setIsLoading(false);
+      setConnectionError(true);
+    });
 
     // Expose video ref to parent if callback provided
     if (onVideoRef) {
