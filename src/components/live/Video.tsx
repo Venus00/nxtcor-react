@@ -15,6 +15,7 @@ import {
   Loader2,
   RefreshCw,
   AlertCircle,
+  Minimize2,
 } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
@@ -29,6 +30,10 @@ const VideoStream: React.FC = () => {
   const [recordingFileName, setRecordingFileName] = useState("");
   const [autoFocusEnabled, setAutoFocusEnabled] = useState(() => {
     const saved = localStorage.getItem("video_autofocus_enabled");
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [stabilizerEnabled, setStabilizerEnabled] = useState(() => {
+    const saved = localStorage.getItem("video_stabilizer_enabled");
     return saved ? JSON.parse(saved) : false;
   });
   const [streamLoading, setStreamLoading] = useState(true);
@@ -122,9 +127,9 @@ const VideoStream: React.FC = () => {
     setIsRetrying(false);
   };
 
-  // Load autofocus state from backend on mount
+  // Load autofocus and stabilizer state from backend on mount
   useEffect(() => {
-    const loadAutofocusState = async () => {
+    const loadCameraState = async () => {
       try {
         const response = await fetch(
           `http://${window.location.hostname}:3000/detection/state`,
@@ -148,10 +153,32 @@ const VideoStream: React.FC = () => {
       } catch (error) {
         console.error("[Video] Error loading autofocus state:", error);
       }
+
+      // Load stabilizer state
+      try {
+        const response = await fetch(
+          `http://${window.location.hostname}:3000/camera/${camId === "cam1" ? "cam2" : "cam1"}/video/exposure`,
+        );
+        const data = await response.json();
+
+        if (data.config && data.config.stabilizer !== undefined) {
+          const stabilizerState = data.config.stabilizer === 1;
+          setStabilizerEnabled(stabilizerState);
+          localStorage.setItem(
+            "video_stabilizer_enabled",
+            JSON.stringify(stabilizerState),
+          );
+          console.log(
+            `[Video] Loaded stabilizer state from backend: ${stabilizerState}`,
+          );
+        }
+      } catch (error) {
+        console.error("[Video] Error loading stabilizer state:", error);
+      }
     };
 
     if (camId) {
-      loadAutofocusState();
+      loadCameraState();
     }
   }, [camId]);
 
@@ -288,22 +315,22 @@ const VideoStream: React.FC = () => {
       if (e) {
         e.preventDefault();
       }
-      
+
       // Clear any existing interval first
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
-      
+
       // Clear any existing timeout
       if (autoStopTimeoutRef.current) {
         clearTimeout(autoStopTimeoutRef.current);
         autoStopTimeoutRef.current = null;
       }
-      
+
       move(direction);
       intervalRef.current = window.setInterval(() => move(direction), 100);
-      
+
       // Auto-stop after 2 seconds for safety
       autoStopTimeoutRef.current = setTimeout(() => {
         if (intervalRef.current) {
@@ -323,7 +350,7 @@ const VideoStream: React.FC = () => {
       if (e) {
         e.preventDefault();
       }
-      
+
       // Clear the auto-stop timeout
       if (autoStopTimeoutRef.current) {
         clearTimeout(autoStopTimeoutRef.current);
@@ -444,6 +471,30 @@ const VideoStream: React.FC = () => {
       localStorage.setItem("video_autofocus_enabled", JSON.stringify(newState));
     } catch (err) {
       console.error("Error toggling autofocus:", err);
+    }
+  };
+
+  const toggleStabilizer = async () => {
+    try {
+      const newState = !stabilizerEnabled;
+      const res = await fetch(
+        `http://${window.location.hostname}:3000/camera/${camId === "cam1" ? "cam2" : "cam1"}/video/exposure`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            channel: 0,
+            config: 0,
+            stabilizer: newState ? 1 : 0
+          }),
+        },
+      );
+      const data = await res.json();
+      console.log("Stabilizer toggled:", data);
+      setStabilizerEnabled(newState);
+      localStorage.setItem("video_stabilizer_enabled", JSON.stringify(newState));
+    } catch (err) {
+      console.error("Error toggling stabilizer:", err);
     }
   };
 
@@ -974,11 +1025,45 @@ const VideoStream: React.FC = () => {
                 </button>
               </div>
 
-              <div className="flex items-center justify-center pt-[0.4vw] border-t border-white/10">
-                <div className="flex items-center space-x-[0.3vw] text-[0.6vw] text-white/60">
-                  <div className="w-[0.2vw] h-[0.2vw] bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
-                  <span className="font-medium tracking-wide">CONNECTÉ</span>
+              {/* IMAGE STABILIZER */}
+              <div className="relative mb-[0.8vw]">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
                 </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-black/20 px-[0.4vw] text-white/50 text-[0.6vw] font-medium tracking-wider">
+                    STABILISATEUR
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center">
+                <button
+                  onClick={toggleStabilizer}
+                  onTouchEnd={toggleStabilizer}
+                  className={`group w-full h-[2vw] ${stabilizerEnabled
+                      ? "bg-green-500/30 border-green-400/50 text-green-100"
+                      : "bg-gray-500/20 border-gray-400/30 text-gray-400"
+                    } border rounded-xl flex items-center justify-center space-x-[0.3vw] transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg ${stabilizerEnabled
+                      ? "hover:shadow-green-500/20"
+                      : "hover:shadow-gray-500/20"
+                    }`}
+                  aria-label="Toggle Image Stabilizer"
+                  title={
+                    stabilizerEnabled
+                      ? "Stabilisateur: ACTIVÉ"
+                      : "Stabilisateur: DÉSACTIVÉ"
+                  }
+                >
+                  <Minimize2
+                    className={`w-[0.8vw] h-[0.8vw] group-hover:scale-110 transition-transform duration-200 ${stabilizerEnabled ? "animate-pulse" : ""
+                      }`}
+                    strokeWidth={2.5}
+                  />
+                  <span className="text-[0.6vw] font-medium tracking-wide">
+                    {stabilizerEnabled ? "ACTIVÉ" : "DÉSACTIVÉ"}
+                  </span>
+                </button>
               </div>
             </div>
           </div>

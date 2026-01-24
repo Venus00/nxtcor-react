@@ -274,24 +274,30 @@ const Analytics: React.FC = () => {
               clearTimeoutRef.current = null;
             }
 
-            // Replace old objects with new ones (clear the map and add new data)
             const objectMap = objectMapRef.current;
-            objectMap.clear();
-
             const now = Date.now();
             const activeObjects: TrackedObjectWithTimestamp[] = [];
 
-            // Add new objects with current timestamp
-            data.data.objects.forEach((obj) => {
-              const objWithTimestamp = {
-                ...obj,
-                lastSeen: now,
-              };
-              objectMap.set(obj.trackId, objWithTimestamp);
-              activeObjects.push(objWithTimestamp);
-            });
+            // Only update if we receive new objects data
+            if (data.data.objects.length > 0) {
+              // Clear map and add new objects with current timestamp
+              objectMap.clear();
+              data.data.objects.forEach((obj) => {
+                const objWithTimestamp = {
+                  ...obj,
+                  lastSeen: now,
+                };
+                objectMap.set(obj.trackId, objWithTimestamp);
+                activeObjects.push(objWithTimestamp);
+              });
 
-            setObjects(activeObjects);
+              setObjects(activeObjects);
+            } else {
+              // No new objects - keep displaying old ones
+              console.log(
+                "[Analytics] No objects in current frame, keeping previous objects displayed",
+              );
+            }
 
             // Set timeout to clear all boxes after 1 second if no new data arrives
             clearTimeoutRef.current = setTimeout(async () => {
