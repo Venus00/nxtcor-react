@@ -54,6 +54,9 @@ const VideoStream: React.FC = () => {
   const focusInIntervalRef = useRef<number | null>(null);
   const focusOutIntervalRef = useRef<number | null>(null);
   const autoStopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const clickMoveIntervalRef = useRef<number | null>(null);
+  const clickMoveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const videoOverlayRef = useRef<HTMLDivElement | null>(null);
 
   const camId = useParams().id || 'cam1';
 
@@ -157,19 +160,25 @@ const VideoStream: React.FC = () => {
       // Load stabilizer state
       try {
         const response = await fetch(
-          `http://${window.location.hostname}:3000/camera/${camId === "cam1" ? "cam2" : "cam1"}/video/exposure`,
+          `http://${window.location.hostname}:3000/camera/${camId === "cam1" ? "cam2" : "cam1"}/video/stabilizer`,
         );
         const data = await response.json();
 
-        if (data.config && data.config.stabilizer !== undefined) {
-          const stabilizerState = data.config.stabilizer === 1;
+        if (data.config && data.config.table.VideoImageControl[0].Stable !== undefined) {
+          const stableValue = data.config.table.VideoImageControl[0].Stable;
+          console.log('[Video] Raw Stable value from API:', stableValue, typeof stableValue);
+
+          // Handle both string and number types
+          // Stable = 0 means OFF/disabled, Stable = 3 (or any non-zero) means ON/enabled
+          const stabilizerState = (stableValue === 0 || stableValue === "0") ? false : true;
+
           setStabilizerEnabled(stabilizerState);
           localStorage.setItem(
             "video_stabilizer_enabled",
             JSON.stringify(stabilizerState),
           );
           console.log(
-            `[Video] Loaded stabilizer state from backend: ${stabilizerState}`,
+            `[Video] Loaded stabilizer state from backend: ${stabilizerState} (raw value: ${stableValue})`,
           );
         }
       } catch (error) {
@@ -478,14 +487,14 @@ const VideoStream: React.FC = () => {
     try {
       const newState = !stabilizerEnabled;
       const res = await fetch(
-        `http://${window.location.hostname}:3000/camera/${camId === "cam1" ? "cam2" : "cam1"}/video/exposure`,
+        `http://${window.location.hostname}:3000/camera/${camId === "cam1" ? "cam2" : "cam1"}/video/stabilizer`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             channel: 0,
             config: 0,
-            stabilizer: newState ? 1 : 0
+            stabilizer: newState ? 3 : 0
           }),
         },
       );
@@ -601,6 +610,124 @@ const VideoStream: React.FC = () => {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const handleVideoClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!videoOverlayRef.current) return;
+
+    // Clear any existing click-move operations
+    if (clickMoveIntervalRef.current) {
+      clearInterval(clickMoveIntervalRef.current);
+      clickMoveIntervalRef.current = null;
+    }
+    if (clickMoveTimeoutRef.current) {
+      clearTimeout(clickMoveTimeoutRef.current);
+      clickMoveTimeoutRef.current = null;
+    }
+
+    const rect = videoOverlayRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    // Calculate center point
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    // Calculate offset from center (-1 to 1)
+    const offsetX = (clickX - centerX) / centerX;
+    const offsetY = (clickY - centerY) / centerY;
+
+    // Calculate distance from center (0 to ~1.414 for corners)
+    const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+
+    // Determine primary direction based on which offset is larger
+    const absX = Math.abs(offsetX);
+    const absY = Math.abs(offsetY);
+
+    // Only move if click is far enough from center (dead zone)
+    if (distance < 0.1) {
+      console.log('[PTZ Click] Click too close to center, ignoring');
+      return;
+    }
+
+    // Calculate speed based on distance (1-8 scale)
+    // Map distance 0.1-1.0 to speed 1-8
+    const normalizedDistance = Math.min(distance, 1.0);
+    const calculatedSpeed = Math.max(1, Math.min(8, Math.round(1 + (normalizedDistance * 7))));
+
+    console.log(`[PTZ Click] Offset: (${offsetX.toFixed(2)}, ${offsetY.toFixed(2)}), Distance: ${distance.toFixed(2)}, Speed: ${calculatedSpeed}`);
+
+    let direction: 'up' | 'down' | 'left' | 'right';
+
+    // Determine direction based on larger offset
+    if (absX > absY) {
+      // Horizontal movement dominates
+      direction = offsetX > 0 ? 'right' : 'left';
+    } else {
+      // Vertical movement dominates
+      direction = offsetY > 0 ? 'down' : 'up';
+    }
+
+    console.log(`[PTZ Click] Moving ${direction} at speed ${calculatedSpeed}`);
+
+    // Execute move command with calculated speed
+    const moveWithSpeed = async () => {
+      try {
+        let endpoint = '';
+        switch (direction) {
+          case 'up':
+            endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/up`;
+            break;
+          case 'down':
+            endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/down`;
+            break;
+          case 'left':
+            endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/left`;
+            break;
+          case 'right':
+            endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/right`;
+            break;
+        }
+
+        await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channel: 0, speed: calculatedSpeed }),
+        });
+      } catch (err) {
+        console.error('[PTZ Click] Move error:', err);
+      }
+    };
+
+    const stopMove = async () => {
+      try {
+        const stopEndpoint = direction === 'left' || direction === 'right'
+          ? `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/stop`
+          : `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/stop`;
+
+        await fetch(`http://${window.location.hostname}:3000${stopEndpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channel: 0 }),
+        });
+      } catch (err) {
+        console.error('[PTZ Click] Stop error:', err);
+      }
+    };
+
+    // Start moving
+    moveWithSpeed();
+    clickMoveIntervalRef.current = window.setInterval(() => moveWithSpeed(), 100);
+
+    // Auto-stop after 1.5 seconds
+    clickMoveTimeoutRef.current = setTimeout(() => {
+      if (clickMoveIntervalRef.current) {
+        clearInterval(clickMoveIntervalRef.current);
+        clickMoveIntervalRef.current = null;
+      }
+      stopMove();
+      console.log('[PTZ Click] Auto-stopped');
+    }, 1500);
+  };
+
   useEffect(() => {
     return () => {
       [
@@ -621,6 +748,14 @@ const VideoStream: React.FC = () => {
       // Clean up auto-stop timeout
       if (autoStopTimeoutRef.current) {
         clearTimeout(autoStopTimeoutRef.current);
+      }
+
+      // Clean up click-move operations
+      if (clickMoveIntervalRef.current) {
+        clearInterval(clickMoveIntervalRef.current);
+      }
+      if (clickMoveTimeoutRef.current) {
+        clearTimeout(clickMoveTimeoutRef.current);
       }
 
       // Clean up recording timer on unmount
@@ -1042,8 +1177,8 @@ const VideoStream: React.FC = () => {
                   onClick={toggleStabilizer}
                   onTouchEnd={toggleStabilizer}
                   className={`group w-full h-[2vw] ${stabilizerEnabled
-                      ? "bg-green-500/30 border-green-400/50 text-green-100"
-                      : "bg-gray-500/20 border-gray-400/30 text-gray-400"
+                    ? "bg-green-500/30 border-green-400/50 text-green-100"
+                    : "bg-gray-500/20 border-gray-400/30 text-gray-400"
                     } border rounded-xl flex items-center justify-center space-x-[0.3vw] transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg ${stabilizerEnabled
                       ? "hover:shadow-green-500/20"
                       : "hover:shadow-gray-500/20"
@@ -1068,6 +1203,15 @@ const VideoStream: React.FC = () => {
             </div>
           </div>
 
+          {/* Click-to-Move Overlay */}
+          <div
+            ref={videoOverlayRef}
+            onClick={handleVideoClick}
+            className="absolute inset-0 z-10 cursor-crosshair"
+            style={{ pointerEvents: 'auto' }}
+            title="Cliquez pour déplacer la caméra"
+          />
+
           <iframe
             ref={iframeRef}
             src={`http://${window.location.hostname}:8889/${camId}`}
@@ -1075,17 +1219,11 @@ const VideoStream: React.FC = () => {
             allow="autoplay; fullscreen"
             onLoad={handleIframeLoad}
             onError={handleIframeError}
-            style={
-              camId === "cam1"
-                ? {
-                  width: "100%",
-                  height: "100%",
-                }
-                : {
-                  width: "100%",
-                  height: "100%",
-                }
-            }
+            style={{
+              width: "100%",
+              height: "100%",
+              pointerEvents: "none"
+            }}
           />
 
           {/* Loading Overlay */}

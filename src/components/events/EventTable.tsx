@@ -9,13 +9,18 @@ export interface EventRecord {
   snapshotUrl: string;
   confidence?: number;
   details?: string;
+  objectId?: number | null;
+  dateFolder?: string;
+  filename?: string;
 }
 
 interface DetectionPhoto {
   filename: string;
+  dateFolder: string;
   classification: string;
   timestamp: string;
   score: number;
+  objectId: number | null;
   path: string;
   size: number;
 }
@@ -57,7 +62,10 @@ const EventTable: React.FC = () => {
           classification: photo.classification.charAt(0).toUpperCase() + photo.classification.slice(1),
           snapshotUrl: `${API_BASE_URL}${photo.path}`,
           confidence: photo.score,
-          details: `Object detected: ${photo.classification} (Score: ${photo.score}%)`
+          objectId: photo.objectId,
+          dateFolder: photo.dateFolder,
+          filename: photo.filename,
+          details: `Object ID: ${photo.objectId || 'N/A'} | Score: ${photo.score}%`
         }));
 
         setEvents(eventRecords);
@@ -246,12 +254,11 @@ const EventTable: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-800/50 border-b border-gray-700">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Capture</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Crop</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date et Heure</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Type d'Événement</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Classification</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Confiance</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Détails</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Object ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Score</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -267,7 +274,7 @@ const EventTable: React.FC = () => {
                       {event.snapshotUrl ? (
                         <img
                           src={event.snapshotUrl}
-                          alt="Event snapshot"
+                          alt="Event crop"
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23374151" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
@@ -285,12 +292,12 @@ const EventTable: React.FC = () => {
                     <div className="text-xs text-gray-400">{formatDate(event.timestamp).split(',')[1]}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md border ${getEventTypeColor(event.eventType)}`}>
-                      {event.eventType}
-                    </span>
+                    <div className="text-sm text-white font-medium">{event.classification}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm text-white font-medium">{event.classification}</div>
+                    <div className="text-sm text-white font-medium">
+                      {event.objectId !== null && event.objectId !== undefined ? `#${event.objectId}` : 'N/A'}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     {event.confidence !== undefined && (
@@ -304,9 +311,6 @@ const EventTable: React.FC = () => {
                         <span className="text-xs text-gray-400">{event.confidence}%</span>
                       </div>
                     )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-gray-300 max-w-xs truncate">{event.details || '-'}</div>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button
@@ -425,32 +429,50 @@ const EventTable: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                {/* Snapshot */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Capture</label>
-                  <div className="w-full rounded-lg overflow-hidden bg-gray-900">
-                    <img
-                      src={selectedEvent.snapshotUrl}
-                      alt="Event snapshot"
-                      className="w-full h-auto"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="600" height="400"%3E%3Crect fill="%23374151" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="20"%3ENo Image Available%3C/text%3E%3C/svg%3E';
-                      }}
-                    />
+                {/* Images Side by Side */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Full Image */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Full Image</label>
+                    <div className="w-full rounded-lg overflow-hidden bg-gray-900">
+                      <img
+                        src={selectedEvent.filename ? `${API_BASE_URL}/detection/photos/${selectedEvent.dateFolder}/${selectedEvent.filename.replace('crop_ther', 'full').replace('crop_full', 'full')}` : selectedEvent.snapshotUrl}
+                        alt="Full image"
+                        className="w-full h-auto"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="16"%3EFull Image Not Available%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Crop Image */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Cropped Detection</label>
+                    <div className="w-full rounded-lg overflow-hidden bg-gray-900">
+                      <img
+                        src={selectedEvent.snapshotUrl}
+                        alt="Cropped detection"
+                        className="w-full h-auto"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="16"%3ECrop Not Available%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* Event Information */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Type d'Événement</label>
-                    <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-md border ${getEventTypeColor(selectedEvent.eventType)}`}>
-                      {selectedEvent.eventType}
-                    </span>
-                  </div>
-                  <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Classification</label>
                     <p className="text-white font-medium">{selectedEvent.classification}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Object ID</label>
+                    <p className="text-white font-medium">
+                      {selectedEvent.objectId !== null && selectedEvent.objectId !== undefined ? `#${selectedEvent.objectId}` : 'N/A'}
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Date et Heure</label>
@@ -458,8 +480,16 @@ const EventTable: React.FC = () => {
                   </div>
                   {selectedEvent.confidence !== undefined && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-1">Confiance</label>
-                      <p className="text-white">{selectedEvent.confidence}%</p>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">Score</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-gray-700 rounded-full h-2 max-w-[120px]">
+                          <div
+                            className="bg-green-500 h-2 rounded-full"
+                            style={{ width: `${selectedEvent.confidence}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-white font-medium">{selectedEvent.confidence}%</span>
+                      </div>
                     </div>
                   )}
                 </div>

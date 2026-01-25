@@ -32,6 +32,7 @@ interface TrackedObject {
 
 interface TrackedObjectWithTimestamp extends TrackedObject {
   lastSeen: number;
+  imageUrl?: string;
 }
 
 interface TrackingData {
@@ -46,6 +47,8 @@ interface TrackingData {
 }
 
 type CameraType = "cam1" | "cam2";
+
+const API_BASE_URL = `http://${window.location.hostname}:3000`;
 
 const Analytics: React.FC = () => {
   // Restore selected camera from localStorage
@@ -280,12 +283,13 @@ const Analytics: React.FC = () => {
 
             // Only update if we receive new objects data
             if (data.data.objects.length > 0) {
-              // Clear map and add new objects with current timestamp
+              // Clear map and add new objects with current timestamp and image URL
               objectMap.clear();
               data.data.objects.forEach((obj) => {
                 const objWithTimestamp = {
                   ...obj,
                   lastSeen: now,
+                  imageUrl: `${API_BASE_URL}/detection/object/${obj.trackId}/crop?t=${now}`,
                 };
                 objectMap.set(obj.trackId, objWithTimestamp);
                 activeObjects.push(objWithTimestamp);
@@ -1116,6 +1120,20 @@ const Analytics: React.FC = () => {
                         {isTracking ? "TRACKING" : "IDLE"}
                       </div>
                     </div>
+
+                    {/* Crop Image Display */}
+                    {obj.imageUrl && (
+                      <div className="mb-3">
+                        <img
+                          src={obj.imageUrl}
+                          alt={`${obj.classificationName} #${obj.trackId}`}
+                          className="w-full h-32 object-cover rounded-md border border-slate-600/50"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
 
                     <div className="text-xs text-slate-300 space-y-1 mb-3">
                       <div>
