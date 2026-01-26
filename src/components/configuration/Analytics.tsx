@@ -237,6 +237,7 @@ const Analytics: React.FC = () => {
   const zoomOutIntervalRef = useRef<number | null>(null);
   const focusInIntervalRef = useRef<number | null>(null);
   const focusOutIntervalRef = useRef<number | null>(null);
+  const autoStopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // WebSocket connection with auto-reconnect
   useEffect(() => {
@@ -303,7 +304,7 @@ const Analytics: React.FC = () => {
               );
             }
 
-            // Set timeout to clear all boxes after 1 second if no new data arrives
+            // Set timeout to clear all boxes after 5 seconds if no new data arrives
             clearTimeoutRef.current = setTimeout(async () => {
               if (trackingId !== null) {
                 console.log(
@@ -312,7 +313,7 @@ const Analytics: React.FC = () => {
                 return;
               }
               console.log(
-                "[Analytics] No data received for 1 second, clearing boxes",
+                "[Analytics] No data received for 5 seconds, clearing boxes",
               );
               objectMapRef.current.clear();
               setObjects([]);
@@ -342,7 +343,7 @@ const Analytics: React.FC = () => {
                   JSON.stringify(null),
                 );
               }
-            }, 1000);
+            }, 5000);
 
             if (!data.data.crcValid) {
               console.warn(
@@ -657,17 +658,58 @@ const Analytics: React.FC = () => {
       | "focus_out",
     intervalRef: React.MutableRefObject<number | null>,
   ) => {
-    const handleStart = () => {
-      move(direction);
-      intervalRef.current = window.setInterval(() => move(direction), 200);
-    };
+    const handleStart = (e?: React.MouseEvent | React.TouchEvent) => {
+      // Prevent default to avoid ghost clicks
+      if (e) {
+        e.preventDefault();
+      }
 
-    const handleStop = () => {
-      stop(direction);
+      // Clear any existing interval first
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+
+      // Clear any existing timeout
+      if (autoStopTimeoutRef.current) {
+        clearTimeout(autoStopTimeoutRef.current);
+        autoStopTimeoutRef.current = null;
+      }
+
+      move(direction);
+      intervalRef.current = window.setInterval(() => move(direction), 100);
+
+      // Auto-stop after 2 seconds for safety
+      autoStopTimeoutRef.current = setTimeout(() => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+          stop(direction);
+        }
+        if (autoStopTimeoutRef.current) {
+          clearTimeout(autoStopTimeoutRef.current);
+          autoStopTimeoutRef.current = null;
+        }
+      }, 2000);
+    };
+
+    const handleStop = (e?: React.MouseEvent | React.TouchEvent) => {
+      // Prevent default to avoid ghost clicks
+      if (e) {
+        e.preventDefault();
+      }
+
+      // Clear the auto-stop timeout
+      if (autoStopTimeoutRef.current) {
+        clearTimeout(autoStopTimeoutRef.current);
+        autoStopTimeoutRef.current = null;
+      }
+
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      stop(direction);
     };
 
     return { handleStart, handleStop };
@@ -721,6 +763,11 @@ const Analytics: React.FC = () => {
           clearInterval(ref.current);
         }
       });
+
+      // Clean up auto-stop timeout
+      if (autoStopTimeoutRef.current) {
+        clearTimeout(autoStopTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -786,9 +833,21 @@ const Analytics: React.FC = () => {
                       />
                     </button>
 
-                    <div className="w-8 h-8 bg-white/5 border border-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                      <div className="w-1.5 h-1.5 bg-white/60 rounded-full shadow-lg"></div>
-                    </div>
+                    <button
+                      onClick={async () => {
+                        // Stop all PTZ movements
+                        await stop('up');
+                        await stop('down');
+                        await stop('left');
+                        await stop('right');
+                        console.log('[Analytics PTZ] Stop all movements');
+                      }}
+                      className="w-8 h-8 bg-red-500/20 hover:bg-red-500/30 active:bg-red-500/40 border border-red-400/30 hover:border-red-400/50 rounded-xl flex items-center justify-center backdrop-blur-sm cursor-pointer transition-all duration-300 ease-out hover:scale-110 active:scale-95"
+                      aria-label="Stop PTZ"
+                      title="Arrêter tous les mouvements PTZ"
+                    >
+                      <div className="w-2 h-2 bg-red-400 rounded-sm shadow-lg"></div>
+                    </button>
 
                     <button
                       onMouseDown={rightHandlers.handleStart}

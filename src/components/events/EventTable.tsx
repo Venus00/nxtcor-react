@@ -12,6 +12,7 @@ export interface EventRecord {
   objectId?: number | null;
   dateFolder?: string;
   filename?: string;
+  fullImageUrl?: string;
 }
 
 interface DetectionPhoto {
@@ -40,6 +41,17 @@ const EventTable: React.FC = () => {
     fetchEvents();
   }, []);
 
+  // Helper to extract camera type from filename
+  const getCameraType = (filename: string): 'Thermique' | 'Optique' => {
+    if (filename.includes('_ther-') || filename.includes('_ther.')) {
+      return 'Thermique';
+    } else if (filename.includes('_rgb-') || filename.includes('_rgb.')) {
+      return 'Optique';
+    }
+    // Default to thermal if pattern not found
+    return 'Thermique';
+  };
+
   const fetchEvents = async () => {
     setLoading(true);
     try {
@@ -54,19 +66,53 @@ const EventTable: React.FC = () => {
       });
 
       if (response.data.success && response.data.photos) {
-        // Convert detection photos to event records
-        const eventRecords: EventRecord[] = response.data.photos.map((photo: DetectionPhoto, index: number) => ({
-          id: `${photo.timestamp}-${index}`,
-          timestamp: photo.timestamp,
-          eventType: 'Object Detection',
-          classification: photo.classification.charAt(0).toUpperCase() + photo.classification.slice(1),
-          snapshotUrl: `${API_BASE_URL}${photo.path}`,
-          confidence: photo.score,
-          objectId: photo.objectId,
-          dateFolder: photo.dateFolder,
-          filename: photo.filename,
-          details: `Object ID: ${photo.objectId || 'N/A'} | Score: ${photo.score}%`
-        }));
+        // Group photos by timestamp + objectId + camera type to merge crop and full images
+        const groupedPhotos = new Map<string, { crop?: DetectionPhoto; full?: DetectionPhoto; meta?: DetectionPhoto }>();
+
+        response.data.photos.forEach((photo: DetectionPhoto) => {
+          // Extract camera type from filename
+          const cameraType = photo.filename.includes('_ther') ? 'ther' : 'rgb';
+          // Create unique key: timestamp + objectId + cameraType
+          const key = `${photo.timestamp}-${photo.objectId}-${cameraType}`;
+
+          if (!groupedPhotos.has(key)) {
+            groupedPhotos.set(key, {});
+          }
+
+          const group = groupedPhotos.get(key)!;
+
+          // Categorize by image type
+          if (photo.filename.includes('crop_')) {
+            group.crop = photo;
+          } else if (photo.filename.includes('full_')) {
+            group.full = photo;
+          } else if (photo.filename.includes('meta')) {
+            group.meta = photo;
+          }
+        });
+
+        // Convert grouped photos to event records (one per detection)
+        const eventRecords: EventRecord[] = Array.from(groupedPhotos.entries()).map(([key, group]) => {
+          // Use crop image as primary, fallback to full if crop doesn't exist
+          const primaryPhoto = group.crop || group.full;
+
+          if (!primaryPhoto) return null;
+
+          return {
+            id: key,
+            timestamp: primaryPhoto.timestamp,
+            eventType: 'Object Detection',
+            classification: primaryPhoto.classification.charAt(0).toUpperCase() + primaryPhoto.classification.slice(1),
+            snapshotUrl: `${API_BASE_URL}${primaryPhoto.path}`,
+            confidence: primaryPhoto.score,
+            objectId: primaryPhoto.objectId,
+            dateFolder: primaryPhoto.dateFolder,
+            filename: primaryPhoto.filename,
+            details: `Object ID: ${primaryPhoto.objectId || 'N/A'} | Score: ${primaryPhoto.score}%`,
+            // Store full image URL if available
+            fullImageUrl: group.full ? `${API_BASE_URL}${group.full.path}` : undefined
+          };
+        }).filter(Boolean) as EventRecord[];
 
         setEvents(eventRecords);
       } else {
@@ -152,7 +198,7 @@ const EventTable: React.FC = () => {
     return matchesType && matchesDate;
   });
 
-  // Calculate pagination
+  // Calculate pagination (no grouping, show individual rows)
   const totalPages = Math.ceil(filteredEvents.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
@@ -254,8 +300,10 @@ const EventTable: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-800/50 border-b border-gray-700">
               <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date & Heure</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Caméra</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Crop</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date et Heure</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Full</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Classification</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Object ID</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Score</th>
@@ -263,71 +311,99 @@ const EventTable: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
-              {paginatedEvents.map((event) => (
-                <tr
-                  key={event.id}
-                  className="hover:bg-gray-800/30 transition-colors cursor-pointer"
-                  onClick={() => setSelectedEvent(event)}
-                >
-                  <td className="px-4 py-3">
-                    <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-700 flex items-center justify-center">
-                      {event.snapshotUrl ? (
+              {paginatedEvents.map((event) => {
+                const cameraType = getCameraType(event.filename || '');
+                // Use the stored fullImageUrl if available, otherwise try to build it
+                const fullImageUrl = event.fullImageUrl || event.snapshotUrl.replace(/crop_(ther|rgb)/, 'full_$1');
+
+                return (
+                  <tr
+                    key={event.id}
+                    className="hover:bg-gray-800/30 transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="text-sm text-white font-medium">
+                        {formatDate(event.timestamp)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${cameraType === 'Thermique'
+                          ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                          : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                          }`}
+                      >
+                        {cameraType}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div
+                        className="w-20 h-20 rounded-lg overflow-hidden bg-gray-700 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
+                        onClick={() => setSelectedEvent(event)}
+                      >
+                        {event.snapshotUrl ? (
+                          <img
+                            src={event.snapshotUrl}
+                            alt="Crop"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23374151" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="10"%3ENo Image%3C/text%3E%3C/svg%3E';
+                            }}
+                          />
+                        ) : (
+                          <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 6 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div
+                        className="w-20 h-20 rounded-lg overflow-hidden bg-gray-700 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-green-500 transition-all"
+                        onClick={() => window.open(fullImageUrl, '_blank')}
+                      >
                         <img
-                          src={event.snapshotUrl}
-                          alt="Event crop"
+                          src={fullImageUrl}
+                          alt="Full"
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23374151" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
+                            (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23374151" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="10"%3ENo Image%3C/text%3E%3C/svg%3E';
                           }}
                         />
-                      ) : (
-                        <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-white font-medium">{formatDate(event.timestamp).split(',')[0]}</div>
-                    <div className="text-xs text-gray-400">{formatDate(event.timestamp).split(',')[1]}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-white font-medium">{event.classification}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-white font-medium">
-                      {event.objectId !== null && event.objectId !== undefined ? `#${event.objectId}` : 'N/A'}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {event.confidence !== undefined && (
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-gray-700 rounded-full h-2 max-w-[60px]">
-                          <div
-                            className="bg-green-500 h-2 rounded-full"
-                            style={{ width: `${event.confidence}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-gray-400">{event.confidence}%</span>
                       </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteEvent(event.id);
-                      }}
-                      className="text-red-400 hover:text-red-300 transition-colors"
-                      title="Delete Event"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded text-xs font-medium">
+                        {event.classification}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm text-white font-medium">
+                        {event.objectId !== null ? event.objectId : 'N/A'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm text-white font-medium">
+                        {event.confidence !== undefined ? `${event.confidence.toFixed(0)}%` : 'N/A'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteEvent(event.id);
+                        }}
+                        className="text-red-400 hover:text-red-300 transition-colors"
+                        title="Supprimer cet événement"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -338,6 +414,7 @@ const EventTable: React.FC = () => {
         <div className="px-4 py-3 bg-gray-800/30 border-t border-gray-700 flex items-center justify-between">
           <div className="text-sm text-gray-400">
             Page <span className="font-semibold text-white">{currentPage}</span> sur <span className="font-semibold text-white">{totalPages}</span>
+            {' '}- <span className="font-semibold text-white">{filteredEvents.length}</span> détections au total
           </div>
 
           <div className="flex items-center gap-2">
@@ -436,7 +513,7 @@ const EventTable: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-400 mb-2">Full Image</label>
                     <div className="w-full rounded-lg overflow-hidden bg-gray-900">
                       <img
-                        src={selectedEvent.filename ? `${API_BASE_URL}/detection/photos/${selectedEvent.dateFolder}/${selectedEvent.filename.replace('crop_ther', 'full').replace('crop_full', 'full')}` : selectedEvent.snapshotUrl}
+                        src={selectedEvent.fullImageUrl || selectedEvent.snapshotUrl.replace(/crop_(ther|rgb)/, 'full_$1')}
                         alt="Full image"
                         className="w-full h-auto"
                         onError={(e) => {
