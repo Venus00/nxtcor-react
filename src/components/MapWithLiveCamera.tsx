@@ -240,7 +240,7 @@ const MapWithLiveCamera: React.FC = () => {
                             {/* Live camera iframe stream */}
                             <iframe
                                 title={selectedCamera + "-live-stream"}
-                                src={`http://${window.location.hostname}:8889/${selectedCamera}`}
+                                src={`http://${window.location.hostname}:8889/${selectedCamera === 'optical' ? 'cam2' : 'cam1'}`}
                                 className="w-full h-full border-0"
                                 allow="autoplay; fullscreen"
                                 style={{ pointerEvents: 'none' }}
