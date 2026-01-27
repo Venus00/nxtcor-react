@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchPTZStatus } from '../util/ptzStatus';
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import OfflineMap from './OfflineMap';
 
 
 
@@ -83,14 +84,10 @@ const MapWithLiveCamera: React.FC = () => {
             <div className="flex flex-col md:flex-row flex-1">
                 {/* Map Section with marker overlay */}
                 <div className="flex-1 min-h-[400px] bg-gray-800 flex items-center justify-center relative">
-                    {/* Replace with your map component or embed */}
-                    <iframe
-                        title="Map"
-                        src="https://www.openstreetmap.org/export/embed.html?bbox=2.50517%2C42.48919%2C2.51517%2C42.49919&layer=mapnik"
-                        className="w-full h-[60vh] md:h-full rounded-lg shadow-lg border-2 border-gray-700"
-                        style={{ minHeight: 400 }}
-                        allowFullScreen
-                    />
+                    {/* Offline Leaflet Map */}
+                    <div className="absolute inset-0 z-0">
+                        <OfflineMap className="w-full h-full rounded-lg shadow-lg border-2 border-gray-700" />
+                    </div>
 
                     {/* PTZ Directional Controls - Positioned around the map */}
                     {/* Up Button */}
@@ -98,7 +95,7 @@ const MapWithLiveCamera: React.FC = () => {
                         onMouseDown={() => handlePTZMove('up')}
                         onMouseUp={handlePTZStop}
                         onMouseLeave={handlePTZStop}
-                        className="absolute top-6 left-1/2 -translate-x-1/2 z-10 w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:from-blue-700 active:to-blue-800 text-white rounded-xl flex items-center justify-center transition-all duration-200 shadow-2xl hover:shadow-blue-500/50 hover:scale-110 active:scale-95 border-2 border-blue-400/30 backdrop-blur-sm"
+                        className="absolute top-20 left-1/2 -translate-x-1/2 z-50 w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:from-blue-700 active:to-blue-800 text-white rounded-xl flex items-center justify-center transition-all duration-200 shadow-2xl hover:shadow-blue-500/50 hover:scale-110 active:scale-95 border-2 border-blue-400/30 backdrop-blur-sm"
                         title="Move Up"
                     >
                         <ChevronUp className="w-8 h-8 stroke-[3]" />
@@ -109,7 +106,7 @@ const MapWithLiveCamera: React.FC = () => {
                         onMouseDown={() => handlePTZMove('down')}
                         onMouseUp={handlePTZStop}
                         onMouseLeave={handlePTZStop}
-                        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:from-blue-700 active:to-blue-800 text-white rounded-xl flex items-center justify-center transition-all duration-200 shadow-2xl hover:shadow-blue-500/50 hover:scale-110 active:scale-95 border-2 border-blue-400/30 backdrop-blur-sm"
+                        className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:from-blue-700 active:to-blue-800 text-white rounded-xl flex items-center justify-center transition-all duration-200 shadow-2xl hover:shadow-blue-500/50 hover:scale-110 active:scale-95 border-2 border-blue-400/30 backdrop-blur-sm"
                         title="Move Down"
                     >
                         <ChevronDown className="w-8 h-8 stroke-[3]" />
@@ -120,7 +117,7 @@ const MapWithLiveCamera: React.FC = () => {
                         onMouseDown={() => handlePTZMove('right')}
                         onMouseUp={handlePTZStop}
                         onMouseLeave={handlePTZStop}
-                        className="absolute left-6 top-1/2 -translate-y-1/2 z-10 w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:from-blue-700 active:to-blue-800 text-white rounded-xl flex items-center justify-center transition-all duration-200 shadow-2xl hover:shadow-blue-500/50 hover:scale-110 active:scale-95 border-2 border-blue-400/30 backdrop-blur-sm"
+                        className="absolute left-20 top-1/2 -translate-y-1/2 z-50 w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:from-blue-700 active:to-blue-800 text-white rounded-xl flex items-center justify-center transition-all duration-200 shadow-2xl hover:shadow-blue-500/50 hover:scale-110 active:scale-95 border-2 border-blue-400/30 backdrop-blur-sm"
                         title="Move Left"
                     >
                         <ChevronLeft className="w-8 h-8 stroke-[3]" />
@@ -131,14 +128,14 @@ const MapWithLiveCamera: React.FC = () => {
                         onMouseDown={() => handlePTZMove('left')}
                         onMouseUp={handlePTZStop}
                         onMouseLeave={handlePTZStop}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 z-10 w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:from-blue-700 active:to-blue-800 text-white rounded-xl flex items-center justify-center transition-all duration-200 shadow-2xl hover:shadow-blue-500/50 hover:scale-110 active:scale-95 border-2 border-blue-400/30 backdrop-blur-sm"
+                        className="absolute right-20 top-1/2 -translate-y-1/2 z-50 w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:from-blue-700 active:to-blue-800 text-white rounded-xl flex items-center justify-center transition-all duration-200 shadow-2xl hover:shadow-blue-500/50 hover:scale-110 active:scale-95 border-2 border-blue-400/30 backdrop-blur-sm"
                         title="Move Right"
                     >
                         <ChevronRight className="w-8 h-8 stroke-[3]" />
                     </button>
 
                     {/* Zoom and Speed Controls - Bottom Right */}
-                    <div className="absolute bottom-6 right-6 z-10 bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-md rounded-2xl p-4 border-2 border-gray-700/50 shadow-2xl shadow-black/50">
+                    <div className="absolute bottom-6 right-6 z-50 bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-md rounded-2xl p-4 border-2 border-gray-700/50 shadow-2xl shadow-black/50">
                         <div className="flex flex-col gap-3">
                             <div className="text-white text-sm font-bold text-center tracking-wide bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
                                 ZOOM
