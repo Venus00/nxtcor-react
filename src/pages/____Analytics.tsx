@@ -54,7 +54,7 @@ const Analytics: React.FC = () => {
     const loadAnalyticsState = async () => {
       try {
         setStateLoading(true);
-        const response = await fetch('http://localhost:3000/analytics/state');
+        const response = await fetch('http://localhost:3000/api/analytics/state');
         const data = await response.json();
 
         if (data.success) {
@@ -233,7 +233,7 @@ const Analytics: React.FC = () => {
   const startDetection = async () => {
     try {
       const res = await fetch(
-        `http://${window.location.hostname}:3000/detection/start`,
+        `http://${window.location.hostname}:3000/api/detection/start`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -252,7 +252,7 @@ const Analytics: React.FC = () => {
   const stopDetection = async () => {
     try {
       const res = await fetch(
-        `http://${window.location.hostname}:3000/detection/stop`,
+        `http://${window.location.hostname}:3000/api/detection/stop`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -1,5 +1,5 @@
 // hooks/api.ts
-const API_BASE = `http://${window.location.hostname}:3000`;
+const API_BASE = `http://${window.location.hostname}:3000/api`;
 
 // Base fetcher function
 export async function apiFetch<T = any>(
