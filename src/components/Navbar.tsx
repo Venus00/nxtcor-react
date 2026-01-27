@@ -1,28 +1,41 @@
-import { Link, useLocation, useNavigate } from "react-router-dom"
-import { Thermometer, Camera, Play, Settings, ChevronDown, LogOut, Shield, BarChart3, Sliders } from "lucide-react"
-import { useState, useRef, useEffect } from "react"
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Thermometer,
+  Camera,
+  Play,
+  Settings,
+  ChevronDown,
+  LogOut,
+  Shield,
+  BarChart3,
+  Sliders,
+} from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 
 const Navbar = () => {
-  const location = useLocation()
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+  const location = useLocation();
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const navigate = useNavigate();
 
-  const popoverRef = useRef<HTMLDivElement>(null)
+  const popoverRef = useRef<HTMLDivElement>(null);
 
-  const isActive = (path: string) => location.pathname === path
+  const isActive = (path: string) => location.pathname === path;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-        setIsPopoverOpen(false)
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(event.target as Node)
+      ) {
+        setIsPopoverOpen(false);
       }
-    }
+    };
 
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("isAuthenticated");
@@ -30,16 +43,19 @@ const Navbar = () => {
   };
 
   const handleSecurity = () => {
-    console.log('Security clicked')
-    setIsPopoverOpen(false)
-  }
+    console.log("Security clicked");
+    setIsPopoverOpen(false);
+  };
 
   return (
-
     <nav className="bg-gray-900 backdrop-blur-sm shadow-2xl relative z-[100]    ">
       <div className="flex items-center justify-between mx-auto px-8 py-4">
         <div className="relative">
-          <img src="/assets/logoNav.png" className="h-10 transition-transform group-hover:scale-105" alt="NEXTCOR Logo" />
+          <img
+            src="/assets/logoNav.png"
+            className="h-10 transition-transform group-hover:scale-105"
+            alt="NEXTCOR Logo"
+          />
         </div>
 
         <div className="flex items-center">
@@ -47,10 +63,11 @@ const Navbar = () => {
             <li>
               <Link
                 to="/live/cam1"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/live/cam1")
-                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  isActive("/live/cam1")
+                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                }`}
               >
                 <Thermometer className="h-4 w-4" />
                 Thermique
@@ -61,10 +78,11 @@ const Navbar = () => {
             <li>
               <Link
                 to="/live/cam2"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg fo  nt-medium text-sm transition-all duration-200 ${isActive("/live/cam2")
-                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg fo  nt-medium text-sm transition-all duration-200 ${
+                  isActive("/live/cam2")
+                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                }`}
               >
                 <Camera className="h-4 w-4" />
                 Optique
@@ -74,27 +92,26 @@ const Navbar = () => {
             <li>
               <Link
                 to="/analytics"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/analytics")
-                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  isActive("/analytics")
+                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                }`}
               >
                 <BarChart3 className="h-4 w-4" />
                 Analytique
               </Link>
             </li>
 
-
-
-
             {/* Playback */}
             <li>
               <Link
                 to="/playback"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/playback")
-                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  isActive("/playback")
+                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                }`}
               >
                 <Play className="h-4 w-4" />
                 Playback
@@ -119,10 +136,11 @@ const Navbar = () => {
             <li>
               <Link
                 to="/camera-settings"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/camera-settings")
-                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  isActive("/camera-settings")
+                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                }`}
               >
                 <Sliders className="h-4 w-4" />
                 Paramètres
@@ -133,13 +151,24 @@ const Navbar = () => {
             <li>
               <Link
                 to="/ptz-settings"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/ptz-settings")
-                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  isActive("/ptz-settings")
+                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                }`}
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                  />
                 </svg>
                 Paramètres PTZ
               </Link>
@@ -149,13 +178,24 @@ const Navbar = () => {
             <li>
               <Link
                 to="/events-management"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/events-management")
-                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  isActive("/events-management")
+                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-600/50"
+                }`}
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                  />
                 </svg>
                 Événements
               </Link>
@@ -165,13 +205,24 @@ const Navbar = () => {
             <li>
               <Link
                 to="/map-live"
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/map-live")
-                  ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/25 border border-blue-500/50"
-                  : "text-slate-300 hover:text-white hover:bg-blue-800/60 border border-transparent hover:border-blue-600/50"
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  isActive("/map-live")
+                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 border border-red-500/50"
+                    : "text-slate-300 hover:text-white hover:bg-red-800/60 border border-transparent hover:border-red-600/50"
+                }`}
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A2 2 0 013 15.382V6.618a2 2 0 011.553-1.946l7-2.118a2 2 0 011.894 0l7 2.118A2 2 0 0121 6.618v8.764a2 2 0 01-1.553 1.946L15 20v-2a2 2 0 00-2-2h-2a2 2 0 00-2 2v2z" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 20l-5.447-2.724A2 2 0 013 15.382V6.618a2 2 0 011.553-1.946l7-2.118a2 2 0 011.894 0l7 2.118A2 2 0 0121 6.618v8.764a2 2 0 01-1.553 1.946L15 20v-2a2 2 0 00-2-2h-2a2 2 0 00-2 2v2z"
+                  />
                 </svg>
                 Carte & Live
               </Link>
@@ -187,10 +238,13 @@ const Navbar = () => {
               className="flex items-center gap-3 px-5 py-2.5 bg-gradient-to-r from-slate-800/60 to-slate-800/40 rounded-xl border border-slate-600/50 hover:border-slate-500/60 hover:from-slate-700/60 hover:to-slate-700/40 transition-all duration-300 cursor-pointer group shadow-lg shadow-black/20"
             >
               <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50 ring-2 ring-green-500/20"></div>
-              <span className="text-sm text-slate-200 font-semibold tracking-wide">Live</span>
+              <span className="text-sm text-slate-200 font-semibold tracking-wide">
+                Live
+              </span>
               <ChevronDown
-                className={`h-4 w-4 text-slate-400 group-hover:text-slate-300 transition-all duration-300 ${isPopoverOpen ? 'rotate-180 text-slate-300' : ''
-                  }`}
+                className={`h-4 w-4 text-slate-400 group-hover:text-slate-300 transition-all duration-300 ${
+                  isPopoverOpen ? "rotate-180 text-slate-300" : ""
+                }`}
               />
             </button>
 
@@ -202,7 +256,9 @@ const Navbar = () => {
                   <div className="px-4 py-3 bg-gradient-to-r from-slate-700/30 to-slate-800/30 border-b border-slate-600/30">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
-                      <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">État du Système</span>
+                      <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                        État du Système
+                      </span>
                     </div>
                   </div>
 
@@ -241,8 +297,6 @@ const Navbar = () => {
                       </div>
                     </button>
                   </div>
-
-
                 </div>
               </div>
             )}
@@ -250,7 +304,7 @@ const Navbar = () => {
         </div>
       </div>
     </nav>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;
