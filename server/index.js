@@ -22,16 +22,16 @@ app.get("*", (req, res) => {
 
 
 io.on("connection", (socket) => {
-console.log("viewer connected", socket.id);
+    console.log("viewer connected", socket.id);
 
 
-socket.on("detections", (msg) => {
-    console.log("détections",msg)
-    socket.broadcast.emit("detections", msg);
-});
+    socket.on("detections", (msg) => {
+        console.log("détections", msg)
+        socket.broadcast.emit("detections", msg);
+    });
 
 
-socket.on("disconnect", () => console.log("viewer disconnected", socket.id));
+    socket.on("disconnect", () => console.log("viewer disconnected", socket.id));
 });
 
 
