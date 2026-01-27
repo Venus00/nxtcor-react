@@ -139,7 +139,7 @@ const VideoStream: React.FC = () => {
     const loadCameraState = async () => {
       try {
         const response = await fetch(
-          `http://${window.location.hostname}:3000/detection/state`,
+          `http://${window.location.hostname}:3000/api/detection/state`,
         );
         const data = await response.json();
 
@@ -164,7 +164,7 @@ const VideoStream: React.FC = () => {
       // Load stabilizer state
       try {
         const response = await fetch(
-          `http://${window.location.hostname}:3000/camera/${camId === "cam1" ? "cam2" : "cam1"}/video/stabilizer`,
+          `http://${window.location.hostname}:3000/api/camera/${camId === "cam1" ? "cam2" : "cam1"}/video/stabilizer`,
         );
         const data = await response.json();
 
@@ -238,7 +238,7 @@ const VideoStream: React.FC = () => {
       }
 
       const res = await fetch(
-        `http://${window.location.hostname}:3000${endpoint}`,
+        `http://${window.location.hostname}:3000/api${endpoint}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -296,7 +296,7 @@ const VideoStream: React.FC = () => {
       }
 
       const res = await fetch(
-        `http://${window.location.hostname}:3000${endpoint}`,
+        `http://${window.location.hostname}:3000/api${endpoint}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -480,7 +480,7 @@ const VideoStream: React.FC = () => {
         : `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/focus/auto/enable`;
 
       const res = await fetch(
-        `http://${window.location.hostname}:3000${endpoint}`,
+        `http://${window.location.hostname}:3000/api${endpoint}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -700,7 +700,7 @@ const VideoStream: React.FC = () => {
             break;
         }
 
-        await fetch(`http://${window.location.hostname}:3000${endpoint}`, {
+        await fetch(`http://${window.location.hostname}:3000/api${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ channel: 0, speed: calculatedSpeed }),
@@ -1456,3 +1456,4 @@ const VideoStream: React.FC = () => {
 };
 
 export default VideoStream;
+

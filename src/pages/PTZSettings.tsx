@@ -35,7 +35,7 @@ const PTZSettings: React.FC = () => {
     // Send API request for PTZ control
     if (direction !== 'center') {
       try {
-        const response = await fetch(`http://${window.location.hostname}:3000/camera/${selectedCamera}/ptz/move/${direction}`, {
+        const response = await fetch(`http://${window.location.hostname}:3000/api/camera/${selectedCamera}/ptz/move/${direction}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ channel: 0, speed: 4 }),
@@ -78,7 +78,7 @@ const PTZSettings: React.FC = () => {
 
     // Send API request for zoom control
     try {
-      const response = await fetch(`http://${window.location.hostname}:3000/camera/${selectedCamera}/ptz/zoom/${action}`, {
+      const response = await fetch(`http://${window.location.hostname}:3000/api/camera/${selectedCamera}/ptz/zoom/${action}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ channel: 0, speed: 4 }),
@@ -102,7 +102,7 @@ const PTZSettings: React.FC = () => {
 
     // Send API request for focus control
     try {
-      const response = await fetch(`http://${window.location.hostname}:3000/camera/${selectedCamera}/ptz/focus/${action}`, {
+      const response = await fetch(`http://${window.location.hostname}:3000/api/camera/${selectedCamera}/ptz/focus/${action}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ channel: 0, speed: 4 }),

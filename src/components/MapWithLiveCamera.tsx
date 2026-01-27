@@ -22,7 +22,7 @@ const MapWithLiveCamera: React.FC = () => {
             try {
                 // Use the real cameraId and API base URL
                 const cameraId = selectedCamera === 'thermal' ? 'cam1' : 'cam2';
-                const baseUrl = 'http://172.24.161.28:3000';
+                const baseUrl = 'http://172.24.161.28:3000/api';
                 const status = await fetchPTZStatus(cameraId, baseUrl);
                 setPanAngle(status.pan);
                 setTiltAngle(status.tilt);
