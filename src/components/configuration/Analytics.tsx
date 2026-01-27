@@ -284,18 +284,20 @@ const Analytics: React.FC = () => {
 
             // Only update if we receive new objects data
             if (data.data.objects.length > 0) {
-              // Clear map and add new objects with current timestamp and image URL
-              objectMap.clear();
+              // Update existing objects or add new ones, keep timestamp for existing
               data.data.objects.forEach((obj) => {
+                const existing = objectMap.get(obj.trackId);
                 const objWithTimestamp = {
                   ...obj,
                   lastSeen: now,
-                  imageUrl: `${API_BASE_URL}/detection/object/${obj.trackId}/crop?t=${now}`,
+                  // Keep existing image URL if object already exists, otherwise create new one
+                  imageUrl: existing?.imageUrl || `${API_BASE_URL}/detection/object/${obj.trackId}/crop?t=${now}`,
                 };
                 objectMap.set(obj.trackId, objWithTimestamp);
-                activeObjects.push(objWithTimestamp);
               });
 
+              // Convert map to array for rendering
+              const activeObjects = Array.from(objectMap.values());
               setObjects(activeObjects);
             } else {
               // No new objects - keep displaying old ones
@@ -304,7 +306,7 @@ const Analytics: React.FC = () => {
               );
             }
 
-            // Set timeout to clear all boxes after 5 seconds if no new data arrives
+            // Set timeout to clear all boxes after 20 seconds if no new data arrives
             clearTimeoutRef.current = setTimeout(async () => {
               if (trackingId !== null) {
                 console.log(
@@ -313,7 +315,7 @@ const Analytics: React.FC = () => {
                 return;
               }
               console.log(
-                "[Analytics] No data received for 5 seconds, clearing boxes",
+                "[Analytics] No data received for 20 seconds, clearing boxes",
               );
               objectMapRef.current.clear();
               setObjects([]);
@@ -343,7 +345,7 @@ const Analytics: React.FC = () => {
                   JSON.stringify(null),
                 );
               }
-            }, 5000);
+            }, 20000);
 
             if (!data.data.crcValid) {
               console.warn(

@@ -1,28 +1,34 @@
 import React from 'react';
-import { MapContainer, TileLayer } from 'react-leaflet';
+import { MapContainer, ImageOverlay } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
 interface OfflineMapProps {
     className?: string;
 }
 
 const OfflineMap: React.FC<OfflineMapProps> = ({ className }) => {
-    // Center coordinates: 30.861114176029012, -3.7202736169236093
-    const position: [number, number] = [30.861114176029012, -3.7202736169236093];
-    const zoom = 15;
+    // Use actual image dimensions (1399 x 689)
+    const imageBounds: [[number, number], [number, number]] = [[0, 0], [689, 1399]];
+    const center: [number, number] = [344.5, 699.5];
 
     return (
         <MapContainer
-            center={position}
-            zoom={zoom}
+            center={center}
+            zoom={3}
             className={className}
-            style={{ width: '100%', height: '100%' }}
+            style={{ width: '100%', height: '100%', backgroundColor: '#1f2937' }}
+            crs={L.CRS.Simple}
+            minZoom={-2}
+            maxZoom={2}
+            attributionControl={false}
+            zoomControl={true}
+            scrollWheelZoom={true}
+            dragging={true}
         >
-            {/* Fetch tiles from public folder */}
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="/map-tiles/{z}/{x}/{y}.png"
-                maxZoom={19}
+            <ImageOverlay
+                url="/map.png"
+                bounds={imageBounds}
             />
         </MapContainer>
     );
