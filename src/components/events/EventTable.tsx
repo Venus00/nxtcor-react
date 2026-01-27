@@ -49,7 +49,6 @@ const EventTable: React.FC = () => {
   }, [selectedEvent]);
 
   useEffect(() => {
-    // MOCK DATA for testing
     // const mockEvents: EventRecord[] = [
     //   {
     //     id: 'mock-1',
@@ -91,7 +90,7 @@ const EventTable: React.FC = () => {
     //     fullImageUrl: 'https://images.unsplash.com/photo-1518715308788-3005759c41c8?auto=format&fit=facearea&w=400&h=300',
     //   },
     // ];
-    // setEvents(mockEvents);
+    //setEvents(mockEvents);
     fetchEvents(); // Enable real fetch
   }, []);
 
