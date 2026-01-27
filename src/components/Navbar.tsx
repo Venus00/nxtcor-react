@@ -160,6 +160,22 @@ const Navbar = () => {
                 Événements
               </Link>
             </li>
+
+            {/* Carte & Live */}
+            <li>
+              <Link
+                to="/map-live"
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${isActive("/map-live")
+                  ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/25 border border-blue-500/50"
+                  : "text-slate-300 hover:text-white hover:bg-blue-800/60 border border-transparent hover:border-blue-600/50"
+                  }`}
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A2 2 0 013 15.382V6.618a2 2 0 011.553-1.946l7-2.118a2 2 0 011.894 0l7 2.118A2 2 0 0121 6.618v8.764a2 2 0 01-1.553 1.946L15 20v-2a2 2 0 00-2-2h-2a2 2 0 00-2 2v2z" />
+                </svg>
+                Carte & Live
+              </Link>
+            </li>
           </ul>
         </div>
 

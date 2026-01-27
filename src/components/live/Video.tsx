@@ -16,6 +16,8 @@ import {
   RefreshCw,
   AlertCircle,
   Minimize2,
+  PanelRightClose,
+  PanelRightOpen,
 } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
@@ -36,6 +38,7 @@ const VideoStream: React.FC = () => {
     const saved = localStorage.getItem("video_stabilizer_enabled");
     return saved ? JSON.parse(saved) : false;
   });
+  const [controlPanelCollapsed, setControlPanelCollapsed] = useState(false);
   const [streamLoading, setStreamLoading] = useState(true);
   const [streamError, setStreamError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -130,7 +133,7 @@ const VideoStream: React.FC = () => {
     setIsRetrying(false);
   };
 
-  // Load autofocus and stabilizer state from backend on mount
+  // Load autofocus  state from backend on mount
   useEffect(() => {
     const loadCameraState = async () => {
       try {
@@ -164,13 +167,12 @@ const VideoStream: React.FC = () => {
         );
         const data = await response.json();
 
-        if (data.config && data.config.table.VideoImageControl[0].Stable !== undefined) {
-          const stableValue = data.config.table.VideoImageControl[0].Stable;
+        if (data.config && data.config["table.VideoImageControl[0].Stable"] !== undefined) {
+          const stableValue = data.config["table.VideoImageControl[0].Stable"];
           console.log('[Video] Raw Stable value from API:', stableValue, typeof stableValue);
 
-          // Handle both string and number types
-          // Stable = 0 means OFF/disabled, Stable = 3 (or any non-zero) means ON/enabled
-          const stabilizerState = (stableValue === 0 || stableValue === "0") ? false : true;
+          // Handle string value: "0" means OFF/disabled, "3" (or any non-zero) means ON/enabled
+          const stabilizerState = (stableValue === "0") ? false : true;
 
           setStabilizerEnabled(stabilizerState);
           localStorage.setItem(
@@ -178,7 +180,7 @@ const VideoStream: React.FC = () => {
             JSON.stringify(stabilizerState),
           );
           console.log(
-            `[Video] Loaded stabilizer state from backend: ${stabilizerState} (raw value: ${stableValue})`,
+            `[Video] Loaded stabilizer state from backend: ${stabilizerState} (raw value: "${stableValue}")`,
           );
         }
       } catch (error) {
@@ -351,7 +353,7 @@ const VideoStream: React.FC = () => {
           clearTimeout(autoStopTimeoutRef.current);
           autoStopTimeoutRef.current = null;
         }
-      }, 2000);
+      }, 15000);
     };
 
     const handleStop = (e?: React.MouseEvent | React.TouchEvent) => {
@@ -769,7 +771,23 @@ const VideoStream: React.FC = () => {
     <div className="flex h-[calc(100vh-5rem)]  overflow-hidden bg-black">
       <div className="flex-grow flex justify-center items-center relative bg-black">
         <div className="relative w-full h-full overflow-hidden bg-black">
-          <div className="absolute bottom-[1vw] right-[2vw] z-20">
+          {/* Control Panel Toggle Button */}
+          <button
+            onClick={() => setControlPanelCollapsed(!controlPanelCollapsed)}
+            className="absolute top-6 right-6 z-30 w-12 h-12 bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 hover:border-white/40 text-white rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-md shadow-lg"
+            aria-label={controlPanelCollapsed ? "Expand Control Panel" : "Collapse Control Panel"}
+            title={controlPanelCollapsed ? "Afficher le panneau" : "Masquer le panneau"}
+          >
+            {controlPanelCollapsed ? (
+              <PanelRightOpen size={24} strokeWidth={2.5} />
+            ) : (
+              <PanelRightClose size={24} strokeWidth={2.5} />
+            )}
+          </button>
+
+          {/* Control Panel */}
+          <div className={`absolute bottom-[1vw] right-[2vw] z-20 transition-all duration-300 ${controlPanelCollapsed ? 'opacity-0 pointer-events-none translate-x-[120%]' : 'opacity-100'
+            }`}>
             <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-[1vw] min-w-[8vw]">
               <div className="flex items-center justify-between mb-[0.8vw] pb-[0.4vw] border-b border-white/10">
                 <div className="flex items-center space-x-[0.3vw]">
@@ -917,9 +935,21 @@ const VideoStream: React.FC = () => {
                       className="w-[1vw] h-[1vw] group-hover:scale-110 transition-transform duration-200"
                       strokeWidth={2.5}
                     />
-                  </button>                  <div className="w-[2vw] h-[2vw] bg-white/5 border border-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <div className="w-[0.3vw] h-[0.3vw] bg-white/60 rounded-full shadow-lg"></div>
-                  </div>
+                  </button>                  <button
+                    onClick={async () => {
+                      // Stop all PTZ movements
+                      await stop('up');
+                      await stop('down');
+                      await stop('left');
+                      await stop('right');
+                      console.log('[PTZ] Stop all movements');
+                    }}
+                    className="w-[2vw] h-[2vw] bg-red-500/20 hover:bg-red-500/30 active:bg-red-500/40 border border-red-400/30 hover:border-red-400/50 rounded-lg flex items-center justify-center backdrop-blur-sm cursor-pointer transition-all duration-300 ease-out hover:scale-110 active:scale-95"
+                    aria-label="Stop PTZ"
+                    title="Arrêter tous les mouvements PTZ"
+                  >
+                    <div className="w-[0.5vw] h-[0.5vw] bg-red-400 rounded-sm shadow-lg"></div>
+                  </button>
 
                   <button
                     onMouseDown={rightHandlers.handleStart}
@@ -1203,14 +1233,122 @@ const VideoStream: React.FC = () => {
             </div>
           </div>
 
-          {/* Click-to-Move Overlay */}
-          <div
-            ref={videoOverlayRef}
-            onClick={handleVideoClick}
-            className="absolute inset-0 z-10 cursor-crosshair"
-            style={{ pointerEvents: 'auto' }}
-            title="Cliquez pour déplacer la caméra"
-          />
+          {/* Overlay PTZ Controls - Positioned at edges */}
+          {/* Up Button - Top Center */}
+          {controlPanelCollapsed && (
+            <button
+              onMouseDown={upHandlers.handleStart}
+              onMouseUp={upHandlers.handleStop}
+              onMouseLeave={upHandlers.handleStop}
+              onTouchStart={upHandlers.handleStart}
+              onTouchEnd={upHandlers.handleStop}
+              className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20 w-14 h-14 bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border border-green-400/40 hover:border-green-400/60 text-white rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-md shadow-lg shadow-green-500/20"
+              aria-label="Move Up"
+            >
+              <ChevronUp size={28} strokeWidth={2.5} />
+            </button>
+          )}
+
+          {/* Down Button - Bottom Center */}
+          {controlPanelCollapsed && (
+            <button
+              onMouseDown={downHandlers.handleStart}
+              onMouseUp={downHandlers.handleStop}
+              onMouseLeave={downHandlers.handleStop}
+              onTouchStart={downHandlers.handleStart}
+              onTouchEnd={downHandlers.handleStop}
+              className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20 w-14 h-14 bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border border-green-400/40 hover:border-green-400/60 text-white rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-md shadow-lg shadow-green-500/20"
+              aria-label="Move Down"
+            >
+              <ChevronDown size={28} strokeWidth={2.5} />
+            </button>
+          )}
+
+          {/* Left Button - Left Center */}
+          {controlPanelCollapsed && (
+            <button
+              onMouseDown={leftHandlers.handleStart}
+              onMouseUp={leftHandlers.handleStop}
+              onMouseLeave={leftHandlers.handleStop}
+              onTouchStart={leftHandlers.handleStart}
+              onTouchEnd={leftHandlers.handleStop}
+              className="absolute left-6 top-1/2 transform -translate-y-1/2 z-20 w-14 h-14 bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border border-green-400/40 hover:border-green-400/60 text-white rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-md shadow-lg shadow-green-500/20"
+              aria-label="Move Left"
+            >
+              <ChevronLeft size={28} strokeWidth={2.5} />
+            </button>
+          )}
+
+          {/* Right Button - Right Center */}
+          {controlPanelCollapsed && (
+            <button
+              onMouseDown={rightHandlers.handleStart}
+              onMouseUp={rightHandlers.handleStop}
+              onMouseLeave={rightHandlers.handleStop}
+              onTouchStart={rightHandlers.handleStart}
+              onTouchEnd={rightHandlers.handleStop}
+              className="absolute right-6 top-1/2 transform -translate-y-1/2 z-20 w-14 h-14 bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border border-green-400/40 hover:border-green-400/60 text-white rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-md shadow-lg shadow-green-500/20"
+              aria-label="Move Right"
+            >
+              <ChevronRight size={28} strokeWidth={2.5} />
+            </button>
+          )}
+
+          {/* Zoom Controls Overlay - Bottom Left */}
+          {controlPanelCollapsed && (
+            <div className="absolute bottom-6 left-6 z-20 flex flex-col gap-2">
+              <button
+                onMouseDown={zoomInHandlers.handleStart}
+                onMouseUp={zoomInHandlers.handleStop}
+                onMouseLeave={zoomInHandlers.handleStop}
+                onTouchStart={zoomInHandlers.handleStart}
+                onTouchEnd={zoomInHandlers.handleStop}
+                className="w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/40 hover:border-blue-400/60 text-white rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-md shadow-lg"
+                aria-label="Zoom In"
+              >
+                <ZoomIn size={20} strokeWidth={2.5} />
+              </button>
+              <button
+                onMouseDown={zoomOutHandlers.handleStart}
+                onMouseUp={zoomOutHandlers.handleStop}
+                onMouseLeave={zoomOutHandlers.handleStop}
+                onTouchStart={zoomOutHandlers.handleStart}
+                onTouchEnd={zoomOutHandlers.handleStop}
+                className="w-12 h-12 bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/40 hover:border-blue-400/60 text-white rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-md shadow-lg"
+                aria-label="Zoom Out"
+              >
+                <ZoomOut size={20} strokeWidth={2.5} />
+              </button>
+            </div>
+          )}
+
+          {/* Focus Controls Overlay - Bottom Right (only show if autofocus is disabled) */}
+          {!autoFocusEnabled && controlPanelCollapsed && (
+            <div className="absolute bottom-6 right-6 z-20 flex flex-col gap-2">
+              <button
+                onMouseDown={focusInHandlers.handleStart}
+                onMouseUp={focusInHandlers.handleStop}
+                onMouseLeave={focusInHandlers.handleStop}
+                onTouchStart={focusInHandlers.handleStart}
+                onTouchEnd={focusInHandlers.handleStop}
+                className="w-12 h-12 bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 border border-purple-400/40 hover:border-purple-400/60 text-white rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-md shadow-lg"
+                aria-label="Focus In"
+              >
+                <Minus size={20} strokeWidth={2.5} />
+              </button>
+              <button
+                onMouseDown={focusOutHandlers.handleStart}
+                onMouseUp={focusOutHandlers.handleStop}
+                onMouseLeave={focusOutHandlers.handleStop}
+                onTouchStart={focusOutHandlers.handleStart}
+                onTouchEnd={focusOutHandlers.handleStop}
+                className="w-12 h-12 bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 border border-purple-400/40 hover:border-purple-400/60 text-white rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 backdrop-blur-md shadow-lg"
+                aria-label="Focus Out"
+              >
+                <Plus size={20} strokeWidth={2.5} />
+              </button>
+            </div>
+          )}
 
           <iframe
             ref={iframeRef}

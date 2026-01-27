@@ -1,11 +1,24 @@
 import { createServer } from "http";
 import express from "express";
 import { Server } from "socket.io";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+
 
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
+
+// Serve static files from React build
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const clientBuildPath = join(__dirname, "..", "dist");
+app.use(express.static(clientBuildPath));
+
+// SPA fallback: serve index.html for any unknown route
+app.get("*", (req, res) => {
+    res.sendFile(join(clientBuildPath, "index.html"));
+});
 
 
 io.on("connection", (socket) => {
