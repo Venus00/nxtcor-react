@@ -8,6 +8,8 @@ import Analytics from './configuration/Analytics';
 import CameraSettingsPage from '../pages/CameraSettings.tsx';
 import PTZSettings from '../pages/PTZSettings';
 import EventsManagement from '../pages/EventsManagement';
+import EventDetailPage from './events/EventDetailPage';
+import MapWithLiveCamera from './MapWithLiveCamera';
 
 const MainLayout: React.FC = () => {
   const [activeConfigTab, setActiveConfigTab] = useState("live");
@@ -40,9 +42,12 @@ const MainLayout: React.FC = () => {
             <Route path="/camera-settings" element={<CameraSettingsPage />} />
             <Route path="/ptz-settings" element={<PTZSettings />} />
             <Route path="/events-management" element={<EventsManagement />} />
+            <Route path="/events/detail" element={<EventDetailPage />} />
+            <Route path="/map-live" element={<MapWithLiveCamera />} />
             <Route path="/" element={<Navigate to="/live/cam1" replace />} />
           </Routes>
         </div>
+
       </div>
     </div>
   );

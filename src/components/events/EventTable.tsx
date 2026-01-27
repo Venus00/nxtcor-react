@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 export interface EventRecord {
@@ -29,16 +30,69 @@ interface DetectionPhoto {
 const API_BASE_URL = `http://${window.location.hostname}:3000`;
 
 const EventTable: React.FC = () => {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventRecord | null>(null);
+  const [showEditor, setShowEditor] = useState(false);
+  const [description, setDescription] = useState("");
   const [filterType, setFilterType] = useState<string>('all');
   const [searchDate, setSearchDate] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
+  // When opening modal, reset editor and description
+  useEffect(() => {
+    if (selectedEvent) {
+      setShowEditor(false);
+      setDescription(selectedEvent.details || "");
+    }
+  }, [selectedEvent]);
 
   useEffect(() => {
-    fetchEvents();
+    // MOCK DATA for testing
+    // const mockEvents: EventRecord[] = [
+    //   {
+    //     id: 'mock-1',
+    //     timestamp: new Date().toISOString(),
+    //     eventType: 'Object Detection',
+    //     classification: 'Person',
+    //     snapshotUrl: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=facearea&w=400&h=300',
+    //     confidence: 92,
+    //     details: 'Object ID: 1 | Score: 92%',
+    //     objectId: 1,
+    //     dateFolder: '2026-01-27',
+    //     filename: 'mock1.jpg',
+    //     fullImageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=facearea&w=400&h=300',
+    //   },
+    //   {
+    //     id: 'mock-2',
+    //     timestamp: new Date(Date.now() - 3600 * 1000).toISOString(),
+    //     eventType: 'Object Detection',
+    //     classification: 'Car',
+    //     snapshotUrl: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=facearea&w=400&h=300',
+    //     confidence: 85,
+    //     details: 'Object ID: 2 | Score: 85%',
+    //     objectId: 2,
+    //     dateFolder: '2026-01-27',
+    //     filename: 'mock2.jpg',
+    //     fullImageUrl: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=facearea&w=400&h=300',
+    //   },
+    //   {
+    //     id: 'mock-3',
+    //     timestamp: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    //     eventType: 'Object Detection',
+    //     classification: 'Dog',
+    //     snapshotUrl: 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=facearea&w=400&h=300',
+    //     confidence: 78,
+    //     details: 'Object ID: 3 | Score: 78%',
+    //     objectId: 3,
+    //     dateFolder: '2026-01-27',
+    //     filename: 'mock3.jpg',
+    //     fullImageUrl: 'https://images.unsplash.com/photo-1518715308788-3005759c41c8?auto=format&fit=facearea&w=400&h=300',
+    //   },
+    // ];
+    // setEvents(mockEvents);
+    fetchEvents(); // Enable real fetch
   }, []);
 
   // Helper to extract camera type from filename
@@ -307,7 +361,7 @@ const EventTable: React.FC = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Classification</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Object ID</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Score</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Preview</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
@@ -389,15 +443,12 @@ const EventTable: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteEvent(event.id);
-                        }}
-                        className="text-red-400 hover:text-red-300 transition-colors"
-                        title="Supprimer cet événement"
+                        onClick={() => navigate('/events/detail', { state: { event } })}
+                        className="text-blue-400 hover:text-blue-300 transition-colors"
+                        title="Prévisualiser l'événement"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm-9 0c0 5.25 7.5 9 9 9s9-3.75 9-9-7.5-9-9-9-9 3.75-9 9z" />
                         </svg>
                       </button>
                     </td>
@@ -445,157 +496,17 @@ const EventTable: React.FC = () => {
                 .map((page, index, array) => (
                   <React.Fragment key={page}>
                     {index > 0 && array[index - 1] !== page - 1 && (
-                      <span className="px-2 text-gray-500">...</span>
+                      <span className="px-2 text-gray-400">...</span>
                     )}
                     <button
+                      key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${currentPage === page
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-700 hover:bg-gray-600 text-white'
-                        }`}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${currentPage === page ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}`}
                     >
                       {page}
                     </button>
                   </React.Fragment>
                 ))}
-            </div>
-
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded text-sm font-medium transition-colors disabled:cursor-not-allowed"
-            >
-              »
-            </button>
-            <button
-              onClick={() => setCurrentPage(totalPages)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded text-sm font-medium transition-colors disabled:cursor-not-allowed"
-            >
-              »»
-            </button>
-          </div>
-
-          <div className="text-sm text-gray-400">
-            {rowsPerPage} lignes par page
-          </div>
-        </div>
-      )}
-
-      {/* Event Details Modal */}
-      {selectedEvent && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-          onClick={() => setSelectedEvent(null)}
-        >
-          <div
-            className="bg-gray-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">Détails de l'Événement</h3>
-                <button
-                  onClick={() => setSelectedEvent(null)}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {/* Images Side by Side */}
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Full Image */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Full Image</label>
-                    <div className="w-full rounded-lg overflow-hidden bg-gray-900">
-                      <img
-                        src={selectedEvent.fullImageUrl || selectedEvent.snapshotUrl.replace(/crop_(ther|rgb)/, 'full_$1')}
-                        alt="Full image"
-                        className="w-full h-auto"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="16"%3EFull Image Not Available%3C/text%3E%3C/svg%3E';
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Crop Image */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Cropped Detection</label>
-                    <div className="w-full rounded-lg overflow-hidden bg-gray-900">
-                      <img
-                        src={selectedEvent.snapshotUrl}
-                        alt="Cropped detection"
-                        className="w-full h-auto"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-size="16"%3ECrop Not Available%3C/text%3E%3C/svg%3E';
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Event Information */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Classification</label>
-                    <p className="text-white font-medium">{selectedEvent.classification}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Object ID</label>
-                    <p className="text-white font-medium">
-                      {selectedEvent.objectId !== null && selectedEvent.objectId !== undefined ? `#${selectedEvent.objectId}` : 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Date et Heure</label>
-                    <p className="text-white">{formatDate(selectedEvent.timestamp)}</p>
-                  </div>
-                  {selectedEvent.confidence !== undefined && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-1">Score</label>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-gray-700 rounded-full h-2 max-w-[120px]">
-                          <div
-                            className="bg-green-500 h-2 rounded-full"
-                            style={{ width: `${selectedEvent.confidence}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-white font-medium">{selectedEvent.confidence}%</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {selectedEvent.details && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Détails</label>
-                    <p className="text-white">{selectedEvent.details}</p>
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-2 pt-4 border-t border-gray-700">
-                  <button
-                    onClick={() => {
-                      handleDeleteEvent(selectedEvent.id);
-                      setSelectedEvent(null);
-                    }}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Supprimer l'Événement
-                  </button>
-                  <button
-                    onClick={() => setSelectedEvent(null)}
-                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Fermer
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
