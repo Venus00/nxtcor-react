@@ -44,7 +44,7 @@ const MapWithLiveCamera: React.FC = () => {
                     {/* Replace with your map component or embed */}
                     <iframe
                         title="Map"
-                        src="https://www.openstreetmap.org/export/embed.html?bbox=2.2945%2C48.8584%2C2.2950%2C48.8589&layer=mapnik"
+                        src="https://www.openstreetmap.org/export/embed.html?bbox=2.50517%2C42.48919%2C2.51517%2C42.49919&layer=mapnik"
                         className="w-full h-[60vh] md:h-full rounded-lg shadow-lg border-2 border-gray-700"
                         style={{ minHeight: 400 }}
                         allowFullScreen

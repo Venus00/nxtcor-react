@@ -43,6 +43,7 @@ const VideoStream: React.FC = () => {
   const [streamError, setStreamError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [digitalZoom, setDigitalZoom] = useState(1);
   const recordingTimerRef = useRef<number | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -384,6 +385,16 @@ const VideoStream: React.FC = () => {
   const rightHandlers = createHoldHandlers("right", rightIntervalRef);
   const zoomInHandlers = createHoldHandlers("zoom_in", zoomInIntervalRef);
   const zoomOutHandlers = createHoldHandlers("zoom_out", zoomOutIntervalRef);
+
+  // Digital zoom handlers
+  const handleDigitalZoomIn = () => {
+    setDigitalZoom(prev => Math.min(prev + 0.1, 3));
+  };
+
+  const handleDigitalZoomOut = () => {
+    setDigitalZoom(prev => Math.max(prev - 0.1, 1));
+  };
+
   const focusInHandlers = createHoldHandlers("focus_in", focusInIntervalRef);
   const focusOutHandlers = createHoldHandlers("focus_out", focusOutIntervalRef);
 
@@ -1009,6 +1020,18 @@ const VideoStream: React.FC = () => {
                     className="w-[0.9vw] h-[0.9vw] group-hover:scale-110 transition-transform duration-200"
                     strokeWidth={2.5}
                   />
+                </button>
+                <button
+                  onClick={handleDigitalZoomOut}
+                  disabled={digitalZoom <= 1}
+                  className="group w-[1.5vw] h-[1.5vw] bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 border border-purple-400/30 hover:border-purple-400/50 text-purple-100 hover:text-white rounded flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  aria-label="Digital Zoom Out"
+                  title="Digital Zoom Out"
+                >
+                  <Minus
+                    className="w-[0.7vw] h-[0.7vw] group-hover:scale-110 transition-transform duration-200"
+                    strokeWidth={2.5}
+                  />
                 </button>                <button
                   onMouseDown={zoomInHandlers.handleStart}
                   onMouseUp={zoomInHandlers.handleStop}
@@ -1023,6 +1046,23 @@ const VideoStream: React.FC = () => {
                     strokeWidth={2.5}
                   />
                 </button>
+                <button
+                  onClick={handleDigitalZoomIn}
+                  disabled={digitalZoom >= 3}
+                  className="group w-[1.5vw] h-[1.5vw] bg-purple-500/20 hover:bg-purple-500/30 active:bg-purple-500/40 border border-purple-400/30 hover:border-purple-400/50 text-purple-100 hover:text-white rounded flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  aria-label="Digital Zoom In"
+                  title="Digital Zoom In"
+                >
+                  <Plus
+                    className="w-[0.7vw] h-[0.7vw] group-hover:scale-110 transition-transform duration-200"
+                    strokeWidth={2.5}
+                  />
+                </button>
+              </div>
+
+              {/* Digital Zoom Indicator */}
+              <div className="text-center mb-[0.8vw]">
+                <span className="text-white/60 text-[0.55vw] font-medium">Digital: {digitalZoom.toFixed(1)}x</span>
               </div>
 
               {/* FOCUS */}
@@ -1360,7 +1400,10 @@ const VideoStream: React.FC = () => {
             style={{
               width: "100%",
               height: "100%",
-              pointerEvents: "none"
+              pointerEvents: "none",
+              transform: `scale(${digitalZoom})`,
+              transformOrigin: 'center center',
+              transition: 'transform 0.2s ease-out'
             }}
           />
 
