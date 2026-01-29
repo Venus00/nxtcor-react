@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Plus, Save, Trash2, Square, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Thermometer } from 'lucide-react';
 import WebRTCMonitor from './WebRTCMonitor';
+import html2canvas from 'html2canvas';
 
 type CameraType = "cam1" | "cam2";
 
@@ -68,79 +69,33 @@ const IntrusionDetection: React.FC = () => {
         }
     };
 
-    const captureFrame = () => {
+    const captureFrame = async () => {
         if (!iframeRef.current || !canvasRef.current) return;
 
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        const iframeContainer = iframeRef.current.parentElement;
+        if (!iframeContainer) return;
 
-        // Set canvas size
-        canvas.width = 640;
-        canvas.height = 480;
+        try {
+            // Use html2canvas to capture the iframe container
+            const canvas = await html2canvas(iframeContainer, {
+                allowTaint: true,
+                useCORS: true,
+                logging: false,
+                width: 640,
+                height: 480,
+                windowWidth: 640,
+                windowHeight: 480,
+            });
 
-        // Create temporary video element to load the stream
-        const video = document.createElement('video');
-        video.crossOrigin = 'anonymous';
-        video.width = 640;
-        video.height = 480;
-        video.autoplay = true;
-        video.muted = true;
-
-        const streamUrl = `http://${window.location.hostname}:8889/${selectedCamera}`;
-
-        let captureTimeout: number;
-        let loadTimeout: number;
-
-        const cleanup = () => {
-            if (captureTimeout) clearTimeout(captureTimeout);
-            if (loadTimeout) clearTimeout(loadTimeout);
-            video.pause();
-            video.src = '';
-            video.load();
-        };
-
-        // Capture frame once video is playing
-        const captureFromVideo = () => {
-            try {
-                ctx.drawImage(video, 0, 0, 640, 480);
-                const imageData = canvas.toDataURL('image/png');
-                setCapturedImage(imageData);
-                setIsCapturing(true);
-                setRectangles([]);
-                cleanup();
-            } catch (error: any) {
-                console.error('[Capture] Error drawing video:', error);
-                alert('Failed to capture frame from video stream');
-                cleanup();
-            }
-        };
-
-        video.onloadeddata = () => {
-            console.log('[Capture] Video loaded, waiting for playback...');
-            // Wait a bit for video to start playing
-            captureTimeout = window.setTimeout(captureFromVideo, 500);
-        };
-
-        video.onerror = (e) => {
-            console.error('[Capture] Video error:', e);
-            alert('Failed to load video stream');
-            cleanup();
-        };
-
-        // Set timeout in case video never loads
-        loadTimeout = window.setTimeout(() => {
-            console.error('[Capture] Video load timeout');
-            alert('Timeout waiting for video stream');
-            cleanup();
-        }, 10000);
-
-        video.src = streamUrl;
-        video.play().catch(err => {
-            console.error('[Capture] Play error:', err);
-            alert('Failed to play video stream');
-            cleanup();
-        });
+            // Convert to data URL
+            const imageData = canvas.toDataURL('image/png');
+            setCapturedImage(imageData);
+            setIsCapturing(true);
+            setRectangles([]);
+        } catch (error: any) {
+            console.error('[Capture] Error:', error);
+            alert('Failed to capture frame from iframe');
+        }
     };
 
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
