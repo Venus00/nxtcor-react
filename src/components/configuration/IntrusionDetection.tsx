@@ -20,6 +20,7 @@ interface Preset {
     timestamp: number;
     rectangles: Rectangle[];
     imageData?: string;
+    presetNumber?: number; // Camera PTZ preset number (30-128)
 }
 
 const IntrusionDetection: React.FC = () => {
@@ -411,6 +412,7 @@ const IntrusionDetection: React.FC = () => {
                                     <div className="text-sm text-slate-400 mb-3">
                                         <div>Camera: {preset.cameraId === 'cam1' ? 'Optical' : 'Thermal'}</div>
                                         <div>Zones: {preset.rectangles.length}</div>
+                                        {preset.presetNumber && <div>PTZ Preset: #{preset.presetNumber}</div>}
                                         <div>Created: {new Date(preset.timestamp).toLocaleString()}</div>
                                     </div>
                                     <div className="flex gap-2">

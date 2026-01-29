@@ -537,18 +537,17 @@ const VideoStream: React.FC = () => {
       const data = await res.json();
       console.log("PTZ Status fetched:", data);
 
-      if (data.ok && data.response) {
-        // Extract pan, tilt, zoom from response
-        // Assuming response structure has pan, tilt, zoom values
-        if (data.response.pan !== undefined) {
-          setGotoPan(data.response.pan.toString());
-        }
-        if (data.response.tilt !== undefined) {
-          setGotoTilt(data.response.tilt.toString());
-        }
-        if (data.response.zoom !== undefined) {
-          setGotoZoom(data.response.zoom.toString());
-        }
+      if (data.success && data.status) {
+        // Extract pan, tilt, zoom from status using the correct keys
+        const zoom = parseFloat(data.status['status.Postion[2]']) || 0;
+        const pan = parseFloat(data.status['status.Postion[0]']) || 0;
+        const tilt = parseFloat(data.status['status.Postion[1]']) || 0;
+
+        setGotoPan(pan.toFixed(2));
+        setGotoTilt(tilt.toFixed(2));
+        setGotoZoom(zoom.toFixed(2));
+
+        console.log(`[PTZ Status] Pan: ${pan}, Tilt: ${tilt}, Zoom: ${zoom}`);
       }
     } catch (err) {
       console.error("Error fetching PTZ status:", err);
