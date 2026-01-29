@@ -100,7 +100,7 @@ const IntrusionDetection: React.FC = () => {
 
                 const checkVideoReady = () => {
                     attempts++;
-                    
+
                     // Check if video has valid dimensions and is ready to play
                     if (video.readyState >= 3 && video.videoWidth > 0 && video.videoHeight > 0) {
                         if (!resolved) {
@@ -144,7 +144,7 @@ const IntrusionDetection: React.FC = () => {
                     console.error('[Capture] Video error:', e);
                     reject(new Error('Video load error - check stream URL'));
                 };
-                
+
                 // Start checking immediately
                 setTimeout(checkVideoReady, 100);
             });
@@ -164,7 +164,7 @@ const IntrusionDetection: React.FC = () => {
 
             // Get image data
             const imageData = canvas.toDataURL('image/png');
-            
+
             // Verify we didn't capture a blank frame (check if image is too small)
             if (imageData.length < 1000) {
                 throw new Error('Captured blank or invalid frame');
