@@ -1413,13 +1413,29 @@ const VideoStream: React.FC = () => {
                     <label className="text-white/60 text-[0.55vw] font-medium mb-[0.2vw] block">
                       Pan (°)
                     </label>
-                    <input
-                      type="number"
-                      value={gotoPan}
-                      onChange={(e) => setGotoPan(e.target.value)}
-                      placeholder="0 - 360"
-                      className="w-full bg-white/10 border border-white/20 text-white text-[0.6vw] rounded-lg px-[0.5vw] py-[0.3vw] focus:outline-none focus:border-blue-400/50 focus:bg-white/15 transition-colors placeholder:text-white/30"
-                    />
+                    <div className="flex gap-[0.3vw]">
+                      <input
+                        type="number"
+                        value={gotoPan}
+                        onChange={(e) => setGotoPan(e.target.value)}
+                        placeholder="0 - 360"
+                        className="flex-1 bg-white/10 border border-white/20 text-white text-[0.6vw] rounded-lg px-[0.5vw] py-[0.3vw] focus:outline-none focus:border-blue-400/50 focus:bg-white/15 transition-colors placeholder:text-white/30"
+                      />
+                      <button
+                        onClick={() => setGotoPan('0')}
+                        className="px-[0.5vw] py-[0.3vw] bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-[0.5vw] rounded-lg transition-all hover:scale-105"
+                        title="Set to minimum (0°)"
+                      >
+                        Min
+                      </button>
+                      <button
+                        onClick={() => setGotoPan('360')}
+                        className="px-[0.5vw] py-[0.3vw] bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-[0.5vw] rounded-lg transition-all hover:scale-105"
+                        title="Set to maximum (360°)"
+                      >
+                        Max
+                      </button>
+                    </div>
                   </div>
 
                   {/* Tilt Input */}
@@ -1427,13 +1443,29 @@ const VideoStream: React.FC = () => {
                     <label className="text-white/60 text-[0.55vw] font-medium mb-[0.2vw] block">
                       Tilt (°)
                     </label>
-                    <input
-                      type="number"
-                      value={gotoTilt}
-                      onChange={(e) => setGotoTilt(e.target.value)}
-                      placeholder="-90 - 90"
-                      className="w-full bg-white/10 border border-white/20 text-white text-[0.6vw] rounded-lg px-[0.5vw] py-[0.3vw] focus:outline-none focus:border-blue-400/50 focus:bg-white/15 transition-colors placeholder:text-white/30"
-                    />
+                    <div className="flex gap-[0.3vw]">
+                      <input
+                        type="number"
+                        value={gotoTilt}
+                        onChange={(e) => setGotoTilt(e.target.value)}
+                        placeholder="-90 - 90"
+                        className="flex-1 bg-white/10 border border-white/20 text-white text-[0.6vw] rounded-lg px-[0.5vw] py-[0.3vw] focus:outline-none focus:border-blue-400/50 focus:bg-white/15 transition-colors placeholder:text-white/30"
+                      />
+                      <button
+                        onClick={() => setGotoTilt('-90')}
+                        className="px-[0.5vw] py-[0.3vw] bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-[0.5vw] rounded-lg transition-all hover:scale-105"
+                        title="Set to minimum (-90°)"
+                      >
+                        Min
+                      </button>
+                      <button
+                        onClick={() => setGotoTilt('90')}
+                        className="px-[0.5vw] py-[0.3vw] bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-[0.5vw] rounded-lg transition-all hover:scale-105"
+                        title="Set to maximum (90°)"
+                      >
+                        Max
+                      </button>
+                    </div>
                   </div>
 
                   {/* Zoom Input */}
@@ -1441,13 +1473,29 @@ const VideoStream: React.FC = () => {
                     <label className="text-white/60 text-[0.55vw] font-medium mb-[0.2vw] block">
                       Zoom (0-128)
                     </label>
-                    <input
-                      type="number"
-                      value={gotoZoom}
-                      onChange={(e) => setGotoZoom(e.target.value)}
-                      placeholder="0 - 128"
-                      className="w-full bg-white/10 border border-white/20 text-white text-[0.6vw] rounded-lg px-[0.5vw] py-[0.3vw] focus:outline-none focus:border-blue-400/50 focus:bg-white/15 transition-colors placeholder:text-white/30"
-                    />
+                    <div className="flex gap-[0.3vw]">
+                      <input
+                        type="number"
+                        value={gotoZoom}
+                        onChange={(e) => setGotoZoom(e.target.value)}
+                        placeholder="0 - 128"
+                        className="flex-1 bg-white/10 border border-white/20 text-white text-[0.6vw] rounded-lg px-[0.5vw] py-[0.3vw] focus:outline-none focus:border-blue-400/50 focus:bg-white/15 transition-colors placeholder:text-white/30"
+                      />
+                      <button
+                        onClick={() => setGotoZoom('0')}
+                        className="px-[0.5vw] py-[0.3vw] bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-[0.5vw] rounded-lg transition-all hover:scale-105"
+                        title="Set to minimum (0)"
+                      >
+                        Min
+                      </button>
+                      <button
+                        onClick={() => setGotoZoom('128')}
+                        className="px-[0.5vw] py-[0.3vw] bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-[0.5vw] rounded-lg transition-all hover:scale-105"
+                        title="Set to maximum (128)"
+                      >
+                        Max
+                      </button>
+                    </div>
                   </div>
 
                   {/* Action Buttons */}
