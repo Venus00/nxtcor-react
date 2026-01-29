@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 const VideoStream: React.FC = () => {
   const [scale] = useState(1.5);
@@ -573,35 +574,34 @@ const VideoStream: React.FC = () => {
     }
   }, [gotoExpanded, camId]);
 
-  // Periodically fetch current zoom value
-  useEffect(() => {
-    const fetchZoom = async () => {
-      try {
-        const res = await fetch(
-          `http://${window.location.hostname}:3000/api/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/status`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-        const data = await res.json();
-        if (data.success && data.status) {
-          const zoom = parseFloat(data.status["status.Postion[2]"]) || 0;
-          setCurrentZoom(zoom);
-        }
-      } catch (err) {
-        console.error("Error fetching zoom:", err);
+  // Fetch current zoom value using React Query (every 2 seconds)
+  const { data: zoomData } = useQuery({
+    queryKey: ['ptz-zoom', camId],
+    queryFn: async () => {
+      const res = await fetch(
+        `http://${window.location.hostname}:3000/api/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/status`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+      const data = await res.json();
+      if (data.success && data.status) {
+        const zoom = parseFloat(data.status["status.ZoomValue"]) || 0;
+        return zoom;
       }
-    };
+      return null;
+    },
+    refetchInterval: 2000, // Refetch every 2 seconds
+    staleTime: 1000, // Consider data stale after 1 second
+  });
 
-    // Fetch immediately
-    fetchZoom();
-
-    // Then fetch every 2 seconds
-    const interval = setInterval(fetchZoom, 2000);
-
-    return () => clearInterval(interval);
-  }, [camId]);
+  // Update currentZoom state when query data changes
+  useEffect(() => {
+    if (zoomData !== undefined && zoomData !== null) {
+      setCurrentZoom(zoomData);
+    }
+  }, [zoomData]);
 
   const handleGoTo = async () => {
     try {
@@ -1542,7 +1542,7 @@ const VideoStream: React.FC = () => {
                   </div>
 
                   {/* Zoom Input */}
-                  <div>
+                  {/* <div>
                     <label className="text-white/60 text-[0.55vw] font-medium mb-[0.2vw] block">
                       Zoom (0-128)
                     </label>
@@ -1569,7 +1569,7 @@ const VideoStream: React.FC = () => {
                         Max
                       </button>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Action Buttons */}
                   <div className="flex gap-[0.4vw]">
