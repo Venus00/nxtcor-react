@@ -29,7 +29,11 @@ interface DetectionPhoto {
 
 const API_BASE_URL = `http://${window.location.hostname}:3000/api`;
 
-const EventTable: React.FC = () => {
+interface EventTableProps {
+  eventType?: 'detection' | 'intrusion';
+}
+
+const EventTable: React.FC<EventTableProps> = ({ eventType = 'detection' }) => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -92,7 +96,7 @@ const EventTable: React.FC = () => {
     // ];
     //setEvents(mockEvents);
     fetchEvents(); // Enable real fetch
-  }, []);
+  }, [eventType]);
 
   // Helper to extract camera type from filename
   const getCameraType = (filename: string): 'Thermique' | 'Optique' => {
@@ -108,71 +112,98 @@ const EventTable: React.FC = () => {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      // Fetch detection photos from the API
-      const response = await axios.get(`${API_BASE_URL}/detection/photos`, {
-        params: {
-          limit: 100,
-          // Add filters if needed
-          ...(filterType !== 'all' && { classification: filterType.toLowerCase() }),
-          ...(searchDate && { startDate: new Date(searchDate).toISOString() })
-        }
-      });
-
-      if (response.data.success && response.data.photos) {
-        // Group photos by timestamp + objectId + camera type to merge crop and full images
-        const groupedPhotos = new Map<string, { crop?: DetectionPhoto; full?: DetectionPhoto; meta?: DetectionPhoto }>();
-
-        response.data.photos.forEach((photo: DetectionPhoto) => {
-          // Extract camera type from filename
-          const cameraType = photo.filename.includes('_ther') ? 'ther' : 'rgb';
-          // Create unique key: timestamp + objectId + cameraType
-          const key = `${photo.timestamp}-${photo.objectId}-${cameraType}`;
-
-          if (!groupedPhotos.has(key)) {
-            groupedPhotos.set(key, {});
-          }
-
-          const group = groupedPhotos.get(key)!;
-
-          // Categorize by image type
-          if (photo.filename.includes('crop_')) {
-            group.crop = photo;
-          } else if (photo.filename.includes('full_')) {
-            group.full = photo;
-          } else if (photo.filename.includes('meta')) {
-            group.meta = photo;
+      if (eventType === 'detection') {
+        // Fetch detection photos from the API
+        const response = await axios.get(`${API_BASE_URL}/detection/photos`, {
+          params: {
+            limit: 100,
+            // Add filters if needed
+            ...(filterType !== 'all' && { classification: filterType.toLowerCase() }),
+            ...(searchDate && { startDate: new Date(searchDate).toISOString() })
           }
         });
 
-        // Convert grouped photos to event records (one per detection)
-        const eventRecords: EventRecord[] = Array.from(groupedPhotos.entries()).map(([key, group]) => {
-          // Use crop image as primary, fallback to full if crop doesn't exist
-          const primaryPhoto = group.crop || group.full;
+        if (response.data.success && response.data.photos) {
+          // Group photos by timestamp + objectId + camera type to merge crop and full images
+          const groupedPhotos = new Map<string, { crop?: DetectionPhoto; full?: DetectionPhoto; meta?: DetectionPhoto }>();
 
-          if (!primaryPhoto) return null;
+          response.data.photos.forEach((photo: DetectionPhoto) => {
+            // Extract camera type from filename
+            const cameraType = photo.filename.includes('_ther') ? 'ther' : 'rgb';
+            // Create unique key: timestamp + objectId + cameraType
+            const key = `${photo.timestamp}-${photo.objectId}-${cameraType}`;
 
-          return {
-            id: key,
-            timestamp: primaryPhoto.timestamp,
-            eventType: 'Object Detection',
-            classification: primaryPhoto.classification.charAt(0).toUpperCase() + primaryPhoto.classification.slice(1),
-            snapshotUrl: `${API_BASE_URL}${primaryPhoto.path}`,
-            confidence: primaryPhoto.score,
-            objectId: primaryPhoto.objectId,
-            dateFolder: primaryPhoto.dateFolder,
-            filename: primaryPhoto.filename,
-            details: `Object ID: ${primaryPhoto.objectId || 'N/A'} | Score: ${primaryPhoto.score}%`,
-            // Store full image URL if available
-            fullImageUrl: group.full ? `${API_BASE_URL}${group.full.path}` : undefined
-          };
-        }).filter(Boolean) as EventRecord[];
+            if (!groupedPhotos.has(key)) {
+              groupedPhotos.set(key, {});
+            }
 
-        setEvents(eventRecords);
-      } else {
-        setEvents([]);
+            const group = groupedPhotos.get(key)!;
+
+            // Categorize by image type
+            if (photo.filename.includes('crop_')) {
+              group.crop = photo;
+            } else if (photo.filename.includes('full_')) {
+              group.full = photo;
+            } else if (photo.filename.includes('meta')) {
+              group.meta = photo;
+            }
+          });
+
+          // Convert grouped photos to event records (one per detection)
+          const eventRecords: EventRecord[] = Array.from(groupedPhotos.entries()).map(([key, group]) => {
+            // Use crop image as primary, fallback to full if crop doesn't exist
+            const primaryPhoto = group.crop || group.full;
+
+            if (!primaryPhoto) return null;
+
+            return {
+              id: key,
+              timestamp: primaryPhoto.timestamp,
+              eventType: 'Object Detection',
+              classification: primaryPhoto.classification.charAt(0).toUpperCase() + primaryPhoto.classification.slice(1),
+              snapshotUrl: `${API_BASE_URL}${primaryPhoto.path}`,
+              confidence: primaryPhoto.score,
+              objectId: primaryPhoto.objectId,
+              dateFolder: primaryPhoto.dateFolder,
+              filename: primaryPhoto.filename,
+              details: `Object ID: ${primaryPhoto.objectId || 'N/A'} | Score: ${primaryPhoto.score}%`,
+              // Store full image URL if available
+              fullImageUrl: group.full ? `${API_BASE_URL}${group.full.path}` : undefined
+            };
+          }).filter(Boolean) as EventRecord[];
+
+          setEvents(eventRecords);
+        } else {
+          setEvents([]);
+        }
+      } else if (eventType === 'intrusion') {
+        // Fetch intrusion events from the API
+        const response = await axios.get(`${API_BASE_URL}/intrusion/events`, {
+          params: {
+            limit: 100,
+            ...(searchDate && { startDate: new Date(searchDate).toISOString() })
+          }
+        }).catch(() => ({ data: { success: false, events: [] } }));
+
+        if (response.data.success && response.data.events) {
+          const eventRecords: EventRecord[] = response.data.events.map((event: any) => ({
+            id: event.id,
+            timestamp: event.timestamp,
+            eventType: 'Intrusion Detection',
+            classification: event.zone || 'Unknown Zone',
+            snapshotUrl: `${API_BASE_URL}${event.path}`,
+            confidence: undefined,
+            details: `Zone: ${event.zone || 'Unknown'} | Camera: ${event.cameraId}`,
+            filename: event.filename,
+            fullImageUrl: `${API_BASE_URL}${event.path}`
+          }));
+          setEvents(eventRecords);
+        } else {
+          setEvents([]);
+        }
       }
     } catch (error) {
-      console.error('Error fetching detection photos:', error);
+      console.error('Error fetching events:', error);
       // Set empty array if API fails
       setEvents([]);
     } finally {
@@ -241,6 +272,7 @@ const EventTable: React.FC = () => {
       'Fast-Moving': 'bg-green-500/20 text-green-400 border-green-500/30',
       'Crowd Detection': 'bg-pink-500/20 text-pink-400 border-pink-500/30',
       'Object Detection': 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+      'Intrusion Detection': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
     };
     return colors[eventType] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
   };
@@ -268,8 +300,15 @@ const EventTable: React.FC = () => {
       <div className="bg-gray-800/50 border-b border-gray-700 p-4">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h2 className="text-xl font-bold text-white mb-1">Historique des Événements</h2>
-            <p className="text-sm text-gray-400">Événements détectés avec captures d'écran et classifications</p>
+            <h2 className="text-xl font-bold text-white mb-1">
+              {eventType === 'detection' ? 'Événements de Détection' : 'Événements d\'Intrusion'}
+            </h2>
+            <p className="text-sm text-gray-400">
+              {eventType === 'detection'
+                ? 'Événements détectés avec captures d\'écran et classifications'
+                : 'Événements d\'intrusion détectés dans les zones surveillées'
+              }
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -305,14 +344,20 @@ const EventTable: React.FC = () => {
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">Tous les Événements</option>
-              <option value="Motion Detection">Détection de Mouvement</option>
-              <option value="Tamper Detection">Détection d'Effraction</option>
-              <option value="Scene Changing">Changement de Scène</option>
-              <option value="Regional Intrusion">Intrusion Régionale</option>
-              <option value="Abandoned Object">Objet Abandonné</option>
-              <option value="Fast-Moving">Mouvement Rapide</option>
-              <option value="Crowd Detection">Détection de Foule</option>
-              <option value="Object Detection">Détection d'Objet</option>
+              {eventType === 'detection' ? (
+                <>
+                  <option value="Object Detection">Détection d'Objet</option>
+                  <option value="Person">Personne</option>
+                  <option value="Car">Voiture</option>
+                  <option value="Animal">Animal</option>
+                </>
+              ) : (
+                <>
+                  <option value="Intrusion Detection">Détection d'Intrusion</option>
+                  <option value="Zone 1">Zone 1</option>
+                  <option value="Zone 2">Zone 2</option>
+                </>
+              )}
             </select>
           </div>
 

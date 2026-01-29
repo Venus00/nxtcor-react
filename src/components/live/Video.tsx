@@ -48,6 +48,7 @@ const VideoStream: React.FC = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
   const [digitalZoom, setDigitalZoom] = useState(1);
+  const [currentZoom, setCurrentZoom] = useState<number | null>(null);
   const recordingTimerRef = useRef<number | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -556,6 +557,7 @@ const VideoStream: React.FC = () => {
         setGotoPan(pan.toFixed(2));
         setGotoTilt(tilt.toFixed(2));
         setGotoZoom(zoom.toFixed(2));
+        setCurrentZoom(zoom);
 
         console.log(`[PTZ Status] Pan: ${pan}, Tilt: ${tilt}, Zoom: ${zoom}`);
       }
@@ -570,6 +572,36 @@ const VideoStream: React.FC = () => {
       fetchPTZStatus();
     }
   }, [gotoExpanded, camId]);
+
+  // Periodically fetch current zoom value
+  useEffect(() => {
+    const fetchZoom = async () => {
+      try {
+        const res = await fetch(
+          `http://${window.location.hostname}:3000/api/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/status`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+        const data = await res.json();
+        if (data.success && data.status) {
+          const zoom = parseFloat(data.status["status.Postion[2]"]) || 0;
+          setCurrentZoom(zoom);
+        }
+      } catch (err) {
+        console.error("Error fetching zoom:", err);
+      }
+    };
+
+    // Fetch immediately
+    fetchZoom();
+
+    // Then fetch every 2 seconds
+    const interval = setInterval(fetchZoom, 2000);
+
+    return () => clearInterval(interval);
+  }, [camId]);
 
   const handleGoTo = async () => {
     try {
@@ -914,8 +946,8 @@ const VideoStream: React.FC = () => {
           {/* Control Panel */}
           <div
             className={`absolute bottom-[1vw] right-[2vw] z-20 transition-all duration-300 ${controlPanelCollapsed
-                ? "opacity-0 pointer-events-none translate-x-[120%]"
-                : "opacity-100"
+              ? "opacity-0 pointer-events-none translate-x-[120%]"
+              : "opacity-100"
               }`}
           >
             <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-[1vw] min-w-[8vw]">
@@ -935,10 +967,10 @@ const VideoStream: React.FC = () => {
                   onTouchEnd={isRecording ? stopRecording : startRecording}
                   disabled={recordingCompleted}
                   className={`group w-full h-[2vw] ${isRecording
-                      ? "bg-red-500/30 hover:bg-red-500/40 active:bg-red-500/50 border-red-400/50 hover:border-red-400/70 text-red-100 hover:shadow-red-500/20"
-                      : recordingCompleted
-                        ? "bg-gray-500/20 border-gray-400/30 text-gray-400 cursor-not-allowed"
-                        : "bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border-green-400/30 hover:border-green-400/50 text-green-100 hover:shadow-green-500/20"
+                    ? "bg-red-500/30 hover:bg-red-500/40 active:bg-red-500/50 border-red-400/50 hover:border-red-400/70 text-red-100 hover:shadow-red-500/20"
+                    : recordingCompleted
+                      ? "bg-gray-500/20 border-gray-400/30 text-gray-400 cursor-not-allowed"
+                      : "bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border-green-400/30 hover:border-green-400/50 text-green-100 hover:shadow-green-500/20"
                     } border hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg disabled:hover:scale-100`}
                   aria-label={
                     isRecording ? "Stop Recording" : "Start Recording"
@@ -1179,11 +1211,17 @@ const VideoStream: React.FC = () => {
                 </button>
               </div>
 
-              {/* Digital Zoom Indicator */}
+              {/* Current Zoom Display */}
               <div className="text-center mb-[0.8vw]">
-                <span className="text-white/60 text-[0.55vw] font-medium">
-                  Digital: {digitalZoom.toFixed(1)}x
-                </span>
+                <div className="flex items-center justify-center gap-[0.5vw]">
+                  <span className="text-white/60 text-[0.55vw] font-medium">
+                    Zoom: {currentZoom !== null ? currentZoom.toFixed(1) : "--"}
+                  </span>
+                  <span className="text-white/40 text-[0.5vw]">/</span>
+                  <span className="text-purple-400/80 text-[0.55vw] font-medium">
+                    Digital: {digitalZoom.toFixed(1)}x
+                  </span>
+                </div>
               </div>
 
               {/* FOCUS */}
@@ -1372,8 +1410,8 @@ const VideoStream: React.FC = () => {
                   onClick={toggleStabilizer}
                   onTouchEnd={toggleStabilizer}
                   className={`group w-full h-[2vw] ${stabilizerEnabled
-                      ? "bg-green-500/30 border-green-400/50 text-green-100"
-                      : "bg-gray-500/20 border-gray-400/30 text-gray-400"
+                    ? "bg-green-500/30 border-green-400/50 text-green-100"
+                    : "bg-gray-500/20 border-gray-400/30 text-gray-400"
                     } border rounded-xl flex items-center justify-center space-x-[0.3vw] transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg ${stabilizerEnabled
                       ? "hover:shadow-green-500/20"
                       : "hover:shadow-gray-500/20"
