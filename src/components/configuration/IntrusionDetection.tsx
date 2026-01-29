@@ -69,38 +69,29 @@ const IntrusionDetection: React.FC = () => {
     };
 
     const captureFrame = () => {
-        if (!canvasRef.current) return;
+        if (!iframeRef.current || !canvasRef.current) return;
 
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
         try {
+            const iframe = iframeRef.current;
+
             // Set canvas size
             canvas.width = 640;
             canvas.height = 480;
 
-            // Create an image from the current iframe stream URL
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
+            // Draw the iframe directly onto the canvas
+            ctx.drawImage(iframe, 0, 0, 640, 480);
 
-            img.onload = () => {
-                ctx.drawImage(img, 0, 0, 640, 480);
-                const imageData = canvas.toDataURL('image/png');
-                setCapturedImage(imageData);
-                setIsCapturing(true);
-                setRectangles([]);
-            };
-
-            img.onerror = () => {
-                alert('Failed to capture frame from stream');
-            };
-
-            // Capture from the same stream source
-            img.src = `http://${window.location.hostname}:8889/${selectedCamera}?timestamp=${Date.now()}`;
+            const imageData = canvas.toDataURL('image/png');
+            setCapturedImage(imageData);
+            setIsCapturing(true);
+            setRectangles([]);
         } catch (error: any) {
             console.error('[Capture] Error:', error);
-            alert('Failed to capture frame');
+            alert('Failed to capture frame from iframe. CORS may be blocking access.');
         }
     };
 
