@@ -197,13 +197,16 @@ const IntrusionDetection: React.FC = () => {
             return;
         }
 
+        // Don't send the full base64 image - too large for request
+        // Backend can store it separately or regenerate thumbnails
         const preset: Preset = {
             id: Date.now().toString(),
             name: presetName,
             cameraId: selectedCamera,
             timestamp: Date.now(),
             rectangles,
-            imageData: capturedImage || undefined
+            // Don't include imageData to avoid "request entity too large" error
+            // imageData: capturedImage || undefined
         };
 
         try {
@@ -446,7 +449,7 @@ const IntrusionDetection: React.FC = () => {
                                 <div className="p-4">
                                     <h3 className="text-lg font-semibold text-white mb-2">{preset.name}</h3>
                                     <div className="text-sm text-slate-400 mb-3">
-                                        <div>Camera: {preset.cameraId === 'cam1' ? 'Optical' : 'Thermal'}</div>
+                                        <div>Camera: {preset.cameraId === 'cam1' ? 'Thermal' : 'Optical'}</div>
                                         <div>Zones: {preset.rectangles.length}</div>
                                         {preset.presetNumber && <div>PTZ Preset: #{preset.presetNumber}</div>}
                                         <div>Created: {new Date(preset.timestamp).toLocaleString()}</div>
@@ -492,7 +495,7 @@ const IntrusionDetection: React.FC = () => {
                         <div>
                             <h2 className="text-2xl font-bold text-white">Intrusion Detection Active</h2>
                             <p className="text-slate-400 mt-1">
-                                Monitoring: <span className="text-white font-semibold">{activePreset.name}</span> on {activePreset.cameraId === 'cam1' ? 'Optical' : 'Thermal'} Camera
+                                Monitoring: <span className="text-white font-semibold">{activePreset.name}</span> on {activePreset.cameraId === 'cam1' ? 'Thermal' : 'Optical'} Camera
                             </p>
                         </div>
                         <button
@@ -702,8 +705,8 @@ const IntrusionDetection: React.FC = () => {
                                         : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                                         } ${isCapturing ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    <Camera className="w-4 h-4" />
-                                    Optical
+                                    <Thermometer className="w-4 h-4" />
+                                    Thermal
                                 </button>
                                 <button
                                     onClick={() => setSelectedCamera('cam2')}
@@ -713,8 +716,8 @@ const IntrusionDetection: React.FC = () => {
                                         : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                                         } ${isCapturing ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    <Thermometer className="w-4 h-4" />
-                                    Thermal
+                                    <Camera className="w-4 h-4" />
+                                    Optical
                                 </button>
                             </div>
                         </div>
