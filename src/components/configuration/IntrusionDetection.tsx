@@ -68,85 +68,39 @@ const IntrusionDetection: React.FC = () => {
         }
     };
 
-    const captureFrame = async () => {
-        if (!iframeRef.current || !canvasRef.current) return;
+    const captureFrame = () => {
+        if (!canvasRef.current) return;
 
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
         try {
-            // Create a temporary video element to capture from the same stream
-            const video = document.createElement('video');
-            video.autoplay = true;
-            video.muted = true;
-            video.playsInline = true;
-            video.src = `http://${window.location.hostname}:8889/${selectedCamera}`;
-            video.style.position = 'fixed';
-            video.style.top = '-9999px';
-            video.style.left = '-9999px';
-            video.style.width = '640px';
-            video.style.height = '480px';
-            document.body.appendChild(video);
-
-            console.log('[Capture] Starting capture from:', video.src);
-
-            // Wait for video to load and be ready to play
-            await new Promise<void>((resolve, reject) => {
-                let resolved = false;
-                const timeout = setTimeout(() => {
-                    if (!resolved) {
-                        reject(new Error('Video load timeout'));
-                    }
-                }, 10000);
-
-                video.onloadeddata = () => {
-                    console.log('[Capture] Video data loaded');
-                };
-
-                video.oncanplay = () => {
-                    console.log('[Capture] Video can play');
-                    if (!resolved) {
-                        resolved = true;
-                        clearTimeout(timeout);
-                        setTimeout(resolve, 1000); // Wait 1 second for stream to stabilize
-                    }
-                };
-
-                video.onerror = (e) => {
-                    console.error('[Capture] Video error:', e);
-                    clearTimeout(timeout);
-                    reject(new Error('Video load error'));
-                };
-            });
-
-            console.log('[Capture] Video ready, capturing frame...');
-
-            // Set canvas size and draw
+            // Set canvas size
             canvas.width = 640;
             canvas.height = 480;
-            ctx.clearRect(0, 0, 640, 480);
-            ctx.drawImage(video, 0, 0, 640, 480);
 
-            const imageData = canvas.toDataURL('image/png');
+            // Create an image from the current iframe stream URL
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
 
-            console.log('[Capture] Frame captured, size:', imageData.length);
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0, 640, 480);
+                const imageData = canvas.toDataURL('image/png');
+                setCapturedImage(imageData);
+                setIsCapturing(true);
+                setRectangles([]);
+            };
 
-            // Cleanup
-            video.pause();
-            video.src = '';
-            document.body.removeChild(video);
+            img.onerror = () => {
+                alert('Failed to capture frame from stream');
+            };
 
-            if (imageData.length < 1000) {
-                throw new Error('Captured image is too small (blank frame)');
-            }
-
-            setCapturedImage(imageData);
-            setIsCapturing(true);
-            setRectangles([]);
+            // Capture from the same stream source
+            img.src = `http://${window.location.hostname}:8889/${selectedCamera}?timestamp=${Date.now()}`;
         } catch (error: any) {
-            console.error('[Capture] Error capturing frame:', error);
-            alert('Failed to capture frame: ' + error.message);
+            console.error('[Capture] Error:', error);
+            alert('Failed to capture frame');
         }
     };
 
