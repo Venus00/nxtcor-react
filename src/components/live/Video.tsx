@@ -609,12 +609,7 @@ const VideoStream: React.FC = () => {
       const data = await res.json();
       console.log("GoTo command sent:", data);
 
-      if (data.ok || data.success) {
-        // Clear inputs after successful command
-        setGotoPan("");
-        setGotoTilt("");
-        setGotoZoom("");
-      } else {
+      if (!data.ok && !data.success) {
         alert("Failed to execute GoTo command");
       }
     } catch (err) {
@@ -918,11 +913,10 @@ const VideoStream: React.FC = () => {
 
           {/* Control Panel */}
           <div
-            className={`absolute bottom-[1vw] right-[2vw] z-20 transition-all duration-300 ${
-              controlPanelCollapsed
+            className={`absolute bottom-[1vw] right-[2vw] z-20 transition-all duration-300 ${controlPanelCollapsed
                 ? "opacity-0 pointer-events-none translate-x-[120%]"
                 : "opacity-100"
-            }`}
+              }`}
           >
             <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-[1vw] min-w-[8vw]">
               <div className="flex items-center justify-between mb-[0.8vw] pb-[0.4vw] border-b border-white/10">
@@ -940,13 +934,12 @@ const VideoStream: React.FC = () => {
                   onClick={isRecording ? stopRecording : startRecording}
                   onTouchEnd={isRecording ? stopRecording : startRecording}
                   disabled={recordingCompleted}
-                  className={`group w-full h-[2vw] ${
-                    isRecording
+                  className={`group w-full h-[2vw] ${isRecording
                       ? "bg-red-500/30 hover:bg-red-500/40 active:bg-red-500/50 border-red-400/50 hover:border-red-400/70 text-red-100 hover:shadow-red-500/20"
                       : recordingCompleted
                         ? "bg-gray-500/20 border-gray-400/30 text-gray-400 cursor-not-allowed"
                         : "bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border-green-400/30 hover:border-green-400/50 text-green-100 hover:shadow-green-500/20"
-                  } border hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg disabled:hover:scale-100`}
+                    } border hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg disabled:hover:scale-100`}
                   aria-label={
                     isRecording ? "Stop Recording" : "Start Recording"
                   }
@@ -1378,15 +1371,13 @@ const VideoStream: React.FC = () => {
                 <button
                   onClick={toggleStabilizer}
                   onTouchEnd={toggleStabilizer}
-                  className={`group w-full h-[2vw] ${
-                    stabilizerEnabled
+                  className={`group w-full h-[2vw] ${stabilizerEnabled
                       ? "bg-green-500/30 border-green-400/50 text-green-100"
                       : "bg-gray-500/20 border-gray-400/30 text-gray-400"
-                  } border rounded-xl flex items-center justify-center space-x-[0.3vw] transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg ${
-                    stabilizerEnabled
+                    } border rounded-xl flex items-center justify-center space-x-[0.3vw] transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg ${stabilizerEnabled
                       ? "hover:shadow-green-500/20"
                       : "hover:shadow-gray-500/20"
-                  }`}
+                    }`}
                   aria-label="Toggle Image Stabilizer"
                   title={
                     stabilizerEnabled
@@ -1395,9 +1386,8 @@ const VideoStream: React.FC = () => {
                   }
                 >
                   <Minimize2
-                    className={`w-[0.8vw] h-[0.8vw] group-hover:scale-110 transition-transform duration-200 ${
-                      stabilizerEnabled ? "animate-pulse" : ""
-                    }`}
+                    className={`w-[0.8vw] h-[0.8vw] group-hover:scale-110 transition-transform duration-200 ${stabilizerEnabled ? "animate-pulse" : ""
+                      }`}
                     strokeWidth={2.5}
                   />
                   <span className="text-[0.6vw] font-medium tracking-wide">
