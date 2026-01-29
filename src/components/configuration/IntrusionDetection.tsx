@@ -76,29 +76,70 @@ const IntrusionDetection: React.FC = () => {
         if (!ctx) return;
 
         try {
-            // Use html2canvas or create a temporary video element to capture the stream
-            // For now, we'll capture the iframe content directly
-            const iframe = iframeRef.current;
-            
             // Create a temporary video element to capture the stream
             const video = document.createElement('video');
-            video.src = `http://${window.location.hostname}:8889/${selectedCamera}`;
+            video.crossOrigin = "anonymous";
             video.autoplay = true;
             video.muted = true;
-            video.style.display = 'none';
+            video.playsInline = true;
+            video.style.position = 'fixed';
+            video.style.top = '-9999px';
+            video.style.left = '-9999px';
+            video.style.width = '640px';
+            video.style.height = '480px';
             document.body.appendChild(video);
 
-            // Wait for video to load
-            await new Promise((resolve) => {
-                video.onloadeddata = resolve;
-                setTimeout(resolve, 1000); // Fallback timeout
+            // Set video source
+            video.src = `http://${window.location.hostname}:8889/${selectedCamera}`;
+
+            // Wait for video to be ready with multiple checks
+            await new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 50; // 5 seconds timeout
+
+                const checkVideo = () => {
+                    attempts++;
+                    
+                    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+                        // Video is ready
+                        resolve(true);
+                    } else if (attempts >= maxAttempts) {
+                        reject(new Error('Video load timeout'));
+                    } else {
+                        setTimeout(checkVideo, 100);
+                    }
+                };
+
+                video.onloadeddata = () => {
+                    if (video.videoWidth > 0 && video.videoHeight > 0) {
+                        resolve(true);
+                    }
+                };
+
+                video.onerror = (e) => reject(new Error('Video load error'));
+                
+                // Start checking
+                checkVideo();
             });
 
+            // Give it a bit more time to ensure frame is ready
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            // Set canvas size
             canvas.width = 640;
             canvas.height = 480;
+
+            // Draw the video frame
             ctx.drawImage(video, 0, 0, 640, 480);
 
+            // Get image data
             const imageData = canvas.toDataURL('image/png');
+            
+            // Verify we didn't capture a blank frame
+            if (imageData === 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==') {
+                throw new Error('Captured blank frame');
+            }
+
             setCapturedImage(imageData);
             setIsCapturing(true);
             setRectangles([]);
@@ -107,7 +148,7 @@ const IntrusionDetection: React.FC = () => {
             document.body.removeChild(video);
         } catch (error) {
             console.error('Error capturing frame:', error);
-            alert('Failed to capture frame. Please try again.');
+            alert('Failed to capture frame. Please ensure the video stream is playing and try again.');
         }
     };
 
