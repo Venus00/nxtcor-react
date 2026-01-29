@@ -93,7 +93,7 @@ const IntrusionDetection: React.FC = () => {
             video.src = `http://${window.location.hostname}:8889/${selectedCamera}`;
 
             // Wait for video to be ready and playing
-            await new Promise<void>((resolve, reject) => {
+            await new Promise<void>((resolve) => {
                 let attempts = 0;
                 const maxAttempts = 100; // 10 seconds timeout
                 let resolved = false;
@@ -109,7 +109,12 @@ const IntrusionDetection: React.FC = () => {
                             resolve();
                         }
                     } else if (attempts >= maxAttempts) {
-                        reject(new Error('Video load timeout - stream may not be available'));
+                        // Resolve anyway after timeout to attempt capture
+                        if (!resolved) {
+                            resolved = true;
+                            console.log('[Capture] Timeout reached, attempting capture anyway');
+                            resolve();
+                        }
                     } else {
                         setTimeout(checkVideoReady, 100);
                     }
@@ -142,7 +147,11 @@ const IntrusionDetection: React.FC = () => {
 
                 video.onerror = (e) => {
                     console.error('[Capture] Video error:', e);
-                    reject(new Error('Video load error - check stream URL'));
+                    // Don't reject, just resolve to attempt capture
+                    if (!resolved) {
+                        resolved = true;
+                        resolve();
+                    }
                 };
 
                 // Start checking immediately
