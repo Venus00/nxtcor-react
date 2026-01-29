@@ -76,32 +76,43 @@ const IntrusionDetection: React.FC = () => {
         if (!ctx) return;
 
         try {
-            const iframe = iframeRef.current;
+            // Create a temporary video element to capture from the same stream
+            const video = document.createElement('video');
+            video.crossOrigin = 'anonymous';
+            video.autoplay = true;
+            video.muted = true;
+            video.playsInline = true;
+            video.src = `http://${window.location.hostname}:8889/${selectedCamera}`;
+            video.style.position = 'absolute';
+            video.style.top = '-9999px';
+            video.style.width = '640px';
+            video.style.height = '480px';
+            document.body.appendChild(video);
 
-            // Set canvas size
+            // Wait for video to load and play
+            await new Promise((resolve) => {
+                video.onloadedmetadata = () => {
+                    video.play();
+                    setTimeout(resolve, 500); // Wait for first frame
+                };
+            });
+
+            // Set canvas size and draw
             canvas.width = 640;
             canvas.height = 480;
-
-            // Capture iframe content
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-            if (iframeDoc) {
-                const video = iframeDoc.querySelector('video');
-                if (video) {
-                    ctx.drawImage(video, 0, 0, 640, 480);
-                } else {
-                    throw new Error('Video element not found in iframe');
-                }
-            } else {
-                throw new Error('Cannot access iframe content');
-            }
+            ctx.drawImage(video, 0, 0, 640, 480);
 
             const imageData = canvas.toDataURL('image/png');
+
+            // Cleanup
+            document.body.removeChild(video);
+
             setCapturedImage(imageData);
             setIsCapturing(true);
             setRectangles([]);
         } catch (error: any) {
             console.error('[Capture] Error capturing frame:', error);
-            alert('Failed to capture frame from iframe');
+            alert('Failed to capture frame');
         }
     };
 
