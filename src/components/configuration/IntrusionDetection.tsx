@@ -207,6 +207,7 @@ const IntrusionDetection: React.FC = () => {
             rectangles,
             // Don't include imageData to avoid "request entity too large" error
             // imageData: capturedImage || undefined
+
         };
 
         try {
