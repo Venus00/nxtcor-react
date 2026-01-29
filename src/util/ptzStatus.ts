@@ -5,6 +5,7 @@ export interface PTZStatus {
     pan: number; // degrees
     tilt: number; // degrees
     raw: any;
+    zoom: number
 }
 
 /**
@@ -17,7 +18,8 @@ export async function fetchPTZStatus(cameraId: string, baseUrl: string): Promise
     const res = await axios.get(url);
     if (!res.data?.success || !res.data.status) throw new Error('Invalid PTZ status response');
     const status = res.data.status;
+    const zoom = parseFloat(status['status.Postion[2]']) || 0;
     const pan = parseFloat(status['status.Postion[0]']) || 0;
     const tilt = parseFloat(status['status.Postion[1]']) || 0;
-    return { pan, tilt, raw: status };
+    return { pan, tilt, raw: status, zoom };
 }

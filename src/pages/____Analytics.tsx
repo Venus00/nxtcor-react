@@ -54,7 +54,7 @@ const Analytics: React.FC = () => {
     const loadAnalyticsState = async () => {
       try {
         setStateLoading(true);
-        const response = await fetch('http://localhost:3000/api/analytics/state');
+        const response = await fetch(`http://${window.location.hostname}:3000/api/analytics/state`);
         const data = await response.json();
 
         if (data.success) {

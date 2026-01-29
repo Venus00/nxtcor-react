@@ -39,6 +39,10 @@ const VideoStream: React.FC = () => {
     return saved ? JSON.parse(saved) : false;
   });
   const [controlPanelCollapsed, setControlPanelCollapsed] = useState(false);
+  const [gotoExpanded, setGotoExpanded] = useState(false);
+  const [gotoPan, setGotoPan] = useState("");
+  const [gotoTilt, setGotoTilt] = useState("");
+  const [gotoZoom, setGotoZoom] = useState("");
   const [streamLoading, setStreamLoading] = useState(true);
   const [streamError, setStreamError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -500,7 +504,7 @@ const VideoStream: React.FC = () => {
     try {
       const newState = !stabilizerEnabled;
       const res = await fetch(
-        `http://${window.location.hostname}:3000/camera/${camId === "cam1" ? "cam2" : "cam1"}/video/stabilizer`,
+        `http://${window.location.hostname}:3000/api/camera/${camId === "cam1" ? "cam2" : "cam1"}/video/stabilizer`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -517,6 +521,96 @@ const VideoStream: React.FC = () => {
       localStorage.setItem("video_stabilizer_enabled", JSON.stringify(newState));
     } catch (err) {
       console.error("Error toggling stabilizer:", err);
+    }
+  };
+
+  const fetchPTZStatus = async () => {
+    try {
+      const res = await fetch(
+        `http://${window.location.hostname}:3000/api/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/status`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+
+      const data = await res.json();
+      console.log("PTZ Status fetched:", data);
+
+      if (data.ok && data.response) {
+        // Extract pan, tilt, zoom from response
+        // Assuming response structure has pan, tilt, zoom values
+        if (data.response.pan !== undefined) {
+          setGotoPan(data.response.pan.toString());
+        }
+        if (data.response.tilt !== undefined) {
+          setGotoTilt(data.response.tilt.toString());
+        }
+        if (data.response.zoom !== undefined) {
+          setGotoZoom(data.response.zoom.toString());
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching PTZ status:", err);
+    }
+  };
+
+  // Fetch PTZ status when GoTo panel is expanded
+  useEffect(() => {
+    if (gotoExpanded) {
+      fetchPTZStatus();
+    }
+  }, [gotoExpanded, camId]);
+
+  const handleGoTo = async () => {
+    try {
+      const pan = parseFloat(gotoPan);
+      const tilt = parseFloat(gotoTilt);
+      const zoom = parseFloat(gotoZoom);
+
+      // Validate inputs
+      if (gotoPan && (isNaN(pan) || pan < 0 || pan > 360)) {
+        alert("Pan must be between 0 and 360 degrees");
+        return;
+      }
+      if (gotoTilt && (isNaN(tilt) || tilt < -90 || tilt > 90)) {
+        alert("Tilt must be between -90 and 90 degrees");
+        return;
+      }
+      if (gotoZoom && (isNaN(zoom) || zoom < 0 || zoom > 128)) {
+        alert("Zoom must be between 0 and 128");
+        return;
+      }
+
+      // Prepare body with only filled values
+      const body: any = { channel: 0, speed };
+      if (gotoPan) body.pan = pan;
+      if (gotoTilt) body.tilt = tilt;
+      if (gotoZoom) body.zoom = zoom;
+
+      const res = await fetch(
+        `http://${window.location.hostname}:3000/api/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/goto`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
+
+      const data = await res.json();
+      console.log("GoTo command sent:", data);
+
+      if (data.ok || data.success) {
+        // Clear inputs after successful command
+        setGotoPan("");
+        setGotoTilt("");
+        setGotoZoom("");
+      } else {
+        alert("Failed to execute GoTo command");
+      }
+    } catch (err) {
+      console.error("Error executing GoTo:", err);
+      alert("Error sending GoTo command");
     }
   };
 
@@ -562,7 +656,7 @@ const VideoStream: React.FC = () => {
     const recordingCameraId = camId === "cam1" ? "cam2" : "cam1";
     try {
       const res = await fetch(
-        `http://${window.location.hostname}:3000/recording/start`,
+        `http://${window.location.hostname}:3000/api/recording/start`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -597,7 +691,7 @@ const VideoStream: React.FC = () => {
     const recordingCameraId = camId === "cam1" ? "cam2" : "cam1";
     try {
       const res = await fetch(
-        `http://${window.location.hostname}:3000/recording/stop`,
+        `http://${window.location.hostname}:3000/api/recording/stop`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1273,6 +1367,107 @@ const VideoStream: React.FC = () => {
             </div>
           </div>
 
+          {/* GoTo Panel - Bottom Left */}
+          <div className="absolute bottom-[1vw] left-[2vw] z-20">
+            <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-[1vw] min-w-[12vw]">
+              <div className="relative mb-[0.8vw]">
+                <button
+                  onClick={() => setGotoExpanded(!gotoExpanded)}
+                  className="w-full flex items-center justify-between text-white/90 hover:text-white transition-colors"
+                >
+                  <div className="flex items-center space-x-[0.3vw]">
+                    <div className="w-[0.3vw] h-[0.3vw] bg-blue-500 rounded-full animate-pulse shadow-lg shadow-blue-500/50"></div>
+                    <span className="text-[0.6vw] font-medium tracking-wide">
+                      GOTO POSITION
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-[0.3vw]">
+                    {gotoExpanded && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fetchPTZStatus();
+                        }}
+                        className="p-[0.2vw] hover:bg-white/10 rounded transition-colors"
+                        title="Refresh current position"
+                      >
+                        <RefreshCw className="w-[0.7vw] h-[0.7vw]" strokeWidth={2.5} />
+                      </button>
+                    )}
+                    <ChevronDown
+                      className={`w-[0.8vw] h-[0.8vw] transition-transform duration-200 ${gotoExpanded ? 'rotate-180' : ''}`}
+                      strokeWidth={2.5}
+                    />
+                  </div>
+                </button>
+              </div>
+
+              {gotoExpanded && (
+                <div className="space-y-[0.6vw]">
+                  {/* Current Status Info */}
+                  <div className="text-white/40 text-[0.5vw] mb-[0.4vw] text-center">
+                    Current position loaded - adjust as needed
+                  </div>
+
+                  {/* Pan Input */}
+                  <div>
+                    <label className="text-white/60 text-[0.55vw] font-medium mb-[0.2vw] block">
+                      Pan (°)
+                    </label>
+                    <input
+                      type="number"
+                      value={gotoPan}
+                      onChange={(e) => setGotoPan(e.target.value)}
+                      placeholder="0 - 360"
+                      className="w-full bg-white/10 border border-white/20 text-white text-[0.6vw] rounded-lg px-[0.5vw] py-[0.3vw] focus:outline-none focus:border-blue-400/50 focus:bg-white/15 transition-colors placeholder:text-white/30"
+                    />
+                  </div>
+
+                  {/* Tilt Input */}
+                  <div>
+                    <label className="text-white/60 text-[0.55vw] font-medium mb-[0.2vw] block">
+                      Tilt (°)
+                    </label>
+                    <input
+                      type="number"
+                      value={gotoTilt}
+                      onChange={(e) => setGotoTilt(e.target.value)}
+                      placeholder="-90 - 90"
+                      className="w-full bg-white/10 border border-white/20 text-white text-[0.6vw] rounded-lg px-[0.5vw] py-[0.3vw] focus:outline-none focus:border-blue-400/50 focus:bg-white/15 transition-colors placeholder:text-white/30"
+                    />
+                  </div>
+
+                  {/* Zoom Input */}
+                  <div>
+                    <label className="text-white/60 text-[0.55vw] font-medium mb-[0.2vw] block">
+                      Zoom (0-128)
+                    </label>
+                    <input
+                      type="number"
+                      value={gotoZoom}
+                      onChange={(e) => setGotoZoom(e.target.value)}
+                      placeholder="0 - 128"
+                      className="w-full bg-white/10 border border-white/20 text-white text-[0.6vw] rounded-lg px-[0.5vw] py-[0.3vw] focus:outline-none focus:border-blue-400/50 focus:bg-white/15 transition-colors placeholder:text-white/30"
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-[0.4vw]">
+                    <button
+                      onClick={handleGoTo}
+                      className="group flex-1 h-[2vw] bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 border border-blue-400/30 hover:border-blue-400/50 text-blue-100 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                      aria-label="Go To Position"
+                    >
+                      <span className="text-[0.6vw] font-medium tracking-wide">
+                        GO
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Overlay PTZ Controls - Positioned at edges */}
           {/* Up Button - Top Center */}
           {controlPanelCollapsed && (
@@ -1426,7 +1621,7 @@ const VideoStream: React.FC = () => {
           )}
 
           {/* Error Overlay */}
-          {streamError && !streamLoading && !isRetrying && (
+          {!streamError && streamLoading && isRetrying && (
             <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center z-30">
               <div className="relative">
                 <div className="absolute inset-0 bg-red-500/20 rounded-full blur-3xl animate-pulse"></div>

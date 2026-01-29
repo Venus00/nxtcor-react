@@ -14,18 +14,17 @@ const General = () => {
     // { name: 'User Management', content: <User_Management />}
   ]
 
- return (
+  return (
     <div className="bg-white text-black  flex flex-col">
       <div className="mb-4 flex-shrink-0">
         <ul className="flex space-x-6 text-base text-center" role="tablist">
           {tabs.map((tab) => (
             <li className="me-2" role="presentation" key={tab.name}>
               <button
-                className={`inline-block p-4 rounded-t-lg ${
-                  activeTab === tab.name
+                className={`inline-block p-4 rounded-t-lg ${activeTab === tab.name
                     ? "text-black border-black border-b-2"
                     : "text-gray-600 hover:text-black hover:border-gray-300"
-                }`}
+                  }`}
                 onClick={() => setActiveTab(tab.name)}
                 type="button"
                 role="tab"
@@ -37,12 +36,12 @@ const General = () => {
           ))}
         </ul>
       </div>
-      
+
       <div className="flex-1 overflow-hidden">
         {tabs.map((tab) => (
-          <div 
-            key={tab.name} 
-            className={`h-full ${activeTab === tab.name ? "" : "hidden"}`} 
+          <div
+            key={tab.name}
+            className={`h-full ${activeTab === tab.name ? "" : "hidden"}`}
             role="tabpanel"
           >
             <div className="p-4 rounded-lg h-full">
