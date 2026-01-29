@@ -33,12 +33,14 @@ const IntrusionDetection: React.FC = () => {
     const [isDrawing, setIsDrawing] = useState(false);
     const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
     const [currentRect, setCurrentRect] = useState<Rectangle | null>(null);
+
     const [presetName, setPresetName] = useState('');
     const [presets, setPresets] = useState<Preset[]>([]);
     const [speed, setSpeed] = useState(2);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
     const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
 
     // PTZ control refs
@@ -66,22 +68,47 @@ const IntrusionDetection: React.FC = () => {
         }
     };
 
-    const captureFrame = () => {
-        if (!videoRef.current || !canvasRef.current) return;
+    const captureFrame = async () => {
+        if (!iframeRef.current || !canvasRef.current) return;
 
         const canvas = canvasRef.current;
-        const video = videoRef.current;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        canvas.width = 640;
-        canvas.height = 480;
-        ctx.drawImage(video, 0, 0, 640, 480);
+        try {
+            // Use html2canvas or create a temporary video element to capture the stream
+            // For now, we'll capture the iframe content directly
+            const iframe = iframeRef.current;
+            
+            // Create a temporary video element to capture the stream
+            const video = document.createElement('video');
+            video.src = `http://${window.location.hostname}:8889/${selectedCamera}`;
+            video.autoplay = true;
+            video.muted = true;
+            video.style.display = 'none';
+            document.body.appendChild(video);
 
-        const imageData = canvas.toDataURL('image/png');
-        setCapturedImage(imageData);
-        setIsCapturing(true);
-        setRectangles([]);
+            // Wait for video to load
+            await new Promise((resolve) => {
+                video.onloadeddata = resolve;
+                setTimeout(resolve, 1000); // Fallback timeout
+            });
+
+            canvas.width = 640;
+            canvas.height = 480;
+            ctx.drawImage(video, 0, 0, 640, 480);
+
+            const imageData = canvas.toDataURL('image/png');
+            setCapturedImage(imageData);
+            setIsCapturing(true);
+            setRectangles([]);
+
+            // Cleanup
+            document.body.removeChild(video);
+        } catch (error) {
+            console.error('Error capturing frame:', error);
+            alert('Failed to capture frame. Please try again.');
+        }
     };
 
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -506,13 +533,14 @@ const IntrusionDetection: React.FC = () => {
                     <div className="relative h-full">
                         <div className="h-full flex items-center justify-center bg-black rounded-lg overflow-hidden">
                             {!isCapturing ? (
-                                <div className="relative w-full h-full">
-                                    <WebRTCMonitor
-                                        selectedCamera={selectedCamera}
-                                        detectionEnabled={true}
-                                        onVideoRef={(ref) => {
-                                            if (ref) videoRef.current = ref;
-                                        }}
+                                <div className="relative w-full h-full flex items-center justify-center">
+                                    <iframe
+                                        ref={iframeRef}
+                                        src={`http://${window.location.hostname}:8889/${selectedCamera}`}
+                                        className="border-0"
+                                        style={{ width: '640px', height: '480px' }}
+                                        allow="autoplay; fullscreen"
+                                        title="Live Camera Feed"
                                     />
                                     <canvas ref={canvasRef} className="hidden" />
                                 </div>

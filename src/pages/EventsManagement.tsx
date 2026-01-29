@@ -420,18 +420,19 @@ const EventsManagement: React.FC = () => {
                     onSave={handleSaveCrowdDetection}
                   />
                 )}
-
-                {activeTab === 'detection-events' && (
-                  <EventTable eventType="detection" />
-                )}
-
-                {activeTab === 'intrusion-events' && (
-                  <EventTable eventType="intrusion" />
-                )}
               </div>
             </>
           )}
         </div>
+
+        {/* Event History Tables - Always Visible */}
+        {activeTab === 'detection-events' && (
+          <EventTable eventType="detection" />
+        )}
+
+        {activeTab === 'intrusion-events' && (
+          <EventTable eventType="intrusion" />
+        )}
       </div>
     </div>
   );
