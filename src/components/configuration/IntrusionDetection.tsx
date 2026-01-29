@@ -92,42 +92,72 @@ const IntrusionDetection: React.FC = () => {
             // Set video source
             video.src = `http://${window.location.hostname}:8889/${selectedCamera}`;
 
-            // Wait for video to be ready with multiple checks
-            await new Promise((resolve, reject) => {
+            // Wait for video to be ready and playing
+            await new Promise<void>((resolve, reject) => {
                 let attempts = 0;
-                const maxAttempts = 50; // 5 seconds timeout
+                const maxAttempts = 100; // 10 seconds timeout
+                let resolved = false;
 
-                const checkVideo = () => {
+                const checkVideoReady = () => {
                     attempts++;
                     
-                    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-                        // Video is ready
-                        resolve(true);
+                    // Check if video has valid dimensions and is ready to play
+                    if (video.readyState >= 3 && video.videoWidth > 0 && video.videoHeight > 0) {
+                        if (!resolved) {
+                            resolved = true;
+                            console.log('[Capture] Video ready:', video.videoWidth, 'x', video.videoHeight);
+                            resolve();
+                        }
                     } else if (attempts >= maxAttempts) {
-                        reject(new Error('Video load timeout'));
+                        reject(new Error('Video load timeout - stream may not be available'));
                     } else {
-                        setTimeout(checkVideo, 100);
+                        setTimeout(checkVideoReady, 100);
                     }
                 };
 
+                // Multiple event listeners to catch when video is ready
                 video.onloadeddata = () => {
-                    if (video.videoWidth > 0 && video.videoHeight > 0) {
-                        resolve(true);
+                    console.log('[Capture] Video loaded data');
+                    if (video.videoWidth > 0 && video.videoHeight > 0 && !resolved) {
+                        resolved = true;
+                        resolve();
                     }
                 };
 
-                video.onerror = (e) => reject(new Error('Video load error'));
+                video.oncanplay = () => {
+                    console.log('[Capture] Video can play');
+                    if (video.videoWidth > 0 && video.videoHeight > 0 && !resolved) {
+                        resolved = true;
+                        resolve();
+                    }
+                };
+
+                video.onplaying = () => {
+                    console.log('[Capture] Video is playing');
+                    if (!resolved) {
+                        resolved = true;
+                        resolve();
+                    }
+                };
+
+                video.onerror = (e) => {
+                    console.error('[Capture] Video error:', e);
+                    reject(new Error('Video load error - check stream URL'));
+                };
                 
-                // Start checking
-                checkVideo();
+                // Start checking immediately
+                setTimeout(checkVideoReady, 100);
             });
 
-            // Give it a bit more time to ensure frame is ready
-            await new Promise(resolve => setTimeout(resolve, 200));
+            // Additional delay to ensure we have a valid frame
+            await new Promise(resolve => setTimeout(resolve, 300));
 
             // Set canvas size
             canvas.width = 640;
             canvas.height = 480;
+
+            // Clear canvas first
+            ctx.clearRect(0, 0, 640, 480);
 
             // Draw the video frame
             ctx.drawImage(video, 0, 0, 640, 480);
@@ -135,10 +165,12 @@ const IntrusionDetection: React.FC = () => {
             // Get image data
             const imageData = canvas.toDataURL('image/png');
             
-            // Verify we didn't capture a blank frame
-            if (imageData === 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==') {
-                throw new Error('Captured blank frame');
+            // Verify we didn't capture a blank frame (check if image is too small)
+            if (imageData.length < 1000) {
+                throw new Error('Captured blank or invalid frame');
             }
+
+            console.log('[Capture] Frame captured successfully, size:', imageData.length);
 
             setCapturedImage(imageData);
             setIsCapturing(true);
@@ -146,9 +178,9 @@ const IntrusionDetection: React.FC = () => {
 
             // Cleanup
             document.body.removeChild(video);
-        } catch (error) {
-            console.error('Error capturing frame:', error);
-            alert('Failed to capture frame. Please ensure the video stream is playing and try again.');
+        } catch (error: any) {
+            console.error('[Capture] Error capturing frame:', error);
+            alert(`Failed to capture frame: ${error.message}\n\nPlease ensure the video stream is playing in the iframe.`);
         }
     };
 
