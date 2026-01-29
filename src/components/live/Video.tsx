@@ -66,7 +66,7 @@ const VideoStream: React.FC = () => {
   const clickMoveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const videoOverlayRef = useRef<HTMLDivElement | null>(null);
 
-  const camId = useParams().id || 'cam1';
+  const camId = useParams().id || "cam1";
 
   // Monitor stream loading and handle errors
   useEffect(() => {
@@ -77,13 +77,13 @@ const VideoStream: React.FC = () => {
       try {
         const response = await fetch(
           `http://${window.location.hostname}:8889/${camId}`,
-          { method: 'HEAD', mode: 'no-cors' }
+          { method: "HEAD", mode: "no-cors" },
         );
         setStreamLoading(false);
         setStreamError(false);
         setRetryCount(0);
       } catch (error) {
-        console.error('[Video] Stream check failed:', error);
+        console.error("[Video] Stream check failed:", error);
         setStreamLoading(false);
         setStreamError(true);
       }
@@ -122,7 +122,7 @@ const VideoStream: React.FC = () => {
 
     retryTimeoutRef.current = setTimeout(() => {
       setIsRetrying(false);
-      setRetryCount(prev => prev + 1);
+      setRetryCount((prev) => prev + 1);
     }, 3000);
   };
 
@@ -172,12 +172,19 @@ const VideoStream: React.FC = () => {
         );
         const data = await response.json();
 
-        if (data.config && data.config["table.VideoImageControl[0].Stable"] !== undefined) {
+        if (
+          data.config &&
+          data.config["table.VideoImageControl[0].Stable"] !== undefined
+        ) {
           const stableValue = data.config["table.VideoImageControl[0].Stable"];
-          console.log('[Video] Raw Stable value from API:', stableValue, typeof stableValue);
+          console.log(
+            "[Video] Raw Stable value from API:",
+            stableValue,
+            typeof stableValue,
+          );
 
           // Handle string value: "0" means OFF/disabled, "3" (or any non-zero) means ON/enabled
-          const stabilizerState = (stableValue === "0") ? false : true;
+          const stabilizerState = stableValue === "0" ? false : true;
 
           setStabilizerEnabled(stabilizerState);
           localStorage.setItem(
@@ -392,11 +399,11 @@ const VideoStream: React.FC = () => {
 
   // Digital zoom handlers
   const handleDigitalZoomIn = () => {
-    setDigitalZoom(prev => Math.min(prev + 0.1, 3));
+    setDigitalZoom((prev) => Math.min(prev + 0.1, 3));
   };
 
   const handleDigitalZoomOut = () => {
-    setDigitalZoom(prev => Math.max(prev - 0.1, 1));
+    setDigitalZoom((prev) => Math.max(prev - 0.1, 1));
   };
 
   const focusInHandlers = createHoldHandlers("focus_in", focusInIntervalRef);
@@ -511,14 +518,17 @@ const VideoStream: React.FC = () => {
           body: JSON.stringify({
             channel: 0,
             config: 0,
-            stabilizer: newState ? 3 : 0
+            stabilizer: newState ? 3 : 0,
           }),
         },
       );
       const data = await res.json();
       console.log("Stabilizer toggled:", data);
       setStabilizerEnabled(newState);
-      localStorage.setItem("video_stabilizer_enabled", JSON.stringify(newState));
+      localStorage.setItem(
+        "video_stabilizer_enabled",
+        JSON.stringify(newState),
+      );
     } catch (err) {
       console.error("Error toggling stabilizer:", err);
     }
@@ -539,9 +549,9 @@ const VideoStream: React.FC = () => {
 
       if (data.success && data.status) {
         // Extract pan, tilt, zoom from status using the correct keys
-        const zoom = parseFloat(data.status['status.Postion[2]']) || 0;
-        const pan = parseFloat(data.status['status.Postion[0]']) || 0;
-        const tilt = parseFloat(data.status['status.Postion[1]']) || 0;
+        const zoom = parseFloat(data.status["status.Postion[2]"]) || 0;
+        const pan = parseFloat(data.status["status.Postion[0]"]) || 0;
+        const tilt = parseFloat(data.status["status.Postion[1]"]) || 0;
 
         setGotoPan(pan.toFixed(2));
         setGotoTilt(tilt.toFixed(2));
@@ -582,13 +592,13 @@ const VideoStream: React.FC = () => {
       }
 
       // Prepare body with only filled values
-      const body: any = { channel: 0, speed };
+      const body: any = { channel: 0 };
       if (gotoPan) body.pan = pan;
       if (gotoTilt) body.tilt = tilt;
       if (gotoZoom) body.zoom = zoom;
 
       const res = await fetch(
-        `http://${window.location.hostname}:3000/api/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/goto`,
+        `http://${window.location.hostname}:3000/api/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/position`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -750,26 +760,31 @@ const VideoStream: React.FC = () => {
 
     // Only move if click is far enough from center (dead zone)
     if (distance < 0.1) {
-      console.log('[PTZ Click] Click too close to center, ignoring');
+      console.log("[PTZ Click] Click too close to center, ignoring");
       return;
     }
 
     // Calculate speed based on distance (1-8 scale)
     // Map distance 0.1-1.0 to speed 1-8
     const normalizedDistance = Math.min(distance, 1.0);
-    const calculatedSpeed = Math.max(1, Math.min(8, Math.round(1 + (normalizedDistance * 7))));
+    const calculatedSpeed = Math.max(
+      1,
+      Math.min(8, Math.round(1 + normalizedDistance * 7)),
+    );
 
-    console.log(`[PTZ Click] Offset: (${offsetX.toFixed(2)}, ${offsetY.toFixed(2)}), Distance: ${distance.toFixed(2)}, Speed: ${calculatedSpeed}`);
+    console.log(
+      `[PTZ Click] Offset: (${offsetX.toFixed(2)}, ${offsetY.toFixed(2)}), Distance: ${distance.toFixed(2)}, Speed: ${calculatedSpeed}`,
+    );
 
-    let direction: 'up' | 'down' | 'left' | 'right';
+    let direction: "up" | "down" | "left" | "right";
 
     // Determine direction based on larger offset
     if (absX > absY) {
       // Horizontal movement dominates
-      direction = offsetX > 0 ? 'right' : 'left';
+      direction = offsetX > 0 ? "right" : "left";
     } else {
       // Vertical movement dominates
-      direction = offsetY > 0 ? 'down' : 'up';
+      direction = offsetY > 0 ? "down" : "up";
     }
 
     console.log(`[PTZ Click] Moving ${direction} at speed ${calculatedSpeed}`);
@@ -777,51 +792,55 @@ const VideoStream: React.FC = () => {
     // Execute move command with calculated speed
     const moveWithSpeed = async () => {
       try {
-        let endpoint = '';
+        let endpoint = "";
         switch (direction) {
-          case 'up':
+          case "up":
             endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/up`;
             break;
-          case 'down':
+          case "down":
             endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/down`;
             break;
-          case 'left':
+          case "left":
             endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/left`;
             break;
-          case 'right':
+          case "right":
             endpoint = `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/right`;
             break;
         }
 
         await fetch(`http://${window.location.hostname}:3000/api${endpoint}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ channel: 0, speed: calculatedSpeed }),
         });
       } catch (err) {
-        console.error('[PTZ Click] Move error:', err);
+        console.error("[PTZ Click] Move error:", err);
       }
     };
 
     const stopMove = async () => {
       try {
-        const stopEndpoint = direction === 'left' || direction === 'right'
-          ? `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/stop`
-          : `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/stop`;
+        const stopEndpoint =
+          direction === "left" || direction === "right"
+            ? `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/stop`
+            : `/camera/${camId === "cam1" ? "cam2" : "cam1"}/ptz/move/stop`;
 
         await fetch(`http://${window.location.hostname}:3000${stopEndpoint}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ channel: 0 }),
         });
       } catch (err) {
-        console.error('[PTZ Click] Stop error:', err);
+        console.error("[PTZ Click] Stop error:", err);
       }
     };
 
     // Start moving
     moveWithSpeed();
-    clickMoveIntervalRef.current = window.setInterval(() => moveWithSpeed(), 100);
+    clickMoveIntervalRef.current = window.setInterval(
+      () => moveWithSpeed(),
+      100,
+    );
 
     // Auto-stop after 1.5 seconds
     clickMoveTimeoutRef.current = setTimeout(() => {
@@ -830,7 +849,7 @@ const VideoStream: React.FC = () => {
         clickMoveIntervalRef.current = null;
       }
       stopMove();
-      console.log('[PTZ Click] Auto-stopped');
+      console.log("[PTZ Click] Auto-stopped");
     }, 1500);
   };
 
@@ -879,8 +898,16 @@ const VideoStream: React.FC = () => {
           <button
             onClick={() => setControlPanelCollapsed(!controlPanelCollapsed)}
             className="absolute top-6 right-6 z-30 w-12 h-12 bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 hover:border-white/40 text-white rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-md shadow-lg"
-            aria-label={controlPanelCollapsed ? "Expand Control Panel" : "Collapse Control Panel"}
-            title={controlPanelCollapsed ? "Afficher le panneau" : "Masquer le panneau"}
+            aria-label={
+              controlPanelCollapsed
+                ? "Expand Control Panel"
+                : "Collapse Control Panel"
+            }
+            title={
+              controlPanelCollapsed
+                ? "Afficher le panneau"
+                : "Masquer le panneau"
+            }
           >
             {controlPanelCollapsed ? (
               <PanelRightOpen size={24} strokeWidth={2.5} />
@@ -890,8 +917,13 @@ const VideoStream: React.FC = () => {
           </button>
 
           {/* Control Panel */}
-          <div className={`absolute bottom-[1vw] right-[2vw] z-20 transition-all duration-300 ${controlPanelCollapsed ? 'opacity-0 pointer-events-none translate-x-[120%]' : 'opacity-100'
-            }`}>
+          <div
+            className={`absolute bottom-[1vw] right-[2vw] z-20 transition-all duration-300 ${
+              controlPanelCollapsed
+                ? "opacity-0 pointer-events-none translate-x-[120%]"
+                : "opacity-100"
+            }`}
+          >
             <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-[1vw] min-w-[8vw]">
               <div className="flex items-center justify-between mb-[0.8vw] pb-[0.4vw] border-b border-white/10">
                 <div className="flex items-center space-x-[0.3vw]">
@@ -908,12 +940,13 @@ const VideoStream: React.FC = () => {
                   onClick={isRecording ? stopRecording : startRecording}
                   onTouchEnd={isRecording ? stopRecording : startRecording}
                   disabled={recordingCompleted}
-                  className={`group w-full h-[2vw] ${isRecording
-                    ? "bg-red-500/30 hover:bg-red-500/40 active:bg-red-500/50 border-red-400/50 hover:border-red-400/70 text-red-100 hover:shadow-red-500/20"
-                    : recordingCompleted
-                      ? "bg-gray-500/20 border-gray-400/30 text-gray-400 cursor-not-allowed"
-                      : "bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border-green-400/30 hover:border-green-400/50 text-green-100 hover:shadow-green-500/20"
-                    } border hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg disabled:hover:scale-100`}
+                  className={`group w-full h-[2vw] ${
+                    isRecording
+                      ? "bg-red-500/30 hover:bg-red-500/40 active:bg-red-500/50 border-red-400/50 hover:border-red-400/70 text-red-100 hover:shadow-red-500/20"
+                      : recordingCompleted
+                        ? "bg-gray-500/20 border-gray-400/30 text-gray-400 cursor-not-allowed"
+                        : "bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/40 border-green-400/30 hover:border-green-400/50 text-green-100 hover:shadow-green-500/20"
+                  } border hover:text-white rounded-xl flex items-center justify-center space-x-1.5 transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg disabled:hover:scale-100`}
                   aria-label={
                     isRecording ? "Stop Recording" : "Start Recording"
                   }
@@ -1015,7 +1048,6 @@ const VideoStream: React.FC = () => {
                   onMouseLeave={upHandlers.handleStop}
                   onTouchStart={upHandlers.handleStart}
                   onTouchEnd={upHandlers.handleStop}
-
                   className="group w-[2vw] h-[2vw] bg-white/5 hover:bg-white/15 active:bg-white/25 border border-white/10 hover:border-white/25 text-white/80 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg hover:shadow-white/5"
                   aria-label="Tilt Up"
                 >
@@ -1039,14 +1071,15 @@ const VideoStream: React.FC = () => {
                       className="w-[1vw] h-[1vw] group-hover:scale-110 transition-transform duration-200"
                       strokeWidth={2.5}
                     />
-                  </button>                  <button
+                  </button>{" "}
+                  <button
                     onClick={async () => {
                       // Stop all PTZ movements
-                      await stop('up');
-                      await stop('down');
-                      await stop('left');
-                      await stop('right');
-                      console.log('[PTZ] Stop all movements');
+                      await stop("up");
+                      await stop("down");
+                      await stop("left");
+                      await stop("right");
+                      console.log("[PTZ] Stop all movements");
                     }}
                     className="w-[2vw] h-[2vw] bg-red-500/20 hover:bg-red-500/30 active:bg-red-500/40 border border-red-400/30 hover:border-red-400/50 rounded-lg flex items-center justify-center backdrop-blur-sm cursor-pointer transition-all duration-300 ease-out hover:scale-110 active:scale-95"
                     aria-label="Stop PTZ"
@@ -1054,7 +1087,6 @@ const VideoStream: React.FC = () => {
                   >
                     <div className="w-[0.5vw] h-[0.5vw] bg-red-400 rounded-sm shadow-lg"></div>
                   </button>
-
                   <button
                     onMouseDown={rightHandlers.handleStart}
                     onMouseUp={rightHandlers.handleStop}
@@ -1125,7 +1157,8 @@ const VideoStream: React.FC = () => {
                     className="w-[0.7vw] h-[0.7vw] group-hover:scale-110 transition-transform duration-200"
                     strokeWidth={2.5}
                   />
-                </button>                <button
+                </button>{" "}
+                <button
                   onMouseDown={zoomInHandlers.handleStart}
                   onMouseUp={zoomInHandlers.handleStop}
                   onMouseLeave={zoomInHandlers.handleStop}
@@ -1155,7 +1188,9 @@ const VideoStream: React.FC = () => {
 
               {/* Digital Zoom Indicator */}
               <div className="text-center mb-[0.8vw]">
-                <span className="text-white/60 text-[0.55vw] font-medium">Digital: {digitalZoom.toFixed(1)}x</span>
+                <span className="text-white/60 text-[0.55vw] font-medium">
+                  Digital: {digitalZoom.toFixed(1)}x
+                </span>
               </div>
 
               {/* FOCUS */}
@@ -1192,7 +1227,11 @@ const VideoStream: React.FC = () => {
                   onTouchEnd={toggleAutoFocus}
                   className={`group w-[2vw] h-[2vw] ${autoFocusEnabled ? "bg-green-500/30 border-green-400/50 text-green-100" : "bg-gray-500/20 border-gray-400/30 text-gray-400"} border rounded-lg flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 active:scale-95 backdrop-blur-sm hover:shadow-lg ${autoFocusEnabled ? "hover:shadow-green-500/20" : "hover:shadow-gray-500/20"}`}
                   aria-label="Toggle Autofocus"
-                  title={autoFocusEnabled ? "Autofocus: ACTIVÉ" : "Autofocus: DÉSACTIVÉ"}
+                  title={
+                    autoFocusEnabled
+                      ? "Autofocus: ACTIVÉ"
+                      : "Autofocus: DÉSACTIVÉ"
+                  }
                 >
                   <Focus
                     className={`w-[0.9vw] h-[0.9vw] group-hover:scale-110 transition-transform duration-200 ${autoFocusEnabled ? "animate-pulse" : ""}`}
@@ -1339,13 +1378,15 @@ const VideoStream: React.FC = () => {
                 <button
                   onClick={toggleStabilizer}
                   onTouchEnd={toggleStabilizer}
-                  className={`group w-full h-[2vw] ${stabilizerEnabled
-                    ? "bg-green-500/30 border-green-400/50 text-green-100"
-                    : "bg-gray-500/20 border-gray-400/30 text-gray-400"
-                    } border rounded-xl flex items-center justify-center space-x-[0.3vw] transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg ${stabilizerEnabled
+                  className={`group w-full h-[2vw] ${
+                    stabilizerEnabled
+                      ? "bg-green-500/30 border-green-400/50 text-green-100"
+                      : "bg-gray-500/20 border-gray-400/30 text-gray-400"
+                  } border rounded-xl flex items-center justify-center space-x-[0.3vw] transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm hover:shadow-lg ${
+                    stabilizerEnabled
                       ? "hover:shadow-green-500/20"
                       : "hover:shadow-gray-500/20"
-                    }`}
+                  }`}
                   aria-label="Toggle Image Stabilizer"
                   title={
                     stabilizerEnabled
@@ -1354,8 +1395,9 @@ const VideoStream: React.FC = () => {
                   }
                 >
                   <Minimize2
-                    className={`w-[0.8vw] h-[0.8vw] group-hover:scale-110 transition-transform duration-200 ${stabilizerEnabled ? "animate-pulse" : ""
-                      }`}
+                    className={`w-[0.8vw] h-[0.8vw] group-hover:scale-110 transition-transform duration-200 ${
+                      stabilizerEnabled ? "animate-pulse" : ""
+                    }`}
                     strokeWidth={2.5}
                   />
                   <span className="text-[0.6vw] font-medium tracking-wide">
@@ -1390,11 +1432,14 @@ const VideoStream: React.FC = () => {
                         className="p-[0.2vw] hover:bg-white/10 rounded transition-colors"
                         title="Refresh current position"
                       >
-                        <RefreshCw className="w-[0.7vw] h-[0.7vw]" strokeWidth={2.5} />
+                        <RefreshCw
+                          className="w-[0.7vw] h-[0.7vw]"
+                          strokeWidth={2.5}
+                        />
                       </button>
                     )}
                     <ChevronDown
-                      className={`w-[0.8vw] h-[0.8vw] transition-transform duration-200 ${gotoExpanded ? 'rotate-180' : ''}`}
+                      className={`w-[0.8vw] h-[0.8vw] transition-transform duration-200 ${gotoExpanded ? "rotate-180" : ""}`}
                       strokeWidth={2.5}
                     />
                   </div>
@@ -1422,14 +1467,14 @@ const VideoStream: React.FC = () => {
                         className="flex-1 bg-white/10 border border-white/20 text-white text-[0.6vw] rounded-lg px-[0.5vw] py-[0.3vw] focus:outline-none focus:border-blue-400/50 focus:bg-white/15 transition-colors placeholder:text-white/30"
                       />
                       <button
-                        onClick={() => setGotoPan('0')}
+                        onClick={() => setGotoPan("0")}
                         className="px-[0.5vw] py-[0.3vw] bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-[0.5vw] rounded-lg transition-all hover:scale-105"
                         title="Set to minimum (0°)"
                       >
                         Min
                       </button>
                       <button
-                        onClick={() => setGotoPan('360')}
+                        onClick={() => setGotoPan("360")}
                         className="px-[0.5vw] py-[0.3vw] bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-[0.5vw] rounded-lg transition-all hover:scale-105"
                         title="Set to maximum (360°)"
                       >
@@ -1452,14 +1497,14 @@ const VideoStream: React.FC = () => {
                         className="flex-1 bg-white/10 border border-white/20 text-white text-[0.6vw] rounded-lg px-[0.5vw] py-[0.3vw] focus:outline-none focus:border-blue-400/50 focus:bg-white/15 transition-colors placeholder:text-white/30"
                       />
                       <button
-                        onClick={() => setGotoTilt('-90')}
+                        onClick={() => setGotoTilt("-90")}
                         className="px-[0.5vw] py-[0.3vw] bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-[0.5vw] rounded-lg transition-all hover:scale-105"
                         title="Set to minimum (-90°)"
                       >
                         Min
                       </button>
                       <button
-                        onClick={() => setGotoTilt('90')}
+                        onClick={() => setGotoTilt("90")}
                         className="px-[0.5vw] py-[0.3vw] bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-[0.5vw] rounded-lg transition-all hover:scale-105"
                         title="Set to maximum (90°)"
                       >
@@ -1482,14 +1527,14 @@ const VideoStream: React.FC = () => {
                         className="flex-1 bg-white/10 border border-white/20 text-white text-[0.6vw] rounded-lg px-[0.5vw] py-[0.3vw] focus:outline-none focus:border-blue-400/50 focus:bg-white/15 transition-colors placeholder:text-white/30"
                       />
                       <button
-                        onClick={() => setGotoZoom('0')}
+                        onClick={() => setGotoZoom("0")}
                         className="px-[0.5vw] py-[0.3vw] bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-[0.5vw] rounded-lg transition-all hover:scale-105"
                         title="Set to minimum (0)"
                       >
                         Min
                       </button>
                       <button
-                        onClick={() => setGotoZoom('128')}
+                        onClick={() => setGotoZoom("128")}
                         className="px-[0.5vw] py-[0.3vw] bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-[0.5vw] rounded-lg transition-all hover:scale-105"
                         title="Set to maximum (128)"
                       >
@@ -1644,8 +1689,8 @@ const VideoStream: React.FC = () => {
               height: "100%",
               pointerEvents: "none",
               transform: `scale(${digitalZoom})`,
-              transformOrigin: 'center center',
-              transition: 'transform 0.2s ease-out'
+              transformOrigin: "center center",
+              transition: "transform 0.2s ease-out",
             }}
           />
 
@@ -1653,8 +1698,12 @@ const VideoStream: React.FC = () => {
           {streamLoading && !streamError && (
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-30">
               <Loader2 className="w-16 h-16 text-blue-500 animate-spin mb-4" />
-              <p className="text-white text-lg font-medium">Chargement du flux vidéo...</p>
-              <p className="text-slate-400 text-sm mt-2">Connexion à la caméra en cours</p>
+              <p className="text-white text-lg font-medium">
+                Chargement du flux vidéo...
+              </p>
+              <p className="text-slate-400 text-sm mt-2">
+                Connexion à la caméra en cours
+              </p>
             </div>
           )}
 
@@ -1662,8 +1711,12 @@ const VideoStream: React.FC = () => {
           {isRetrying && (
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-30">
               <RefreshCw className="w-16 h-16 text-yellow-500 animate-spin mb-4" />
-              <p className="text-white text-lg font-medium">Reconnexion en cours...</p>
-              <p className="text-slate-400 text-sm mt-2">Tentative de rétablissement du flux</p>
+              <p className="text-white text-lg font-medium">
+                Reconnexion en cours...
+              </p>
+              <p className="text-slate-400 text-sm mt-2">
+                Tentative de rétablissement du flux
+              </p>
             </div>
           )}
 
@@ -1674,9 +1727,15 @@ const VideoStream: React.FC = () => {
                 <div className="absolute inset-0 bg-red-500/20 rounded-full blur-3xl animate-pulse"></div>
                 <AlertCircle className="relative w-24 h-24 text-red-500 mb-6" />
               </div>
-              <h3 className="text-white text-2xl font-bold mb-2">Impossible d'obtenir le flux</h3>
-              <p className="text-slate-300 text-base mb-1">La connexion à la caméra a échoué</p>
-              <p className="text-slate-400 text-sm mb-6">Vérifiez que la caméra est allumée et connectée</p>
+              <h3 className="text-white text-2xl font-bold mb-2">
+                Impossible d'obtenir le flux
+              </h3>
+              <p className="text-slate-300 text-base mb-1">
+                La connexion à la caméra a échoué
+              </p>
+              <p className="text-slate-400 text-sm mb-6">
+                Vérifiez que la caméra est allumée et connectée
+              </p>
               <button
                 onClick={handleRetryStream}
                 className="group px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-300 flex items-center gap-3 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-105 active:scale-95"
@@ -1698,4 +1757,3 @@ const VideoStream: React.FC = () => {
 };
 
 export default VideoStream;
-
