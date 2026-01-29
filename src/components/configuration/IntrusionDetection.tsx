@@ -76,120 +76,32 @@ const IntrusionDetection: React.FC = () => {
         if (!ctx) return;
 
         try {
-            // Create a temporary video element to capture the stream
-            const video = document.createElement('video');
-            video.crossOrigin = "anonymous";
-            video.autoplay = true;
-            video.muted = true;
-            video.playsInline = true;
-            video.style.position = 'fixed';
-            video.style.top = '-9999px';
-            video.style.left = '-9999px';
-            video.style.width = '640px';
-            video.style.height = '480px';
-            document.body.appendChild(video);
-
-            // Set video source
-            video.src = `http://${window.location.hostname}:8889/${selectedCamera}`;
-
-            // Wait for video to be ready and playing
-            await new Promise<void>((resolve) => {
-                let attempts = 0;
-                const maxAttempts = 100; // 10 seconds timeout
-                let resolved = false;
-
-                const checkVideoReady = () => {
-                    attempts++;
-
-                    // Check if video has valid dimensions and is ready to play
-                    if (video.readyState >= 3 && video.videoWidth > 0 && video.videoHeight > 0) {
-                        if (!resolved) {
-                            resolved = true;
-                            console.log('[Capture] Video ready:', video.videoWidth, 'x', video.videoHeight);
-                            resolve();
-                        }
-                    } else if (attempts >= maxAttempts) {
-                        // Resolve anyway after timeout to attempt capture
-                        if (!resolved) {
-                            resolved = true;
-                            console.log('[Capture] Timeout reached, attempting capture anyway');
-                            resolve();
-                        }
-                    } else {
-                        setTimeout(checkVideoReady, 100);
-                    }
-                };
-
-                // Multiple event listeners to catch when video is ready
-                video.onloadeddata = () => {
-                    console.log('[Capture] Video loaded data');
-                    if (video.videoWidth > 0 && video.videoHeight > 0 && !resolved) {
-                        resolved = true;
-                        resolve();
-                    }
-                };
-
-                video.oncanplay = () => {
-                    console.log('[Capture] Video can play');
-                    if (video.videoWidth > 0 && video.videoHeight > 0 && !resolved) {
-                        resolved = true;
-                        resolve();
-                    }
-                };
-
-                video.onplaying = () => {
-                    console.log('[Capture] Video is playing');
-                    if (!resolved) {
-                        resolved = true;
-                        resolve();
-                    }
-                };
-
-                video.onerror = (e) => {
-                    console.error('[Capture] Video error:', e);
-                    // Don't reject, just resolve to attempt capture
-                    if (!resolved) {
-                        resolved = true;
-                        resolve();
-                    }
-                };
-
-                // Start checking immediately
-                setTimeout(checkVideoReady, 100);
-            });
-
-            // Additional delay to ensure we have a valid frame
-            await new Promise(resolve => setTimeout(resolve, 300));
+            const iframe = iframeRef.current;
 
             // Set canvas size
             canvas.width = 640;
             canvas.height = 480;
 
-            // Clear canvas first
-            ctx.clearRect(0, 0, 640, 480);
-
-            // Draw the video frame
-            ctx.drawImage(video, 0, 0, 640, 480);
-
-            // Get image data
-            const imageData = canvas.toDataURL('image/png');
-
-            // Verify we didn't capture a blank frame (check if image is too small)
-            if (imageData.length < 1000) {
-                throw new Error('Captured blank or invalid frame');
+            // Capture iframe content
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (iframeDoc) {
+                const video = iframeDoc.querySelector('video');
+                if (video) {
+                    ctx.drawImage(video, 0, 0, 640, 480);
+                } else {
+                    throw new Error('Video element not found in iframe');
+                }
+            } else {
+                throw new Error('Cannot access iframe content');
             }
 
-            console.log('[Capture] Frame captured successfully, size:', imageData.length);
-
+            const imageData = canvas.toDataURL('image/png');
             setCapturedImage(imageData);
             setIsCapturing(true);
             setRectangles([]);
-
-            // Cleanup
-            document.body.removeChild(video);
         } catch (error: any) {
             console.error('[Capture] Error capturing frame:', error);
-            alert(`Failed to capture frame: ${error.message}\n\nPlease ensure the video stream is playing in the iframe.`);
+            alert('Failed to capture frame from iframe');
         }
     };
 
