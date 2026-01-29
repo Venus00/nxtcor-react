@@ -70,44 +70,54 @@ const IntrusionDetection: React.FC = () => {
     };
 
     const captureFrame = async () => {
-        if (!iframeRef.current || !canvasRef.current) return;
+        if (!canvasRef.current) return;
 
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Set canvas size
-        canvas.width = 640;
-        canvas.height = 480;
+        try {
+            // Call your capture API
+            const response = await fetch(`http://${window.location.hostname}:9898/capture/${selectedCamera}`);
+            const data = await response.json();
 
-        // Get the stream URL from iframe
-        const streamUrl = iframeRef.current.src;
-
-        // Create an image element to load the stream snapshot
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-
-        img.onload = () => {
-            try {
-                // Draw the loaded image to canvas
-                ctx.drawImage(img, 0, 0, 640, 480);
-                const imageData = canvas.toDataURL('image/png');
-                setCapturedImage(imageData);
-                setIsCapturing(true);
-                setRectangles([]);
-            } catch (error: any) {
-                console.error('[Capture] Error drawing image:', error);
-                alert('Failed to capture frame');
+            if (!data.image) {
+                alert('No image data received from capture API');
+                return;
             }
-        };
 
-        img.onerror = (e) => {
-            console.error('[Capture] Image load error:', e);
-            alert('Failed to load stream snapshot');
-        };
+            // Set canvas size
+            canvas.width = 640;
+            canvas.height = 480;
 
-        // Add timestamp to get fresh frame
-        img.src = streamUrl + (streamUrl.includes('?') ? '&' : '?') + 'snapshot=' + Date.now();
+            // Create an image element to load the base64 image
+            const img = new Image();
+
+            img.onload = () => {
+                try {
+                    // Draw the loaded image to canvas
+                    ctx.drawImage(img, 0, 0, 640, 480);
+                    const imageData = canvas.toDataURL('image/png');
+                    setCapturedImage(imageData);
+                    setIsCapturing(true);
+                    setRectangles([]);
+                } catch (error: any) {
+                    console.error('[Capture] Error drawing image:', error);
+                    alert('Failed to draw captured frame');
+                }
+            };
+
+            img.onerror = (e) => {
+                console.error('[Capture] Image load error:', e);
+                alert('Failed to load captured image');
+            };
+
+            // Load the base64 image
+            img.src = data.image.startsWith('data:') ? data.image : `data:image/jpeg;base64,${data.image}`;
+        } catch (error: any) {
+            console.error('[Capture] API Error:', error);
+            alert('Failed to capture frame from camera');
+        }
     };
 
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
