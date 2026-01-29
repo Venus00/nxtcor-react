@@ -72,30 +72,42 @@ const IntrusionDetection: React.FC = () => {
     const captureFrame = async () => {
         if (!iframeRef.current || !canvasRef.current) return;
 
-        const iframeContainer = iframeRef.current.parentElement;
-        if (!iframeContainer) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
 
-        try {
-            // Use html2canvas to capture the iframe container
-            const canvas = await html2canvas(iframeContainer, {
-                allowTaint: true,
-                useCORS: true,
-                logging: false,
-                width: 640,
-                height: 480,
-                windowWidth: 640,
-                windowHeight: 480,
-            });
+        // Set canvas size
+        canvas.width = 640;
+        canvas.height = 480;
 
-            // Convert to data URL
-            const imageData = canvas.toDataURL('image/png');
-            setCapturedImage(imageData);
-            setIsCapturing(true);
-            setRectangles([]);
-        } catch (error: any) {
-            console.error('[Capture] Error:', error);
-            alert('Failed to capture frame from iframe');
-        }
+        // Get the stream URL from iframe
+        const streamUrl = iframeRef.current.src;
+
+        // Create an image element to load the stream snapshot
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+
+        img.onload = () => {
+            try {
+                // Draw the loaded image to canvas
+                ctx.drawImage(img, 0, 0, 640, 480);
+                const imageData = canvas.toDataURL('image/png');
+                setCapturedImage(imageData);
+                setIsCapturing(true);
+                setRectangles([]);
+            } catch (error: any) {
+                console.error('[Capture] Error drawing image:', error);
+                alert('Failed to capture frame');
+            }
+        };
+
+        img.onerror = (e) => {
+            console.error('[Capture] Image load error:', e);
+            alert('Failed to load stream snapshot');
+        };
+
+        // Add timestamp to get fresh frame
+        img.src = streamUrl + (streamUrl.includes('?') ? '&' : '?') + 'snapshot=' + Date.now();
     };
 
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
